@@ -1,0 +1,116 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Tu libro está listo - {{ app_name }}{% endblock %}
+
+{% block header_subtitle %}{{ book.title }} - Generación completada{% endblock %}
+
+{% block content %}
+<div class="success-box">
+    <strong>¡Excelentes noticias!</strong> Tu libro <em>"{{ book.title }}"</em> ha sido generado exitosamente y está listo para descargar.
+</div>
+
+<div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #e2e8f0;">
+    <h3 style="color: #2d3748; margin-bottom: 15px; font-size: 18px;">📖 Detalles del libro</h3>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div>
+            <strong style="color: #4a5568;">Título:</strong><br>
+            <span style="color: #2d3748;">{{ book.title }}</span>
+        </div>
+        
+        <div>
+            <strong style="color: #4a5568;">Género:</strong><br>
+            <span style="color: #2d3748;">{{ book.genre }}</span>
+        </div>
+        
+        <div>
+            <strong style="color: #4a5568;">Páginas:</strong><br>
+            <span style="color: #2d3748;">{{ book.final_pages or book.page_count }} páginas</span>
+        </div>
+        
+        <div>
+            <strong style="color: #4a5568;">Palabras:</strong><br>
+            <span style="color: #2d3748;">{{ book.final_words or "~" + ((book.final_pages or book.page_count) * 250) | string }} palabras</span>
+        </div>
+        
+        <div>
+            <strong style="color: #4a5568;">Idioma:</strong><br>
+            <span style="color: #2d3748;">{{ book.language | upper }}</span>
+        </div>
+        
+        <div>
+            <strong style="color: #4a5568;">Audiencia:</strong><br>
+            <span style="color: #2d3748;">{{ book.target_audience }}</span>
+        </div>
+    </div>
+    
+    {% if book.key_topics %}
+    <div style="margin-top: 15px;">
+        <strong style="color: #4a5568;">Temas principales:</strong><br>
+        <span style="color: #2d3748;">{{ book.key_topics | join(', ') if book.key_topics is iterable else book.key_topics }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<div class="text-center">
+    <a href="{{ download_url }}" class="action-button">
+        📥 Descargar mi libro
+    </a>
+</div>
+
+<div class="message">
+    Tu libro está disponible en los siguientes formatos:
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        <li><strong>PDF:</strong> Perfecto para lectura en dispositivos y impresión</li>
+        <li><strong>EPUB:</strong> Ideal para lectores electrónicos y móviles</li>
+        {% if user.subscription_type.value != 'free' %}
+        <li><strong>DOCX:</strong> Para edición y personalización adicional</li>
+        <li><strong>HTML:</strong> Para publicación web</li>
+        {% endif %}
+    </ul>
+</div>
+
+<div class="info-box">
+    <strong>💡 Sugerencias para tu libro:</strong><br>
+    • Revisa el contenido y siéntete libre de editarlo según tus necesidades<br>
+    • Comparte tu creación con amigos, familia o en redes sociales<br>
+    • Considera usarlo como base para un proyecto más grande<br>
+    • ¡Danos tu feedback para mejorar futuras generaciones!
+</div>
+
+{% if user.remaining_books > 0 %}
+<div class="message">
+    <strong>¿Listo para tu próximo libro?</strong><br>
+    Te quedan <span class="highlight">{{ user.remaining_books }} libro{% if user.remaining_books != 1 %}s{% endif %}</span> este mes. 
+    ¿Qué te parece explorar un género diferente o profundizar en un tema que te apasione?
+</div>
+
+<div class="text-center">
+    <a href="{{ dashboard_url }}" class="secondary-button">
+        ✨ Crear otro libro
+    </a>
+</div>
+{% else %}
+<div class="warning-box">
+    <strong>Has alcanzado tu límite mensual</strong><br>
+    Has usado todos tus libros disponibles este mes. Tu límite se restablecerá el próximo mes, o puedes considerar actualizar tu plan para generar más libros.
+</div>
+
+<div class="text-center">
+    <a href="#" class="secondary-button">Ver planes premium</a>
+</div>
+{% endif %}
+
+<div class="divider"></div>
+
+<div class="message">
+    <strong>¿Te gustó el resultado?</strong><br>
+    Tu feedback es invaluable para nosotros. Compártenos qué te pareció la calidad del contenido, 
+    la estructura del libro y cualquier sugerencia para mejorar.
+</div>
+
+<div class="text-center">
+    <a href="#" class="secondary-button">📝 Dar feedback</a>
+    <a href="#" class="secondary-button">⭐ Calificar experiencia</a>
+</div>
+{% endblock %}

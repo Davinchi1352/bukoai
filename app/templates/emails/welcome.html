@@ -1,0 +1,75 @@
+{% extends "emails/base.html" %}
+
+{% block title %}¡Bienvenido a {{ app_name }}!{% endblock %}
+
+{% block header_subtitle %}Tu cuenta está lista para generar libros increíbles{% endblock %}
+
+{% block content %}
+<div class="success-box">
+    <strong>¡Felicidades!</strong> Tu cuenta en {{ app_name }} ha sido creada exitosamente. Ya puedes comenzar a generar libros únicos con inteligencia artificial.
+</div>
+
+<div class="message">
+    Como nuevo miembro de nuestra comunidad, tienes acceso a todas estas funcionalidades:
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+        <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 8px;">📚 Generación de Libros</h3>
+        <p style="font-size: 14px; color: #4a5568;">Crea libros completos en múltiples géneros y formatos</p>
+    </div>
+    
+    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #48bb78;">
+        <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 8px;">⚡ IA Avanzada</h3>
+        <p style="font-size: 14px; color: #4a5568;">Potenciado por Claude AI para contenido de alta calidad</p>
+    </div>
+    
+    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #ed8936;">
+        <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 8px;">📄 Múltiples Formatos</h3>
+        <p style="font-size: 14px; color: #4a5568;">Descarga en PDF, EPUB, DOCX y más</p>
+    </div>
+    
+    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #9f7aea;">
+        <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 8px;">🎯 Personalización</h3>
+        <p style="font-size: 14px; color: #4a5568;">Controla tono, estilo, audiencia y más</p>
+    </div>
+</div>
+
+<div class="text-center">
+    <a href="{{ dashboard_url }}" class="action-button">
+        🚀 Generar mi primer libro
+    </a>
+</div>
+
+<div class="message">
+    <strong>¿Qué puedes hacer ahora?</strong>
+    <ol style="margin-left: 20px; margin-top: 10px;">
+        <li><strong>Explora el dashboard:</strong> Familiarízate con la interfaz y opciones disponibles</li>
+        <li><strong>Crea tu primer libro:</strong> Elige un tema que te apasione y deja que la IA haga el trabajo</li>
+        <li><strong>Personaliza tu perfil:</strong> Configura tus preferencias y información de facturación</li>
+        <li><strong>Únete a la comunidad:</strong> Comparte tus creaciones y descubre libros de otros usuarios</li>
+    </ol>
+</div>
+
+<div class="info-box">
+    <strong>Tu plan actual: Plan Gratuito</strong><br>
+    • 1 libro por mes<br>
+    • Hasta 30 páginas por libro<br>
+    • Formatos PDF y EPUB<br>
+    • Soporte por email<br><br>
+    
+    <a href="#" class="secondary-button">Ver planes premium</a>
+</div>
+
+<div class="divider"></div>
+
+<div class="message">
+    <strong>¿Necesitas ayuda?</strong><br>
+    Nuestro equipo de soporte está aquí para ayudarte. No dudes en contactarnos si tienes preguntas sobre la generación de libros, tu cuenta, o cualquier otra consulta.
+</div>
+
+<div class="text-center">
+    <a href="#" class="secondary-button">Centro de ayuda</a>
+    <a href="#" class="secondary-button">Contactar soporte</a>
+</div>
+{% endblock %}

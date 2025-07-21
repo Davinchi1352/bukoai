@@ -1,0 +1,170 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Eliminar Cuenta{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-trash-alt me-2"></i>Eliminar Cuenta
+                    </h1>
+                </div>
+                
+                <div class="card-body">
+                    <div class="alert alert-danger mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>¡Advertencia!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <div class="danger-icon text-danger mb-3">
+                            <i class="fas fa-user-slash fa-4x"></i>
+                        </div>
+                        <h2 class="h4 mb-3">¿Estás seguro?</h2>
+                        <p class="text-muted">
+                            Al eliminar tu cuenta, perderás permanentemente:
+                        </p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    Todos tus libros generados
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    Tu historial de generación
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    Configuraciones personales
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    Datos de suscripción
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    Acceso a la plataforma
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    Información de perfil
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('auth.delete_account') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-3">
+                            {{ form.current_password.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else ""), 
+                                                        placeholder="Tu contraseña actual",
+                                                        id="current_password") }}
+                                <button class="btn btn-outline-secondary password-toggle" type="button" data-target="current_password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% if form.current_password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.current_password.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            {{ form.confirmation.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-keyboard"></i>
+                                </span>
+                                {{ form.confirmation(class="form-control" + (" is-invalid" if form.confirmation.errors else ""), 
+                                                    placeholder="Escribe ELIMINAR exactamente") }}
+                            </div>
+                            {% if form.confirmation.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.confirmation.errors[0] }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Por seguridad, debes escribir exactamente "ELIMINAR" para confirmar
+                            </small>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-2"></i>Eliminar Cuenta Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Alternative Options -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>¿Buscas algo diferente?
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Antes de eliminar tu cuenta, considera estas alternativas:
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('main.subscription') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-pause me-2"></i>Pausar Suscripción
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('main.privacy_settings') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-shield-alt me-2"></i>Configurar Privacidad
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('main.contact') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-life-ring me-2"></i>Contactar Soporte
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-group-text {
+        background-color: var(--gray-100);
+        border-color: var(--gray-300);
+    }
+    
+    .password-toggle {
+        border-left: 0;
+    }
+</style>
+{% endblock %}

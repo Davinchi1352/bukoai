@@ -1,0 +1,44 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Verifica tu cuenta - {{ app_name }}{% endblock %}
+
+{% block header_subtitle %}Confirma tu dirección de email{% endblock %}
+
+{% block content %}
+<div class="message">
+    Gracias por registrarte en <strong>{{ app_name }}</strong>. Para completar tu registro y activar tu cuenta, necesitamos verificar tu dirección de email.
+</div>
+
+<div class="info-box">
+    <strong>¿Por qué verificar tu email?</strong><br>
+    Esto nos ayuda a garantizar la seguridad de tu cuenta y te permite recibir notificaciones importantes sobre tus libros generados.
+</div>
+
+<div class="text-center">
+    <a href="{{ verification_url }}" class="action-button">
+        ✓ Verificar mi cuenta
+    </a>
+</div>
+
+<div class="message">
+    Al verificar tu cuenta podrás:
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        <li>Generar tu primer libro gratis</li>
+        <li>Recibir notificaciones cuando tus libros estén listos</li>
+        <li>Acceder a todas las funcionalidades de la plataforma</li>
+        <li>Gestionar tu suscripción y configuraciones</li>
+    </ul>
+</div>
+
+<div class="divider"></div>
+
+<div class="text-small">
+    <strong>¿Problemas con el botón?</strong><br>
+    Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+    <a href="{{ verification_url }}">{{ verification_url }}</a>
+</div>
+
+<div class="warning-box">
+    <strong>Importante:</strong> Este enlace expirará en 24 horas por seguridad. Si no verificas tu cuenta dentro de este tiempo, necesitarás solicitar un nuevo enlace de verificación.
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% if action == 'activated' %}
+Suscripción {{ subscription_type }} activada - {{ app_name }}
+{% elif action == 'cancelled' %}
+Suscripción {{ subscription_type }} cancelada - {{ app_name }}
+{% elif action == 'expired' %}
+Suscripción {{ subscription_type }} expirada - {{ app_name }}
+{% else %}
+Cambio en tu suscripción - {{ app_name }}
+{% endif %}
+=========================================================
+
+Hola {{ user.first_name }},
+
+{% if action == 'activated' %}
+¡Felicidades! Tu suscripción al Plan {{ subscription_type }} ha sido activada exitosamente. Ya puedes disfrutar de todos los beneficios premium.
+
+🎉 BENEFICIOS DE TU PLAN {{ subscription_type | upper }}
+
+{% if subscription_type.lower() == 'starter' %}
+• 5 libros por mes
+• Hasta 50 páginas por libro
+• Todos los formatos (PDF, EPUB, DOCX)
+• Soporte prioritario
+• Sin marcas de agua
+{% elif subscription_type.lower() == 'pro' %}
+• 15 libros por mes
+• Hasta 100 páginas por libro
+• Todos los formatos + HTML
+• Imágenes y gráficos
+• Plantillas premium
+• API access
+{% elif subscription_type.lower() == 'business' %}
+• 50 libros por mes
+• Páginas ilimitadas
+• Todos los formatos
+• Branding personalizado
+• Colaboración en equipo
+• Soporte dedicado
+{% elif subscription_type.lower() == 'enterprise' %}
+• Libros ilimitados
+• Páginas ilimitadas
+• Integración personalizada
+• SLA garantizado
+• Onboarding dedicado
+• Cuenta manager
+{% endif %}
+
+EXPLORAR NUEVAS FUNCIONALIDADES:
+{{ dashboard_url }}
+
+{% elif action == 'cancelled' %}
+Tu suscripción al Plan {{ subscription_type }} ha sido cancelada como solicitaste. Lamentamos verte partir.
+
+¿QUÉ SIGNIFICA ESTO?
+• Tu suscripción permanecerá activa hasta el final del período de facturación actual
+• Después de esa fecha, tu cuenta volverá al Plan Gratuito
+• Mantendrás acceso a todos tus libros generados anteriormente
+• Puedes reactivar tu suscripción en cualquier momento
+
+TE EXTRAÑAREMOS
+Si cambias de opinión, puedes reactivar tu suscripción en cualquier momento desde tu dashboard. También nos encantaría conocer tus comentarios sobre cómo podemos mejorar nuestro servicio.
+
+REACTIVAR SUSCRIPCIÓN:
+{{ dashboard_url }}
+
+{% elif action == 'expired' %}
+Tu suscripción al Plan {{ subscription_type }} ha expirado. Tu cuenta ha vuelto al Plan Gratuito.
+
+¿QUÉ PUEDES HACER AHORA?
+• Continúa generando 1 libro por mes con el Plan Gratuito
+• Mantén acceso a todos tus libros generados anteriormente
+• Renueva tu suscripción para recuperar todos los beneficios
+• Explora otros planes que se adapten mejor a tus necesidades
+
+RENOVAR SUSCRIPCIÓN:
+{{ dashboard_url }}
+{% endif %}
+
+¿Necesitas ayuda?
+Si tienes preguntas sobre tu suscripción, facturación, o cualquier aspecto de tu cuenta, nuestro equipo de soporte está aquí para ayudarte.
+
+Dashboard: {{ dashboard_url }}
+
+---
+
+Este email fue enviado desde {{ app_name }}
+
+© {{ current_year or 2025 }} {{ app_name }}. Todos los derechos reservados.

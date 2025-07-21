@@ -1,0 +1,202 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Registrarse{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card" style="max-width: 520px;">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <i class="fas fa-book-open me-2"></i>Buko AI
+            </div>
+            <h1 class="auth-title">Crea tu cuenta</h1>
+            <p class="auth-subtitle">Comienza a generar libros increíbles con IA</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form needs-validation" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        {{ form.first_name.label(class="form-label") }}
+                        {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else ""), 
+                                          placeholder="Juan",
+                                          autofocus=true) }}
+                        {% if form.first_name.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.first_name.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        {{ form.last_name.label(class="form-label") }}
+                        {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else ""), 
+                                         placeholder="Pérez") }}
+                        {% if form.last_name.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.last_name.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mb-3">
+                {{ form.email.label(class="form-label") }}
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-envelope"></i>
+                    </span>
+                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), 
+                                  placeholder="tu@email.com",
+                                  autocomplete="email") }}
+                </div>
+                {% if form.email.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.email.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group mb-3">
+                {{ form.password.label(class="form-label") }}
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                    {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), 
+                                    placeholder="Mínimo 8 caracteres",
+                                    id="password") }}
+                    <button class="btn btn-outline-secondary password-toggle" type="button" data-target="password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.password.errors[0] }}
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Debe contener mayúsculas, minúsculas, números y símbolos
+                </small>
+            </div>
+            
+            <div class="form-group mb-3">
+                {{ form.confirm_password.label(class="form-label") }}
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                    {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), 
+                                            placeholder="Confirma tu contraseña",
+                                            id="confirm_password") }}
+                    <button class="btn btn-outline-secondary password-toggle" type="button" data-target="confirm_password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                {% if form.confirm_password.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.confirm_password.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        {{ form.country.label(class="form-label") }}
+                        {{ form.country(class="form-select" + (" is-invalid" if form.country.errors else "")) }}
+                        {% if form.country.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.country.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        {{ form.city.label(class="form-label") }}
+                        {{ form.city(class="form-control" + (" is-invalid" if form.city.errors else ""), 
+                                    placeholder="Tu ciudad") }}
+                        {% if form.city.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.city.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mb-3">
+                {{ form.preferred_language.label(class="form-label") }}
+                {{ form.preferred_language(class="form-select" + (" is-invalid" if form.preferred_language.errors else "")) }}
+                {% if form.preferred_language.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.preferred_language.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-check mb-4">
+                {{ form.terms_accepted(class="form-check-input" + (" is-invalid" if form.terms_accepted.errors else "")) }}
+                <label class="form-check-label" for="{{ form.terms_accepted.id }}">
+                    Acepto los <a href="{{ url_for('main.terms') }}" target="_blank">términos y condiciones</a> 
+                    y la <a href="{{ url_for('main.privacy') }}" target="_blank">política de privacidad</a>
+                </label>
+                {% if form.terms_accepted.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.terms_accepted.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
+                <i class="fas fa-user-plus me-2"></i>Crear Cuenta
+            </button>
+            
+            <div class="d-grid gap-2 mb-4">
+                <button type="button" class="btn btn-outline-secondary">
+                    <i class="fab fa-google me-2"></i>Registrarse con Google
+                </button>
+                <button type="button" class="btn btn-outline-secondary">
+                    <i class="fab fa-microsoft me-2"></i>Registrarse con Microsoft
+                </button>
+            </div>
+        </form>
+        
+        <div class="auth-footer">
+            <p class="mb-0">
+                ¿Ya tienes una cuenta? 
+                <a href="{{ url_for('auth.login') }}" class="fw-semibold">
+                    Inicia sesión
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-content {
+        padding-top: 0;
+    }
+    
+    .navbar,
+    .footer {
+        display: none;
+    }
+    
+    .input-group-text {
+        background-color: var(--gray-100);
+        border-color: var(--gray-300);
+    }
+    
+    .password-toggle {
+        border-left: 0;
+    }
+</style>
+{% endblock %}

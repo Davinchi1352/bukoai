@@ -1,0 +1,505 @@
+/* ===================================
+   Buko AI - Main Stylesheet
+   =================================== */
+
+:root {
+    /* Global Professional Color Palette */
+    --primary-color: #1e293b;           /* Slate 800 - Professional dark blue-gray */
+    --primary-dark: #0f172a;            /* Slate 900 - Darker variant */
+    --primary-light: #334155;           /* Slate 700 - Lighter variant */
+    --secondary-color: #64748b;         /* Slate 500 - Balanced medium gray */
+    --secondary-dark: #475569;          /* Slate 600 - Darker gray */
+    --secondary-light: #94a3b8;         /* Slate 400 - Lighter gray */
+    --accent-color: #3b82f6;            /* Blue 500 - Professional blue accent */
+    --accent-dark: #1d4ed8;             /* Blue 700 - Darker blue */
+    --accent-light: #60a5fa;            /* Blue 400 - Lighter blue */
+    --danger-color: #dc2626;            /* Red 600 - Professional red */
+    --warning-color: #d97706;           /* Amber 600 - Professional amber */
+    --info-color: #0ea5e9;              /* Sky 500 - Professional sky blue */
+    --success-color: #059669;           /* Emerald 600 - Professional green */
+    --dark-color: #0f172a;              /* Slate 900 - Almost black */
+    --light-color: #f8fafc;             /* Slate 50 - Warm white */
+    --gray-100: #f1f5f9;                /* Slate 100 */
+    --gray-200: #e2e8f0;                /* Slate 200 */
+    --gray-300: #cbd5e1;                /* Slate 300 */
+    --gray-400: #94a3b8;                /* Slate 400 */
+    --gray-500: #64748b;                /* Slate 500 */
+    --gray-600: #475569;                /* Slate 600 */
+    --gray-700: #334155;                /* Slate 700 */
+    --gray-800: #1e293b;                /* Slate 800 */
+    --gray-900: #0f172a;                /* Slate 900 */
+    
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-base: 16px;
+    --line-height-base: 1.6;
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
+    
+    /* Borders */
+    --border-radius: 0.5rem;
+    --border-radius-sm: 0.25rem;
+    --border-radius-lg: 0.75rem;
+    --border-radius-xl: 1rem;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    
+    /* Transitions */
+    --transition-base: all 0.3s ease;
+    --transition-fast: all 0.15s ease;
+}
+
+/* ===================================
+   Base Styles
+   =================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--gray-900);
+    background-color: var(--light-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: var(--spacing-md);
+    color: var(--dark-color);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+    transition: var(--transition-base);
+}
+
+a:hover {
+    color: var(--accent-dark);
+}
+
+/* ===================================
+   Layout
+   =================================== */
+
+.main-content {
+    min-height: calc(100vh - 76px);
+    padding-top: 76px;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* ===================================
+   Navigation
+   =================================== */
+
+.navbar {
+    padding: 1rem 0;
+    transition: var(--transition-base);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.navbar-nav .nav-link {
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    color: var(--gray-700);
+    transition: var(--transition-base);
+}
+
+.navbar-nav .nav-link:hover {
+    color: var(--accent-color);
+}
+
+.navbar-nav .nav-link.active {
+    color: var(--accent-color);
+}
+
+/* ===================================
+   Buttons
+   =================================== */
+
+.btn {
+    font-weight: 500;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--border-radius);
+    transition: var(--transition-base);
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-dark);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--gray-200);
+    color: var(--gray-800);
+}
+
+.btn-secondary:hover {
+    background-color: var(--gray-300);
+    color: var(--gray-900);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--accent-color);
+    color: var(--accent-color);
+    background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* ===================================
+   Forms
+   =================================== */
+
+.form-label {
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+    padding: 0.625rem 0.875rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--gray-900);
+    background-color: white;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    transition: var(--transition-base);
+}
+
+.form-control:focus,
+.form-select:focus {
+    color: var(--gray-900);
+    background-color: white;
+    border-color: var(--accent-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.form-control::placeholder {
+    color: var(--gray-400);
+}
+
+.form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+    vertical-align: top;
+    background-color: white;
+    border: 1px solid var(--gray-300);
+    transition: var(--transition-base);
+}
+
+.form-check-input:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.form-check-input:focus {
+    border-color: var(--accent-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.invalid-feedback {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--danger-color);
+}
+
+.is-invalid {
+    border-color: var(--danger-color) !important;
+}
+
+/* ===================================
+   Cards
+   =================================== */
+
+.card {
+    background-color: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+}
+
+.card:hover {
+    box-shadow: var(--shadow);
+}
+
+.card-header {
+    background-color: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    padding: 1.25rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* ===================================
+   Authentication Pages
+   =================================== */
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--gray-100);
+    padding: 2rem 0;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background-color: white;
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-lg);
+    padding: 2.5rem;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-logo {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    margin-bottom: 0.5rem;
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+.auth-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.auth-form .form-control {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.auth-footer a {
+    color: var(--accent-color);
+    font-weight: 500;
+}
+
+/* ===================================
+   Alerts
+   =================================== */
+
+.alert {
+    padding: 1rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.alert-success {
+    color: #065f46;
+    background-color: #d1fae5;
+    border-color: #a7f3d0;
+}
+
+.alert-danger {
+    color: #991b1b;
+    background-color: #fee2e2;
+    border-color: #fecaca;
+}
+
+.alert-warning {
+    color: #92400e;
+    background-color: #fef3c7;
+    border-color: #fde68a;
+}
+
+.alert-info {
+    color: #1e40af;
+    background-color: #dbeafe;
+    border-color: #bfdbfe;
+}
+
+/* ===================================
+   Footer
+   =================================== */
+
+.footer {
+    background-color: var(--gray-900);
+    color: var(--gray-400);
+}
+
+.footer h5,
+.footer h6 {
+    color: white;
+    font-weight: 600;
+}
+
+.footer a {
+    color: var(--gray-400);
+    transition: var(--transition-base);
+}
+
+.footer a:hover {
+    color: white;
+}
+
+.social-links a {
+    font-size: 1.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--gray-800);
+    transition: var(--transition-base);
+}
+
+.social-links a:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* ===================================
+   Utilities
+   =================================== */
+
+.text-primary { color: var(--accent-color) !important; }
+.text-secondary { color: var(--secondary-color) !important; }
+.text-success { color: var(--success-color) !important; }
+.text-danger { color: var(--danger-color) !important; }
+.text-warning { color: var(--warning-color) !important; }
+.text-info { color: var(--info-color) !important; }
+.text-dark { color: var(--dark-color) !important; }
+.text-muted { color: var(--gray-500) !important; }
+
+.bg-primary { background-color: var(--accent-color) !important; }
+.bg-secondary { background-color: var(--secondary-color) !important; }
+.bg-success { background-color: var(--success-color) !important; }
+.bg-danger { background-color: var(--danger-color) !important; }
+.bg-warning { background-color: var(--warning-color) !important; }
+.bg-info { background-color: var(--info-color) !important; }
+.bg-dark { background-color: var(--dark-color) !important; }
+.bg-light { background-color: var(--light-color) !important; }
+
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow { box-shadow: var(--shadow) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+.shadow-xl { box-shadow: var(--shadow-xl) !important; }
+
+/* ===================================
+   Responsive
+   =================================== */
+
+@media (max-width: 768px) {
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.75rem; }
+    h3 { font-size: 1.5rem; }
+    
+    .auth-card {
+        padding: 2rem 1.5rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .auth-wrapper {
+        padding: 1rem;
+    }
+    
+    .auth-card {
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+    }
+}

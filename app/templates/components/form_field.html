@@ -1,0 +1,86 @@
+{% macro render_field(field, label_class="form-label", field_class="form-control", container_class="form-group mb-3", show_label=true, placeholder=none, icon=none) %}
+<div class="{{ container_class }}">
+    {% if show_label %}
+        {{ field.label(class=label_class) }}
+    {% endif %}
+    
+    {% if icon %}
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="{{ icon }}"></i>
+            </span>
+            {{ field(class=field_class + (" is-invalid" if field.errors else ""), 
+                    placeholder=placeholder or field.label.text) }}
+        </div>
+    {% else %}
+        {{ field(class=field_class + (" is-invalid" if field.errors else ""), 
+                placeholder=placeholder or field.label.text) }}
+    {% endif %}
+    
+    {% if field.errors %}
+        <div class="invalid-feedback{{ ' d-block' if not icon }}">
+            {{ field.errors[0] }}
+        </div>
+    {% endif %}
+    
+    {% if field.description %}
+        <small class="form-text text-muted">{{ field.description }}</small>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_password_field(field, label_class="form-label", field_class="form-control", container_class="form-group mb-3", show_label=true, placeholder=none, icon="fas fa-lock") %}
+<div class="{{ container_class }}">
+    {% if show_label %}
+        {{ field.label(class=label_class) }}
+    {% endif %}
+    
+    <div class="input-group">
+        <span class="input-group-text">
+            <i class="{{ icon }}"></i>
+        </span>
+        {{ field(class=field_class + (" is-invalid" if field.errors else ""), 
+                placeholder=placeholder or field.label.text,
+                id=field.id or field.name) }}
+        <button class="btn btn-outline-secondary password-toggle" type="button" data-target="{{ field.id or field.name }}">
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+    
+    {% if field.errors %}
+        <div class="invalid-feedback d-block">
+            {{ field.errors[0] }}
+        </div>
+    {% endif %}
+    
+    {% if field.description %}
+        <small class="form-text text-muted">{{ field.description }}</small>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_checkbox(field, label_class="form-check-label", field_class="form-check-input", container_class="form-check mb-3") %}
+<div class="{{ container_class }}">
+    {{ field(class=field_class + (" is-invalid" if field.errors else "")) }}
+    {{ field.label(class=label_class) }}
+    
+    {% if field.errors %}
+        <div class="invalid-feedback">
+            {{ field.errors[0] }}
+        </div>
+    {% endif %}
+    
+    {% if field.description %}
+        <small class="form-text text-muted d-block">{{ field.description }}</small>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_submit_button(text, icon="fas fa-check", btn_class="btn-primary", size="", full_width=false) %}
+<button type="submit" class="btn {{ btn_class }} {{ size }}{{ ' w-100' if full_width }}">
+    {% if icon %}
+        <i class="{{ icon }} me-2"></i>
+    {% endif %}
+    {{ text }}
+</button>
+{% endmacro %}

@@ -1,0 +1,21 @@
+{{ title }} - {{ app_name }}
+{{ "=" * (title|length + app_name|length + 3) }}
+
+Hola {{ user.first_name }},
+
+{{ title | upper }}
+
+{{ message }}
+
+{% if action_url and action_text %}
+{{ action_text | upper }}:
+{{ action_url }}
+{% endif %}
+
+---
+
+Notificación enviada el {{ timestamp.strftime('%d de %B de %Y a las %H:%M') }} UTC
+
+Este email fue enviado desde {{ app_name }}
+
+© {{ current_year or 2025 }} {{ app_name }}. Todos los derechos reservados.

@@ -1,0 +1,244 @@
+# ===========================================
+# BUKO AI - DOCKER COMPOSE DEVELOPMENT
+# ===========================================
+
+
+services:
+  # Base de datos PostgreSQL para desarrollo
+  db:
+    image: postgres:16-alpine
+    container_name: buko-ai-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-buko_ai_dev}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-buko_ai_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - buko-ai-dev-network
+
+  # Redis para desarrollo
+  redis:
+    image: redis:7-alpine
+    container_name: buko-ai-redis-dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - buko-ai-dev-network
+
+  # Aplicación web con hot reload
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buko-ai-web-dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-buko_ai_dev}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - MAIL_SERVER=mailhog
+      - MAIL_PORT=1025
+      - MAIL_USERNAME=
+      - MAIL_PASSWORD=
+      - MAIL_USE_TLS=false
+      - MAIL_USE_SSL=false
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+      - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN}
+    volumes:
+      - .:/app
+      - ./storage:/storage
+      - ./logs:/app/logs
+    ports:
+      - "5001:5000"
+    command: ["flask", "run", "--host=0.0.0.0", "--port=5000", "--reload"]
+    networks:
+      - buko-ai-dev-network
+
+  # Celery worker para desarrollo
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buko-ai-worker-dev
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-buko_ai_dev}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+    volumes:
+      - .:/app
+      - ./storage:/storage
+      - ./logs:/app/logs
+    entrypoint: ["/entrypoint.sh", "worker"]
+    command: ["--loglevel=debug", "--pool=solo"]
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/celery_health_check.py", "worker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - buko-ai-dev-network
+
+  # Celery beat para desarrollo
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buko-ai-beat-dev
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-buko_ai_dev}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+    volumes:
+      - .:/app
+      - ./storage:/storage
+      - ./logs:/app/logs
+    entrypoint: ["/entrypoint.sh", "beat"]
+    command: ["--loglevel=debug"]
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/celery_health_check.py", "beat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - buko-ai-dev-network
+
+  # Flower para monitoreo
+  flower:
+    image: mher/flower:2.0
+    container_name: buko-ai-flower-dev
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - FLOWER_UNAUTHENTICATED_API=true
+    ports:
+      - "5555:5555"
+    command: ["celery", "--broker=redis://redis:6379/0", "flower", "--port=5555"]
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5555/api/workers"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - buko-ai-dev-network
+
+  # MailHog para testing de emails
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: buko-ai-mailhog-dev
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_WEB_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8025"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - buko-ai-dev-network
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: buko-ai-nginx-dev
+    restart: unless-stopped
+    depends_on:
+      - web
+      - flower
+    ports:
+      - "8082:80"
+      - "8443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+      - ./storage:/storage:ro
+      - ./app/static:/app/app/static:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - buko-ai-dev-network
+
+  # Adminer para gestión de base de datos
+  adminer:
+    image: adminer:latest
+    container_name: buko-ai-adminer-dev
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - buko-ai-dev-network
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  buko-ai-dev-network:
+    driver: bridge

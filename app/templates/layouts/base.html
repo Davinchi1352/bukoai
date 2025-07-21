@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="{% block meta_description %}Buko AI - Generador de libros con Inteligencia Artificial{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}libros, IA, inteligencia artificial, generador, escritura{% endblock %}">
+    
+    <title>{% block title %}Buko AI{% endblock %} - Generador de Libros con IA</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{{ url_for('main.index') }}">
+                <i class="fas fa-book-open me-2"></i>Buko AI
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('books.my_books') }}">
+                                <i class="fas fa-book me-1"></i>Mis Libros
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('books.generate') }}">
+                                <i class="fas fa-magic me-1"></i>Generar Libro
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>{{ current_user.first_name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                        <i class="fas fa-user me-2"></i>Mi Perfil
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('main.subscription') }}">
+                                        <i class="fas fa-crown me-2"></i>Suscripción
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.features') }}">Características</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.pricing') }}">Precios</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">Iniciar Sesión</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-primary ms-2" href="{{ url_for('auth.register') }}">
+                                Registrarse <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container mt-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {% if category == 'success' %}
+                                <i class="fas fa-check-circle me-2"></i>
+                            {% elif category == 'error' or category == 'danger' %}
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                            {% elif category == 'warning' %}
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle me-2"></i>
+                            {% endif %}
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer bg-dark text-white py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-book-open me-2"></i>Buko AI
+                    </h5>
+                    <p class="text-muted">
+                        Generador de libros con Inteligencia Artificial. 
+                        Crea contenido único y profesional en minutos.
+                    </p>
+                    <div class="social-links mt-3">
+                        <a href="#" class="text-muted me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-muted me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-muted me-3"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="text-muted"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h6 class="mb-3">Producto</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.features') }}" class="text-muted text-decoration-none">
+                                Características
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.pricing') }}" class="text-muted text-decoration-none">
+                                Precios
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.api_docs') }}" class="text-muted text-decoration-none">
+                                API
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h6 class="mb-3">Empresa</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.about') }}" class="text-muted text-decoration-none">
+                                Acerca de
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.contact') }}" class="text-muted text-decoration-none">
+                                Contacto
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.blog') }}" class="text-muted text-decoration-none">
+                                Blog
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h6 class="mb-3">Soporte</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.help') }}" class="text-muted text-decoration-none">
+                                Centro de Ayuda
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.faq') }}" class="text-muted text-decoration-none">
+                                FAQ
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.status') }}" class="text-muted text-decoration-none">
+                                Estado del Sistema
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h6 class="mb-3">Legal</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.privacy') }}" class="text-muted text-decoration-none">
+                                Privacidad
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.terms') }}" class="text-muted text-decoration-none">
+                                Términos
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('main.cookies') }}" class="text-muted text-decoration-none">
+                                Cookies
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <hr class="my-4 bg-secondary">
+            
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0 text-muted">
+                        &copy; 2024 Buko AI. Todos los derechos reservados.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <select class="form-select form-select-sm d-inline-block w-auto" id="languageSelect">
+                        <option value="es" selected>Español</option>
+                        <option value="en">English</option>
+                        <option value="pt">Português</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery (optional, for certain features) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

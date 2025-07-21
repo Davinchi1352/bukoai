@@ -1,0 +1,29 @@
+{% extends "emails/base.html" %}
+
+{% block title %}{{ title }} - {{ app_name }}{% endblock %}
+
+{% block header_subtitle %}Notificación importante{% endblock %}
+
+{% block content %}
+<div class="info-box">
+    <strong>{{ title }}</strong>
+</div>
+
+<div class="message">
+    {{ message | safe }}
+</div>
+
+{% if action_url and action_text %}
+<div class="text-center">
+    <a href="{{ action_url }}" class="action-button">
+        {{ action_text }}
+    </a>
+</div>
+{% endif %}
+
+<div class="divider"></div>
+
+<div class="text-small text-center">
+    <p>Notificación enviada el {{ timestamp.strftime('%d de %B de %Y a las %H:%M') }} UTC</p>
+</div>
+{% endblock %}

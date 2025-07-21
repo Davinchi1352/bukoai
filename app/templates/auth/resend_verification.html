@@ -1,0 +1,116 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Verificar Email{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-envelope me-2"></i>Verificar Email
+                    </h1>
+                </div>
+                
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Tu email no está verificado.</strong><br>
+                        Para acceder a todas las funcionalidades, necesitas verificar tu dirección de email.
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <div class="email-icon text-warning mb-3">
+                            <i class="fas fa-envelope-open-text fa-4x"></i>
+                        </div>
+                        <h2 class="h4 mb-3">Verificación de Email</h2>
+                        <p class="text-muted">
+                            Enviaremos un nuevo email de verificación a:<br>
+                            <strong>{{ current_user.email }}</strong>
+                        </p>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('auth.resend_verification') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-check mb-4">
+                            {{ form.confirm_email(class="form-check-input" + (" is-invalid" if form.confirm_email.errors else "")) }}
+                            <label class="form-check-label" for="{{ form.confirm_email.id }}">
+                                Confirmo que quiero recibir un email de verificación en esta dirección
+                            </label>
+                            {% if form.confirm_email.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.confirm_email.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-paper-plane me-2"></i>Enviar Verificación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Help Section -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">
+                        <i class="fas fa-question-circle me-2"></i>¿Necesitas ayuda?
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-search text-info me-2"></i>
+                                <div>
+                                    <strong>Revisa tu spam</strong><br>
+                                    <small class="text-muted">El email podría estar en la carpeta de spam</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock text-warning me-2"></i>
+                                <div>
+                                    <strong>Espera unos minutos</strong><br>
+                                    <small class="text-muted">Los emails pueden tardar en llegar</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-edit text-success me-2"></i>
+                                <div>
+                                    <strong>Email incorrecto?</strong><br>
+                                    <small class="text-muted">
+                                        <a href="{{ url_for('auth.profile') }}">Actualiza tu email</a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-life-ring text-danger me-2"></i>
+                                <div>
+                                    <strong>¿Sigues sin recibirlo?</strong><br>
+                                    <small class="text-muted">
+                                        <a href="{{ url_for('main.contact') }}">Contacta soporte</a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

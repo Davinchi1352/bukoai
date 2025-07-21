@@ -1,0 +1,53 @@
+Tu libro está listo - {{ app_name }}
+====================================
+
+Hola {{ user.first_name }},
+
+¡Excelentes noticias! Tu libro "{{ book.title }}" ha sido generado exitosamente y está listo para descargar.
+
+📖 DETALLES DEL LIBRO
+Título: {{ book.title }}
+Género: {{ book.genre }}
+Páginas: {{ book.final_pages or book.page_count }} páginas
+Palabras: {{ book.final_words or "~" + ((book.final_pages or book.page_count) * 250) | string }} palabras
+Idioma: {{ book.language | upper }}
+Audiencia: {{ book.target_audience }}
+{% if book.key_topics %}
+Temas principales: {{ book.key_topics | join(', ') if book.key_topics is iterable else book.key_topics }}
+{% endif %}
+
+DESCARGAR MI LIBRO:
+{{ download_url }}
+
+Tu libro está disponible en los siguientes formatos:
+• PDF: Perfecto para lectura en dispositivos y impresión
+• EPUB: Ideal para lectores electrónicos y móviles
+{% if user.subscription_type.value != 'free' %}
+• DOCX: Para edición y personalización adicional
+• HTML: Para publicación web
+{% endif %}
+
+💡 SUGERENCIAS PARA TU LIBRO:
+• Revisa el contenido y siéntete libre de editarlo según tus necesidades
+• Comparte tu creación con amigos, familia o en redes sociales
+• Considera usarlo como base para un proyecto más grande
+• ¡Danos tu feedback para mejorar futuras generaciones!
+
+{% if user.remaining_books > 0 %}
+¿LISTO PARA TU PRÓXIMO LIBRO?
+Te quedan {{ user.remaining_books }} libro{% if user.remaining_books != 1 %}s{% endif %} este mes. ¿Qué te parece explorar un género diferente o profundizar en un tema que te apasione?
+
+Crear otro libro: {{ dashboard_url }}
+{% else %}
+HAS ALCANZADO TU LÍMITE MENSUAL
+Has usado todos tus libros disponibles este mes. Tu límite se restablecerá el próximo mes, o puedes considerar actualizar tu plan para generar más libros.
+{% endif %}
+
+¿Te gustó el resultado?
+Tu feedback es invaluable para nosotros. Compártenos qué te pareció la calidad del contenido, la estructura del libro y cualquier sugerencia para mejorar.
+
+---
+
+Este email fue enviado desde {{ app_name }}
+
+© {{ current_year or 2025 }} {{ app_name }}. Todos los derechos reservados.

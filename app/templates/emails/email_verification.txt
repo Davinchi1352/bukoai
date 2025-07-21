@@ -1,0 +1,27 @@
+{{ app_name }} - Verifica tu cuenta
+================================
+
+Hola {{ user.first_name }},
+
+Gracias por registrarte en {{ app_name }}. Para completar tu registro y activar tu cuenta, necesitamos verificar tu dirección de email.
+
+VERIFICAR MI CUENTA:
+{{ verification_url }}
+
+¿Por qué verificar tu email?
+Esto nos ayuda a garantizar la seguridad de tu cuenta y te permite recibir notificaciones importantes sobre tus libros generados.
+
+Al verificar tu cuenta podrás:
+• Generar tu primer libro gratis
+• Recibir notificaciones cuando tus libros estén listos
+• Acceder a todas las funcionalidades de la plataforma
+• Gestionar tu suscripción y configuraciones
+
+IMPORTANTE: Este enlace expirará en 24 horas por seguridad. Si no verificas tu cuenta dentro de este tiempo, necesitarás solicitar un nuevo enlace de verificación.
+
+---
+
+Este email fue enviado desde {{ app_name }}
+Si no solicitaste esta acción, puedes ignorar este mensaje.
+
+© {{ current_year or 2025 }} {{ app_name }}. Todos los derechos reservados.

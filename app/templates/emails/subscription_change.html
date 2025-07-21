@@ -1,0 +1,146 @@
+{% extends "emails/base.html" %}
+
+{% block title %}
+{% if action == 'activated' %}
+Suscripción {{ subscription_type }} activada - {{ app_name }}
+{% elif action == 'cancelled' %}
+Suscripción {{ subscription_type }} cancelada - {{ app_name }}
+{% elif action == 'expired' %}
+Suscripción {{ subscription_type }} expirada - {{ app_name }}
+{% else %}
+Cambio en tu suscripción - {{ app_name }}
+{% endif %}
+{% endblock %}
+
+{% block header_subtitle %}
+{% if action == 'activated' %}
+Tu plan {{ subscription_type }} está activo
+{% elif action == 'cancelled' %}
+Confirmación de cancelación
+{% elif action == 'expired' %}
+Tu suscripción ha expirado
+{% else %}
+Actualización de suscripción
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if action == 'activated' %}
+<div class="success-box">
+    <strong>¡Felicidades!</strong> Tu suscripción al <strong>Plan {{ subscription_type }}</strong> ha sido activada exitosamente. Ya puedes disfrutar de todos los beneficios premium.
+</div>
+
+<div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0;">
+    <h3 style="color: #2d3748; margin-bottom: 15px;">🎉 Beneficios de tu plan {{ subscription_type }}</h3>
+    
+    {% if subscription_type.lower() == 'starter' %}
+    <ul style="margin-left: 0; list-style: none; padding: 0;">
+        <li style="margin-bottom: 8px;">✅ 5 libros por mes</li>
+        <li style="margin-bottom: 8px;">✅ Hasta 50 páginas por libro</li>
+        <li style="margin-bottom: 8px;">✅ Todos los formatos (PDF, EPUB, DOCX)</li>
+        <li style="margin-bottom: 8px;">✅ Soporte prioritario</li>
+        <li style="margin-bottom: 8px;">✅ Sin marcas de agua</li>
+    </ul>
+    {% elif subscription_type.lower() == 'pro' %}
+    <ul style="margin-left: 0; list-style: none; padding: 0;">
+        <li style="margin-bottom: 8px;">✅ 15 libros por mes</li>
+        <li style="margin-bottom: 8px;">✅ Hasta 100 páginas por libro</li>
+        <li style="margin-bottom: 8px;">✅ Todos los formatos + HTML</li>
+        <li style="margin-bottom: 8px;">✅ Imágenes y gráficos</li>
+        <li style="margin-bottom: 8px;">✅ Plantillas premium</li>
+        <li style="margin-bottom: 8px;">✅ API access</li>
+    </ul>
+    {% elif subscription_type.lower() == 'business' %}
+    <ul style="margin-left: 0; list-style: none; padding: 0;">
+        <li style="margin-bottom: 8px;">✅ 50 libros por mes</li>
+        <li style="margin-bottom: 8px;">✅ Páginas ilimitadas</li>
+        <li style="margin-bottom: 8px;">✅ Todos los formatos</li>
+        <li style="margin-bottom: 8px;">✅ Branding personalizado</li>
+        <li style="margin-bottom: 8px;">✅ Colaboración en equipo</li>
+        <li style="margin-bottom: 8px;">✅ Soporte dedicado</li>
+    </ul>
+    {% elif subscription_type.lower() == 'enterprise' %}
+    <ul style="margin-left: 0; list-style: none; padding: 0;">
+        <li style="margin-bottom: 8px;">✅ Libros ilimitados</li>
+        <li style="margin-bottom: 8px;">✅ Páginas ilimitadas</li>
+        <li style="margin-bottom: 8px;">✅ Integración personalizada</li>
+        <li style="margin-bottom: 8px;">✅ SLA garantizado</li>
+        <li style="margin-bottom: 8px;">✅ Onboarding dedicado</li>
+        <li style="margin-bottom: 8px;">✅ Cuenta manager</li>
+    </ul>
+    {% endif %}
+</div>
+
+<div class="text-center">
+    <a href="{{ dashboard_url }}" class="action-button">
+        🚀 Explorar nuevas funcionalidades
+    </a>
+</div>
+
+{% elif action == 'cancelled' %}
+<div class="warning-box">
+    <strong>Suscripción cancelada</strong><br>
+    Tu suscripción al <strong>Plan {{ subscription_type }}</strong> ha sido cancelada como solicitaste. Lamentamos verte partir.
+</div>
+
+<div class="message">
+    <strong>¿Qué significa esto?</strong>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        <li>Tu suscripción permanecerá activa hasta el final del período de facturación actual</li>
+        <li>Después de esa fecha, tu cuenta volverá al Plan Gratuito</li>
+        <li>Mantendrás acceso a todos tus libros generados anteriormente</li>
+        <li>Puedes reactivar tu suscripción en cualquier momento</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <strong>Te extrañaremos</strong><br>
+    Si cambias de opinión, puedes reactivar tu suscripción en cualquier momento desde tu dashboard. 
+    También nos encantaría conocer tus comentarios sobre cómo podemos mejorar nuestro servicio.
+</div>
+
+<div class="text-center">
+    <a href="{{ dashboard_url }}" class="secondary-button">Reactivar suscripción</a>
+    <a href="#" class="secondary-button">Dar feedback</a>
+</div>
+
+{% elif action == 'expired' %}
+<div class="warning-box">
+    <strong>Suscripción expirada</strong><br>
+    Tu suscripción al <strong>Plan {{ subscription_type }}</strong> ha expirado. Tu cuenta ha vuelto al Plan Gratuito.
+</div>
+
+<div class="message">
+    <strong>¿Qué puedes hacer ahora?</strong>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        <li>Continúa generando 1 libro por mes con el Plan Gratuito</li>
+        <li>Mantén acceso a todos tus libros generados anteriormente</li>
+        <li>Renueva tu suscripción para recuperar todos los beneficios</li>
+        <li>Explora otros planes que se adapten mejor a tus necesidades</li>
+    </ul>
+</div>
+
+<div class="text-center">
+    <a href="#" class="action-button">
+        🔄 Renovar suscripción
+    </a>
+</div>
+
+<div class="text-center">
+    <a href="#" class="secondary-button">Ver todos los planes</a>
+</div>
+{% endif %}
+
+<div class="divider"></div>
+
+<div class="message">
+    <strong>¿Necesitas ayuda?</strong><br>
+    Si tienes preguntas sobre tu suscripción, facturación, o cualquier aspecto de tu cuenta, 
+    nuestro equipo de soporte está aquí para ayudarte.
+</div>
+
+<div class="text-center">
+    <a href="#" class="secondary-button">Contactar soporte</a>
+    <a href="{{ dashboard_url }}" class="secondary-button">Ver dashboard</a>
+</div>
+{% endblock %}

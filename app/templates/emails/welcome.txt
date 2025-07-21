@@ -1,0 +1,51 @@
+¡Bienvenido a {{ app_name }}!
+===========================
+
+Hola {{ user.first_name }},
+
+¡Felicidades! Tu cuenta en {{ app_name }} ha sido creada exitosamente. Ya puedes comenzar a generar libros únicos con inteligencia artificial.
+
+Como nuevo miembro de nuestra comunidad, tienes acceso a todas estas funcionalidades:
+
+📚 GENERACIÓN DE LIBROS
+Crea libros completos en múltiples géneros y formatos
+
+⚡ IA AVANZADA  
+Potenciado por Claude AI para contenido de alta calidad
+
+📄 MÚLTIPLES FORMATOS
+Descarga en PDF, EPUB, DOCX y más
+
+🎯 PERSONALIZACIÓN
+Controla tono, estilo, audiencia y más
+
+GENERAR MI PRIMER LIBRO:
+{{ dashboard_url }}
+
+¿Qué puedes hacer ahora?
+
+1. Explora el dashboard: Familiarízate con la interfaz y opciones disponibles
+2. Crea tu primer libro: Elige un tema que te apasione y deja que la IA haga el trabajo
+3. Personaliza tu perfil: Configura tus preferencias y información de facturación
+4. Únete a la comunidad: Comparte tus creaciones y descubre libros de otros usuarios
+
+TU PLAN ACTUAL: Plan Gratuito
+• 1 libro por mes
+• Hasta 30 páginas por libro
+• Formatos PDF y EPUB
+• Soporte por email
+
+¿Necesitas ayuda?
+Nuestro equipo de soporte está aquí para ayudarte. No dudes en contactarnos si tienes preguntas sobre la generación de libros, tu cuenta, o cualquier otra consulta.
+
+Enlaces útiles:
+• Dashboard: {{ dashboard_url }}
+• Iniciar sesión: {{ login_url }}
+• Centro de ayuda: [Disponible en la plataforma]
+• Contactar soporte: [Disponible en la plataforma]
+
+---
+
+Este email fue enviado desde {{ app_name }}
+
+© {{ current_year or 2025 }} {{ app_name }}. Todos los derechos reservados.

@@ -1,0 +1,1004 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Buko AI - Genera Libros con Inteligencia Artificial{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        /* Global Professional Color Palette */
+        --primary-color: #1e293b;           /* Slate 800 - Professional dark blue-gray */
+        --primary-light: #334155;           /* Slate 700 - Lighter variant */
+        --primary-lighter: #475569;         /* Slate 600 - Even lighter */
+        --secondary-color: #64748b;         /* Slate 500 - Balanced medium gray */
+        --accent-color: #3b82f6;            /* Blue 500 - Subtle accent for CTAs */
+        --text-primary: #0f172a;            /* Slate 900 - Main text */
+        --text-secondary: #475569;          /* Slate 600 - Secondary text */
+        --text-muted: #94a3b8;              /* Slate 400 - Muted text */
+        --background-primary: #ffffff;      /* Pure white */
+        --background-secondary: #f8fafc;    /* Slate 50 - Warm white */
+        --background-tertiary: #f1f5f9;     /* Slate 100 - Light gray */
+        --border-color: #e2e8f0;            /* Slate 200 - Subtle borders */
+        --success-color: #059669;           /* Emerald 600 - Professional green */
+        --warning-color: #d97706;           /* Amber 600 - Soft orange */
+        --error-color: #dc2626;             /* Red 600 - Clear red */
+        
+        /* Subtle Gradients for Modern Look */
+        --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        --background-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        --neutral-gradient: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        position: relative;
+        min-height: 100vh;
+        background: var(--background-gradient);
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a"><stop offset="0" stop-color="%23334155" stop-opacity="0.05"/><stop offset="1" stop-color="%23334155" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="150" fill="url(%23a)"/><circle cx="800" cy="300" r="200" fill="url(%23a)"/><circle cx="400" cy="700" r="250" fill="url(%23a)"/></svg>');
+        animation: float-bg 20s ease-in-out infinite;
+        opacity: 0.6;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-title {
+        font-size: clamp(3rem, 8vw, 5rem);
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 2rem;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+    }
+
+    .hero-subtitle {
+        font-size: clamp(1.2rem, 3vw, 1.5rem);
+        margin-bottom: 3rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        font-weight: 400;
+    }
+
+    .hero-cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 4rem;
+    }
+
+    .btn-hero {
+        padding: 1rem 2.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-hero:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary-hero {
+        background: var(--accent-gradient);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.15);
+        font-weight: 600;
+    }
+
+    .btn-primary-hero:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25);
+        color: white;
+    }
+
+    .btn-secondary-hero {
+        background: var(--background-primary);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
+        font-weight: 600;
+    }
+
+    .btn-secondary-hero:hover {
+        background: var(--background-tertiary);
+        border-color: var(--text-muted);
+        transform: translateY(-2px);
+        color: var(--text-primary);
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+    }
+
+    /* Hero Visual */
+    .hero-visual {
+        position: relative;
+        height: 600px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .floating-book {
+        position: absolute;
+        width: 300px;
+        height: 400px;
+        background: var(--background-primary);
+        border-radius: 15px;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.1);
+        animation: float-book 6s ease-in-out infinite;
+        transform-style: preserve-3d;
+        border: 1px solid var(--border-color);
+    }
+
+    .floating-book::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--primary-gradient);
+        opacity: 0.02;
+        border-radius: 15px;
+        animation: pulse 3s ease-in-out infinite;
+    }
+
+    .book-pages {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        bottom: 20px;
+        background: var(--background-primary);
+        border-radius: 10px;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    .book-title-demo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 15px;
+        letter-spacing: -0.01em;
+    }
+
+    .book-progress {
+        width: 100%;
+        height: 6px;
+        background: var(--background-tertiary);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .book-progress-bar {
+        height: 100%;
+        background: var(--accent-gradient);
+        border-radius: 3px;
+        animation: progress-fill 4s ease-in-out infinite;
+    }
+
+    .ai-particles {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+    }
+
+    .particle {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: var(--text-muted);
+        border-radius: 50%;
+        animation: particle-float 8s linear infinite;
+        opacity: 0.3;
+    }
+
+    /* Stats Section - Diseño Tranquilo y Estable */
+    .stats-section {
+        padding: 5rem 0;
+        background: var(--background-secondary);
+        color: var(--text-primary);
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        z-index: 1;
+    }
+
+    .stats-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .stats-title {
+        text-align: center;
+        margin-bottom: 3rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 2.5rem 1.5rem;
+        background: var(--background-primary);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+        /* Eliminamos transforms conflictivos */
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-card:hover {
+        /* Hover sutil sin transforms */
+        border-color: var(--accent-color);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--accent-color);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--accent-color);
+        display: block;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .stat-description {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+        line-height: 1.4;
+    }
+
+    /* Features Section */
+    .features-section {
+        padding: 8rem 0;
+        background: var(--background-tertiary);
+    }
+
+    .section-title {
+        text-align: center;
+        margin-bottom: 5rem;
+    }
+
+    .section-title h2 {
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+    }
+
+    .section-subtitle {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+        font-weight: 400;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 3rem;
+        margin-top: 4rem;
+    }
+
+    .feature-card {
+        position: relative;
+        padding: 3rem;
+        background: var(--background-primary);
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--accent-gradient);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+        border-color: var(--text-muted);
+    }
+
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+        color: var(--accent-color);
+        background: var(--background-tertiary);
+        border: 1px solid var(--border-color);
+        animation: icon-bounce 2s ease-in-out infinite;
+    }
+
+    .feature-icon-1 { background: var(--background-tertiary); }
+    .feature-icon-2 { background: var(--background-tertiary); }
+    .feature-icon-3 { background: var(--background-tertiary); }
+    .feature-icon-4 { background: var(--background-tertiary); }
+    .feature-icon-5 { background: var(--background-tertiary); }
+    .feature-icon-6 { background: var(--background-tertiary); }
+
+    .feature-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        letter-spacing: -0.01em;
+    }
+
+    .feature-description {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        font-weight: 400;
+    }
+
+    .feature-link {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .feature-link:hover {
+        color: var(--primary-color);
+        transform: translateX(5px);
+    }
+
+    /* Testimonials Section */
+    .testimonials-section {
+        padding: 8rem 0;
+        background: var(--background-primary);
+        color: var(--text-primary);
+    }
+
+    .testimonial-carousel {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 3rem;
+        margin-top: 4rem;
+    }
+
+    .testimonial-card {
+        background: var(--background-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 3rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+        border-color: var(--text-muted);
+    }
+
+    .testimonial-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin: 0 auto 2rem;
+        background: var(--accent-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        font-weight: 700;
+    }
+
+    .testimonial-quote {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        font-style: italic;
+        color: var(--text-secondary);
+    }
+
+    .testimonial-author {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .testimonial-role {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    /* CTA Section */
+    .cta-section {
+        padding: 8rem 0;
+        background: var(--background-tertiary);
+        text-align: center;
+        color: var(--text-primary);
+        border-top: 1px solid var(--border-color);
+    }
+
+    .cta-title {
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        font-weight: 800;
+        margin-bottom: 2rem;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+    }
+
+    .cta-subtitle {
+        font-size: 1.25rem;
+        margin-bottom: 3rem;
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+
+    .cta-buttons {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .cta-note {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    /* Animations - Versión Estable y Tranquila */
+    @keyframes float-bg {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(90deg); }
+    }
+
+    @keyframes float-book {
+        0%, 100% { transform: translateY(0px) rotateY(-10deg); }
+        50% { transform: translateY(-10px) rotateY(-5deg); }
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 0.02; }
+        50% { opacity: 0.06; }
+    }
+
+    @keyframes progress-fill {
+        0% { width: 0%; }
+        50% { width: 75%; }
+        100% { width: 90%; }
+    }
+
+    @keyframes particle-float {
+        0% { transform: translateY(50vh) rotate(0deg); opacity: 0; }
+        20% { opacity: 0.2; }
+        80% { opacity: 0.2; }
+        100% { transform: translateY(-50vh) rotate(180deg); opacity: 0; }
+    }
+
+    @keyframes icon-bounce {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-3px); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero-cta {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-hero {
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .hero-visual {
+            height: 400px;
+        }
+
+        .floating-book {
+            width: 250px;
+            height: 320px;
+        }
+
+        .feature-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .testimonial-carousel {
+            grid-template-columns: 1fr;
+        }
+
+        /* Stats responsive */
+        .stats-section {
+            padding: 3rem 0;
+        }
+
+        .stats-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            padding: 2rem 1rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+        }
+
+        .stat-description {
+            font-size: 0.7rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1.5rem 1rem;
+        }
+
+        .stats-container {
+            padding: 0 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-content">
+                <h1 class="hero-title">
+                    Transforma Ideas en 
+                    <span style="color: var(--accent-color); font-weight: 900;">
+                        Libros Épicos
+                    </span>
+                </h1>
+                <p class="hero-subtitle">
+                    Crea libros profesionales en minutos con la potencia de la inteligencia artificial más avanzada. 
+                    Desde novelas hasta manuales técnicos, tu imaginación es el límite.
+                </p>
+                <div class="hero-cta">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('books.generate') }}" class="btn-hero btn-primary-hero">
+                            <i class="fas fa-magic me-2"></i>Crear Mi Libro
+                        </a>
+                        <a href="{{ url_for('books.my_books') }}" class="btn-hero btn-secondary-hero">
+                            <i class="fas fa-book me-2"></i>Mi Biblioteca
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.register') }}" class="btn-hero btn-primary-hero">
+                            <i class="fas fa-rocket me-2"></i>Comenzar Gratis
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn-hero btn-secondary-hero">
+                            <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-visual">
+                    <div class="floating-book">
+                        <div class="book-pages">
+                            <div class="book-title-demo">Mi Libro Generado</div>
+                            <div class="book-progress">
+                                <div class="book-progress-bar"></div>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                <i class="fas fa-brain me-2"></i>Generado con IA
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ai-particles">
+                        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+                        <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
+                        <div class="particle" style="left: 30%; animation-delay: 2s;"></div>
+                        <div class="particle" style="left: 40%; animation-delay: 3s;"></div>
+                        <div class="particle" style="left: 50%; animation-delay: 4s;"></div>
+                        <div class="particle" style="left: 60%; animation-delay: 5s;"></div>
+                        <div class="particle" style="left: 70%; animation-delay: 6s;"></div>
+                        <div class="particle" style="left: 80%; animation-delay: 7s;"></div>
+                        <div class="particle" style="left: 90%; animation-delay: 8s;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="stats-container">
+        <h2 class="stats-title">Confianza que Inspira</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">15K+</span>
+                <div class="stat-label">Libros Creados</div>
+                <div class="stat-description">Historias únicas cada día</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">8.2K+</span>
+                <div class="stat-label">Autores Felices</div>
+                <div class="stat-description">Creatividad sin límites</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">4.9/5</span>
+                <div class="stat-label">Calificación</div>
+                <div class="stat-description">Excelencia comprobada</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">2.3M+</span>
+                <div class="stat-label">Palabras Generadas</div>
+                <div class="stat-description">Contenido de calidad</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section">
+    <div class="container">
+        <div class="section-title">
+            <h2>Características Revolucionarias</h2>
+            <p class="section-subtitle">
+                Descubre las herramientas que transformarán tu proceso creativo y 
+                te permitirán crear contenido excepcional en tiempo récord.
+            </p>
+        </div>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-1">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="feature-title">IA Claude de Nueva Generación</h3>
+                <p class="feature-description">
+                    Utiliza el modelo más avanzado de Anthropic para generar contenido 
+                    coherente, creativo y perfectamente estructurado. Thinking transparente 
+                    y proceso de razonamiento visible.
+                </p>
+                <a href="#" class="feature-link">
+                    Explorar tecnología <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-2">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <h3 class="feature-title">Generación Inteligente</h3>
+                <p class="feature-description">
+                    Wizard multi-paso que te guía desde la idea inicial hasta el libro 
+                    terminado. Personaliza género, tono, audiencia y longitud para 
+                    resultados perfectos.
+                </p>
+                <a href="#" class="feature-link">
+                    Ver proceso <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-3">
+                    <i class="fas fa-download"></i>
+                </div>
+                <h3 class="feature-title">Múltiples Formatos</h3>
+                <p class="feature-description">
+                    Descarga tus libros en PDF profesional, EPUB para e-readers, 
+                    DOCX para edición y más. Compatible con todas las plataformas 
+                    de publicación.
+                </p>
+                <a href="#" class="feature-link">
+                    Ver formatos <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-4">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <h3 class="feature-title">Velocidad Extrema</h3>
+                <p class="feature-description">
+                    Genera libros completos en 5-15 minutos. Procesamiento asíncrono 
+                    con seguimiento en tiempo real del progreso. Perfecto para 
+                    deadlines ajustados.
+                </p>
+                <a href="#" class="feature-link">
+                    Prueba velocidad <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-5">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <h3 class="feature-title">Personalización Total</h3>
+                <p class="feature-description">
+                    12 géneros literarios, 4 idiomas, múltiples tonos y estilos. 
+                    Instrucciones personalizadas para resultados únicos que 
+                    reflejen tu visión.
+                </p>
+                <a href="#" class="feature-link">
+                    Personalizar <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-6">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="feature-title">Seguridad y Privacidad</h3>
+                <p class="feature-description">
+                    Tus ideas y contenido están protegidos con encriptación 
+                    de grado militar. Backup automático y recuperación de 
+                    datos garantizada.
+                </p>
+                <a href="#" class="feature-link">
+                    Ver seguridad <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section">
+    <div class="container">
+        <div class="section-title">
+            <h2>Lo que dicen nuestros autores</h2>
+            <p class="section-subtitle">
+                Miles de escritores ya han transformado sus ideas en libros exitosos.
+            </p>
+        </div>
+        
+        <div class="testimonial-carousel">
+            <div class="testimonial-card">
+                <div class="testimonial-avatar">MR</div>
+                <div class="testimonial-quote">
+                    "Increíble. Generé mi primera novela en 10 minutos y la calidad 
+                    es sorprendente. Buko AI entendió perfectamente mi visión y 
+                    creó algo único."
+                </div>
+                <div class="testimonial-author">María Rodríguez</div>
+                <div class="testimonial-role">Escritora de Ficción</div>
+            </div>
+            
+            <div class="testimonial-card">
+                <div class="testimonial-avatar">CL</div>
+                <div class="testimonial-quote">
+                    "Como consultor, necesitaba crear un manual técnico rápidamente. 
+                    Buko AI no solo lo hizo en minutos, sino que superó mis expectativas 
+                    en estructura y claridad."
+                </div>
+                <div class="testimonial-author">Carlos López</div>
+                <div class="testimonial-role">Consultor Empresarial</div>
+            </div>
+            
+            <div class="testimonial-card">
+                <div class="testimonial-avatar">AV</div>
+                <div class="testimonial-quote">
+                    "La función de thinking transparente es genial. Puedo ver cómo 
+                    la IA desarrolla las ideas y ajustar el proceso. Es como tener 
+                    un co-autor experto."
+                </div>
+                <div class="testimonial-author">Ana Vega</div>
+                <div class="testimonial-role">Autora de Autoayuda</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <h2 class="cta-title">¿Listo para escribir tu historia?</h2>
+        <p class="cta-subtitle">
+            Únete a miles de autores que ya están creando libros increíbles. 
+            Comienza gratis y descubre el poder de la IA en la escritura.
+        </p>
+        <div class="cta-buttons">
+            {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('auth.register') }}" class="btn-hero btn-primary-hero">
+                    <i class="fas fa-rocket me-2"></i>Empezar Gratis
+                </a>
+                <a href="{{ url_for('main.features') }}" class="btn-hero btn-secondary-hero">
+                    <i class="fas fa-info-circle me-2"></i>Conocer Más
+                </a>
+            {% else %}
+                <a href="{{ url_for('books.generate') }}" class="btn-hero btn-primary-hero">
+                    <i class="fas fa-magic me-2"></i>Crear Mi Libro
+                </a>
+                <a href="{{ url_for('books.my_books') }}" class="btn-hero btn-secondary-hero">
+                    <i class="fas fa-book me-2"></i>Mi Biblioteca
+                </a>
+            {% endif %}
+        </div>
+        <p class="cta-note">
+            ✨ Sin tarjeta de crédito • Libro gratuito incluido • Cancela cuando quieras
+        </p>
+    </div>
+</section>
+
+<script>
+// Inicialización simple y estable - Sin animaciones conflictivas
+document.addEventListener('DOMContentLoaded', function() {
+    // Generar partículas una sola vez (sin re-generación)
+    generateParticles();
+    
+    // Efecto parallax suave y limitado
+    let ticking = false;
+    
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const scrolled = window.pageYOffset;
+                const heroSection = document.querySelector('.hero-section');
+                
+                // Parallax muy sutil para evitar conflictos
+                if (heroSection && scrolled < window.innerHeight) {
+                    heroSection.style.transform = `translateY(${scrolled * 0.2}px)`;
+                }
+                
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+});
+
+function generateParticles() {
+    const particleContainer = document.querySelector('.ai-particles');
+    if (!particleContainer) return;
+    
+    // Menos partículas para mejor performance
+    for (let i = 0; i < 6; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = (20 + (i * 12)) + '%';
+        particle.style.animationDelay = (i * 2) + 's';
+        particle.style.animationDuration = '12s';
+        particleContainer.appendChild(particle);
+    }
+}
+
+// Funciones de utilidad para interacciones suaves
+function addSmoothHover() {
+    const cards = document.querySelectorAll('.stat-card, .feature-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.willChange = 'border-color, box-shadow';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.willChange = 'auto';
+        });
+    });
+}
+
+// Inicializar hover suave
+document.addEventListener('DOMContentLoaded', addSmoothHover);
+</script>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Mi Perfil{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user-circle me-2"></i>Mi Perfil
+                    </h1>
+                </div>
+                
+                <div class="card-body">
+                    <!-- User Info Header -->
+                    <div class="d-flex align-items-center mb-4 pb-4 border-bottom">
+                        <div class="avatar-circle bg-primary text-white me-3">
+                            {{ current_user.first_name[0] }}{{ current_user.last_name[0] }}
+                        </div>
+                        <div>
+                            <h2 class="h4 mb-1">{{ current_user.full_name }}</h2>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-envelope me-1"></i>{{ current_user.email }}
+                                {% if current_user.email_verified %}
+                                    <span class="badge bg-success ms-2">
+                                        <i class="fas fa-check-circle me-1"></i>Verificado
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning ms-2">
+                                        <i class="fas fa-exclamation-circle me-1"></i>No verificado
+                                    </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Form -->
+                    <form method="POST" action="{{ url_for('auth.profile') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <h3 class="h5 mb-3">Información Personal</h3>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.first_name.label(class="form-label") }}
+                                    {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else "")) }}
+                                    {% if form.first_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.first_name.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.last_name.label(class="form-label") }}
+                                    {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                                    {% if form.last_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.last_name.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.country.label(class="form-label") }}
+                                    {{ form.country(class="form-select" + (" is-invalid" if form.country.errors else "")) }}
+                                    {% if form.country.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.country.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.city.label(class="form-label") }}
+                                    {{ form.city(class="form-control" + (" is-invalid" if form.city.errors else "")) }}
+                                    {% if form.city.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.city.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="h5 mb-3 mt-4">Contacto</h3>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    {{ form.phone_country.label(class="form-label") }}
+                                    {{ form.phone_country(class="form-control" + (" is-invalid" if form.phone_country.errors else ""),
+                                                         placeholder="+54") }}
+                                    {% if form.phone_country.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.phone_country.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    {{ form.phone_number.label(class="form-label") }}
+                                    {{ form.phone_number(class="form-control" + (" is-invalid" if form.phone_number.errors else ""),
+                                                        placeholder="11 2345 6789") }}
+                                    {% if form.phone_number.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.phone_number.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="h5 mb-3 mt-4">Preferencias</h3>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.preferred_language.label(class="form-label") }}
+                                    {{ form.preferred_language(class="form-select" + (" is-invalid" if form.preferred_language.errors else "")) }}
+                                    {% if form.preferred_language.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.preferred_language.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.timezone.label(class="form-label") }}
+                                    {{ form.timezone(class="form-select" + (" is-invalid" if form.timezone.errors else "")) }}
+                                    {% if form.timezone.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.timezone.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            {{ form.billing_address.label(class="form-label") }}
+                            {{ form.billing_address(class="form-control" + (" is-invalid" if form.billing_address.errors else ""),
+                                                   rows=3,
+                                                   placeholder="Calle 123, Ciudad, Código Postal") }}
+                            {% if form.billing_address.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.billing_address.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Account Actions -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">Acciones de Cuenta</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                            </a>
+                        </div>
+                        {% if not current_user.email_verified %}
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('auth.resend_verification') }}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-envelope me-2"></i>Verificar Email
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('main.subscription') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-crown me-2"></i>Mi Suscripción
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('auth.delete_account') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-trash-alt me-2"></i>Eliminar Cuenta
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
