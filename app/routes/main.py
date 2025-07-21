@@ -2,6 +2,7 @@
 Rutas principales de la aplicación.
 """
 from flask import Blueprint, render_template, jsonify
+from flask_login import login_required
 
 bp = Blueprint('main', __name__)
 
@@ -41,12 +42,10 @@ def pricing():
 
 
 @bp.route('/dashboard')
+@login_required
 def dashboard():
     """Dashboard del usuario."""
-    return jsonify({
-        'message': 'Dashboard page',
-        'status': 'active'
-    })
+    return render_template('dashboard_compact.html')
 
 
 @bp.route('/my-books')

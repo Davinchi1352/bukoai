@@ -151,13 +151,9 @@ def create_app(config_name=None):
     from app.routes.api import bp as api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
     
-    # Register new API blueprints
-    # TODO: These need to be properly configured when implementing books and stats features
-    # from app.routes.api.books import bp as books_api_bp
-    # app.register_blueprint(books_api_bp)
-    
-    # from app.routes.api.stats import bp as stats_api_bp
-    # app.register_blueprint(stats_api_bp)
+    # Register real API blueprints for dashboard
+    from app.routes.api_real import bp as api_real_bp
+    app.register_blueprint(api_real_bp, url_prefix='/api')
     
     from app.routes.admin import bp as admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')

@@ -1,0 +1,606 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block meta_description %}Dashboard principal de Buko AI - Gestiona tus libros generados con IA{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Design System Colors - Strict Implementation */
+    :root {
+        --primary-color: #1e293b;
+        --primary-dark: #0f172a;
+        --accent-color: #3b82f6;
+        --accent-dark: #1d4ed8;
+        --secondary-color: #64748b;
+        --secondary-light: #94a3b8;
+        --success-color: #059669;
+        --warning-color: #d97706;
+        --error-color: #dc2626;
+        --info-color: #0ea5e9;
+        --background-primary: #ffffff;
+        --background-secondary: #f8fafc;
+        --background-tertiary: #f1f5f9;
+        --border-color: #e2e8f0;
+        --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        --background-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+
+    .main-content {
+        padding-top: 100px;
+        background: var(--background-gradient);
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        background: var(--background-primary);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+    }
+
+    .stats-card {
+        background: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        height: 100%;
+    }
+
+    .stats-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+    }
+
+    .stats-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: var(--background-primary);
+        margin-bottom: 0.75rem;
+    }
+
+    .stats-icon.primary { background: var(--accent-color); }
+    .stats-icon.success { background: var(--success-color); }
+    .stats-icon.warning { background: var(--warning-color); }
+    .stats-icon.info { background: var(--info-color); }
+
+    .stats-number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+
+    .stats-label {
+        font-size: 0.875rem;
+        color: var(--secondary-color);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-change {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--secondary-light);
+    }
+
+    .compact-analytics {
+        background: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-title {
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: var(--accent-color);
+    }
+
+    .quick-actions {
+        background: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .action-btn {
+        background: var(--background-tertiary);
+        border: 1px solid var(--border-color);
+        color: var(--primary-color);
+        text-decoration: none;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .action-btn:hover {
+        background: var(--accent-color);
+        color: var(--background-primary);
+        border-color: var(--accent-color);
+        transform: translateY(-1px);
+    }
+
+    .analytics-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .analytics-item:last-child {
+        border-bottom: none;
+    }
+
+    .analytics-bar {
+        height: 4px;
+        background: var(--background-tertiary);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 0.25rem;
+    }
+
+    .analytics-progress {
+        height: 100%;
+        background: var(--accent-color);
+        transition: width 0.3s ease;
+    }
+
+    .loading-placeholder {
+        background: var(--background-tertiary);
+        border-radius: 3px;
+        height: 0.75rem;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .welcome-message {
+        color: var(--primary-color);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .welcome-subtitle {
+        color: var(--secondary-color);
+        margin-bottom: 0;
+        font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+        .stats-number { font-size: 1.5rem; }
+        .section-title { font-size: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Welcome Header -->
+    <div class="dashboard-header p-3">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="welcome-message">
+                    Dashboard{% if current_user.is_authenticated %} - {{ current_user.first_name }}{% endif %}
+                </h1>
+                <p class="welcome-subtitle">
+                    Resumen de tu actividad en Buko AI
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('books.generate') }}" class="btn btn-primary">
+                    <i class="fas fa-magic me-1"></i>Nuevo Libro
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Real Data Notice -->
+    <div class="alert alert-info alert-dismissible fade show mb-3" role="alert" id="data-notice" style="display: none;">
+        <i class="fas fa-info-circle me-2"></i>
+        <span id="data-notice-text">Cargando datos...</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Main Statistics Cards (Compact) -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card p-3">
+                <div class="stats-icon primary">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="stats-number" id="total-books">--</div>
+                <p class="stats-label">Total Libros</p>
+                <div class="stats-change" id="total-books-change">+0 este mes</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card p-3">
+                <div class="stats-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stats-number" id="completed-books">--</div>
+                <p class="stats-label">Completados</p>
+                <div class="stats-change" id="success-rate">--% éxito</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card p-3">
+                <div class="stats-icon warning">
+                    <i class="fas fa-file-word"></i>
+                </div>
+                <div class="stats-number" id="total-words">--</div>
+                <p class="stats-label">Palabras Totales</p>
+                <div class="stats-change" id="avg-words">-- promedio</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card p-3">
+                <div class="stats-icon info">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="stats-number" id="total-cost">--</div>
+                <p class="stats-label">Costo Total</p>
+                <div class="stats-change" id="avg-cost">-- promedio</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="quick-actions p-3">
+                <h3 class="section-title">
+                    <i class="fas fa-rocket"></i>
+                    Acciones
+                </h3>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('books.generate') }}" class="action-btn">
+                        <i class="fas fa-magic"></i>
+                        Generar Libro
+                    </a>
+                    
+                    <a href="{{ url_for('books.my_books') }}" class="action-btn">
+                        <i class="fas fa-book-open"></i>
+                        Mis Libros
+                    </a>
+                    
+                    <a href="{{ url_for('auth.profile') }}" class="action-btn">
+                        <i class="fas fa-user-cog"></i>
+                        Mi Perfil
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics by Category -->
+        <div class="col-lg-4 mb-4">
+            <div class="compact-analytics p-3">
+                <h3 class="section-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Por Categoría
+                </h3>
+                
+                <div id="books-by-genre">
+                    <div class="loading-placeholder mb-2"></div>
+                    <div class="loading-placeholder" style="width: 70%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Books -->
+        <div class="col-lg-4 mb-4">
+            <div class="compact-analytics p-3">
+                <h3 class="section-title">
+                    <i class="fas fa-history"></i>
+                    Libros Recientes
+                </h3>
+                
+                <div id="recent-books-list">
+                    <div class="loading-placeholder mb-2"></div>
+                    <div class="loading-placeholder mb-2" style="width: 80%;"></div>
+                    <div class="loading-placeholder" style="width: 60%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Compact Analytics -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="compact-analytics p-3">
+                <h3 class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Por Formato
+                </h3>
+                
+                <div id="books-by-format">
+                    <div class="loading-placeholder mb-2"></div>
+                    <div class="loading-placeholder" style="width: 60%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="compact-analytics p-3">
+                <h3 class="section-title">
+                    <i class="fas fa-download"></i>
+                    Formatos Descargados
+                </h3>
+                
+                <div id="download-formats">
+                    <div class="loading-placeholder mb-2"></div>
+                    <div class="loading-placeholder" style="width: 50%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    loadRecentBooks();
+    loadAnalytics();
+});
+
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/stats/dashboard');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load stats');
+        }
+        
+        const data = await response.json();
+        
+        // Check if this is real data or mock data
+        if (data.error) {
+            showDataNotice('⚠️ Error al cargar datos reales: ' + data.error, 'warning');
+        } else if (data.total_books === 0 && !data.error) {
+            showDataNotice('ℹ️ No tienes libros aún. ¡Genera tu primer libro!', 'info');
+        } else {
+            // Hide notice if showing real data
+            document.getElementById('data-notice').style.display = 'none';
+        }
+        
+        // Update main statistics
+        updateStatistic('total-books', data.total_books || 0);
+        updateStatistic('completed-books', data.completed_books || 0);
+        updateStatistic('total-words', formatNumber(data.total_words || 0));
+        updateStatistic('total-cost', '$' + (data.total_cost || 0).toFixed(2));
+        
+        // Update additional info
+        updateElement('total-books-change', '+' + (data.total_books_change || 0) + ' este mes');
+        updateElement('success-rate', (data.success_rate || 0).toFixed(1) + '% éxito');
+        updateElement('avg-words', formatNumber(data.avg_words_per_book || 0) + ' promedio');
+        updateElement('avg-cost', '$' + (data.avg_cost_per_book || 0).toFixed(2) + ' promedio');
+        
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        showDataNotice('❌ Error de conexión con la base de datos', 'danger');
+        showFallbackStats();
+    }
+}
+
+async function loadRecentBooks() {
+    try {
+        const response = await fetch('/api/books?limit=3');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load recent books');
+        }
+        
+        const data = await response.json();
+        
+        const recentBooksList = document.getElementById('recent-books-list');
+        
+        if (data.books && data.books.length > 0) {
+            recentBooksList.innerHTML = data.books.map(book => `
+                <div class="analytics-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div style="color: var(--primary-color); font-weight: 500; font-size: 0.875rem;">${book.title}</div>
+                            <small style="color: var(--secondary-color);">
+                                ${book.genre || 'Sin categoría'} • ${formatDate(book.created_at)}
+                            </small>
+                        </div>
+                        <span class="badge ${book.status === 'completed' ? 'bg-success' : book.status === 'processing' ? 'bg-warning' : 'bg-secondary'}" style="font-size: 0.6rem;">
+                            ${getStatusText(book.status)}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            recentBooksList.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="fas fa-book-open text-muted mb-2" style="font-size: 1.5rem;"></i>
+                    <p class="text-muted mb-0" style="font-size: 0.875rem;">No tienes libros aún</p>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('Error loading recent books:', error);
+    }
+}
+
+async function loadAnalytics() {
+    try {
+        const response = await fetch('/api/stats/analytics');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load analytics');
+        }
+        
+        const data = await response.json();
+        
+        populateCompactAnalytics('books-by-genre', data.books_by_genre);
+        populateCompactAnalytics('books-by-format', data.books_by_format);
+        populateDownloadFormats('download-formats', data.download_formats);
+        
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        showAnalyticsError();
+    }
+}
+
+function populateCompactAnalytics(elementId, data) {
+    const element = document.getElementById(elementId);
+    if (!element || !data || data.length === 0) {
+        element.innerHTML = `
+            <div class="text-center py-2">
+                <p class="text-muted mb-0" style="font-size: 0.75rem;">Sin datos</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const total = data.reduce((sum, item) => sum + item.count, 0);
+    
+    element.innerHTML = data.slice(0, 4).map(item => {
+        const percentage = total > 0 ? ((item.count / total) * 100) : 0;
+        const label = item.genre || item.format || 'Sin categoría';
+        
+        return `
+            <div class="analytics-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span style="color: var(--primary-color); font-weight: 500; font-size: 0.875rem;">${label}</span>
+                    <span style="color: var(--secondary-color); font-size: 0.75rem;">${item.count}</span>
+                </div>
+                <div class="analytics-bar">
+                    <div class="analytics-progress" style="width: ${percentage}%"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function populateDownloadFormats(elementId, data) {
+    const element = document.getElementById(elementId);
+    if (!element || !data || data.length === 0) {
+        element.innerHTML = `
+            <div class="text-center py-2">
+                <p class="text-muted mb-0" style="font-size: 0.75rem;">Sin descargas</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const total = data.reduce((sum, item) => sum + item.total_downloads, 0);
+    
+    element.innerHTML = data.map(item => {
+        const percentage = total > 0 ? ((item.total_downloads / total) * 100) : 0;
+        const formatIcons = {
+            'PDF': 'fas fa-file-pdf text-danger',
+            'EPUB': 'fas fa-book text-primary',
+            'DOCX': 'fas fa-file-word text-info'
+        };
+        const icon = formatIcons[item.format] || 'fas fa-file';
+        
+        return `
+            <div class="analytics-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span style="color: var(--primary-color); font-weight: 500; font-size: 0.875rem;">
+                        <i class="${icon} me-2"></i>${item.format}
+                    </span>
+                    <span style="color: var(--secondary-color); font-size: 0.75rem;">${item.total_downloads}</span>
+                </div>
+                <div class="analytics-bar">
+                    <div class="analytics-progress" style="width: ${percentage}%"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateStatistic(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+function updateElement(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toLocaleString();
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'completed': 'Completado',
+        'processing': 'Procesando',
+        'error': 'Error'
+    };
+    return statusMap[status] || status;
+}
+
+function showFallbackStats() {
+    updateStatistic('total-books', 0);
+    updateStatistic('completed-books', 0);
+    updateStatistic('total-words', 0);
+    updateStatistic('total-cost', '$0.00');
+}
+
+function showAnalyticsError() {
+    const ids = ['books-by-genre', 'books-by-format', 'download-formats'];
+    ids.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.innerHTML = '<div class="text-center py-2"><p class="text-muted mb-0" style="font-size: 0.75rem;">Error al cargar</p></div>';
+        }
+    });
+}
+
+function showDataNotice(message, type = 'info') {
+    const notice = document.getElementById('data-notice');
+    const noticeText = document.getElementById('data-notice-text');
+    
+    if (notice && noticeText) {
+        notice.className = `alert alert-${type} alert-dismissible fade show mb-3`;
+        noticeText.textContent = message;
+        notice.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}
