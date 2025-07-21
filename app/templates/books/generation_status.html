@@ -1,0 +1,1393 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Generando Libro - {{ book.title }} - Buko AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #1e293b;
+        --accent-color: #3b82f6;
+        --success-color: #059669;
+        --warning-color: #d97706;
+        --error-color: #dc2626;
+        --background-primary: #ffffff;
+        --background-secondary: #f8fafc;
+        --background-tertiary: #f1f5f9;
+        --border-color: #e2e8f0;
+        --text-muted: #94a3b8;
+    }
+
+    body {
+        background: var(--background-secondary);
+        color: #64748b;
+    }
+
+    /* Professional Header */
+    .status-header {
+        background: linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%);
+        color: white;
+        padding: 2.5rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 30px 30px;
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .status-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -50%;
+        width: 200%;
+        height: 100%;
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(255,255,255,0.03) 10px,
+            rgba(255,255,255,0.03) 20px
+        );
+        animation: headerPattern 20s linear infinite;
+    }
+
+    @keyframes headerPattern {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(50px); }
+    }
+
+    /* Professional Cards */
+    .card {
+        background: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(30, 41, 59, 0.04);
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(30, 41, 59, 0.08);
+    }
+
+    .card-header {
+        background: var(--background-secondary);
+        border-bottom: 1px solid var(--border-color);
+        border-radius: 16px 16px 0 0;
+        padding: 1.25rem;
+        font-weight: 600;
+    }
+
+    /* Enhanced Progress Circle */
+    .progress-container {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        margin: 0 auto;
+    }
+
+    .progress-circle {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(var(--accent-color) 0deg, var(--background-tertiary) 0deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow: 0 10px 40px rgba(59, 130, 246, 0.15);
+        transition: all 0.5s ease;
+    }
+
+    .progress-circle::before {
+        content: '';
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: var(--background-primary);
+        position: absolute;
+        box-shadow: inset 0 3px 6px rgba(30, 41, 59, 0.05);
+    }
+
+    .progress-text {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+    }
+
+    .progress-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        line-height: 1;
+    }
+
+    .progress-label {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Animated Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+
+    .badge-processing {
+        background: linear-gradient(135deg, var(--accent-color), #2563eb);
+        color: white;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        animation: pulse 2s infinite;
+    }
+
+    .badge-completed {
+        background: linear-gradient(135deg, var(--success-color), #047857);
+        color: white;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    }
+
+    .badge-failed {
+        background: linear-gradient(135deg, var(--error-color), #b91c1c);
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        50% { transform: scale(1.02); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); }
+        100% { transform: scale(1); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+    }
+
+    /* Professional Metrics */
+    .metric-card {
+        background: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .metric-card:hover::before {
+        left: 100%;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(30, 41, 59, 0.1);
+    }
+
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--background-secondary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.75rem;
+        font-size: 1.25rem;
+    }
+
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+
+    .metric-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+    }
+
+    /* Connection Status */
+    .connection-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .connection-status.connected {
+        border: 1px solid rgba(5, 150, 105, 0.3);
+        color: var(--success-color);
+    }
+
+    .connection-status.connected i {
+        animation: pulse-icon 2s infinite;
+    }
+
+    @keyframes pulse-icon {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+
+    .connection-status.disconnected {
+        border: 1px solid rgba(220, 38, 38, 0.3);
+        color: var(--error-color);
+    }
+
+    /* Enhanced Thinking Section */
+    .thinking-section {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%);
+        border: 1px solid #f59e0b;
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .thinking-header {
+        background: rgba(245, 158, 11, 0.1);
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .thinking-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--warning-color);
+        color: white;
+        padding: 0.375rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        animation: thinking-pulse 2s infinite;
+    }
+
+    @keyframes thinking-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.9; }
+    }
+
+    .thinking-content {
+        padding: 1.25rem;
+        font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: #92400e;
+        max-height: 300px;
+        overflow-y: auto;
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .thinking-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .thinking-content::-webkit-scrollbar-track {
+        background: rgba(245, 158, 11, 0.1);
+        border-radius: 3px;
+    }
+
+    .thinking-content::-webkit-scrollbar-thumb {
+        background: rgba(245, 158, 11, 0.4);
+        border-radius: 3px;
+    }
+
+    .thinking-stats {
+        padding: 0.75rem 1.25rem;
+        background: rgba(245, 158, 11, 0.05);
+        border-top: 1px solid rgba(245, 158, 11, 0.2);
+        display: flex;
+        justify-content: space-around;
+        font-size: 0.75rem;
+    }
+
+    /* Professional Log Section */
+    .log-container {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 0.5rem;
+    }
+
+    .log-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .log-container::-webkit-scrollbar-track {
+        background: var(--background-secondary);
+        border-radius: 3px;
+    }
+
+    .log-container::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 3px;
+    }
+
+    .log-entry {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        border-left: 3px solid;
+        background: var(--background-secondary);
+        animation: slideIn 0.3s ease;
+        transition: all 0.2s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .log-entry:hover {
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .log-entry.info {
+        border-color: var(--info-color);
+        background: rgba(14, 165, 233, 0.05);
+    }
+
+    .log-entry.success {
+        border-color: var(--success-color);
+        background: rgba(5, 150, 105, 0.05);
+    }
+
+    .log-entry.warning {
+        border-color: var(--warning-color);
+        background: rgba(217, 119, 6, 0.05);
+    }
+
+    .log-entry.error {
+        border-color: var(--error-color);
+        background: rgba(220, 38, 38, 0.05);
+    }
+
+    .log-entry.thinking {
+        border-color: #8b5cf6;
+        background: rgba(139, 92, 246, 0.05);
+    }
+
+    .log-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.875rem;
+    }
+
+    .log-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .log-message {
+        font-size: 0.875rem;
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+        word-wrap: break-word;
+    }
+
+    .log-timestamp {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    /* Stream Animation */
+    .stream-text {
+        display: inline-block;
+        animation: streamIn 0.3s ease;
+    }
+
+    @keyframes streamIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Loading Animation */
+    .loading-dots {
+        display: inline-flex;
+        gap: 0.25rem;
+    }
+
+    .loading-dots span {
+        width: 6px;
+        height: 6px;
+        background: currentColor;
+        border-radius: 50%;
+        animation: loadingDot 1.4s infinite ease-in-out;
+    }
+
+    .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes loadingDot {
+        0%, 80%, 100% {
+            transform: scale(0);
+            opacity: 0.5;
+        }
+        40% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .progress-container {
+            width: 140px;
+            height: 140px;
+        }
+
+        .progress-circle::before {
+            width: 100px;
+            height: 100px;
+        }
+
+        .progress-value {
+            font-size: 2rem;
+        }
+
+        .metric-card {
+            padding: 1rem;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Professional Status Header -->
+<div class="status-header">
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2" style="color: white; font-weight: 700;">{{ book.title }}</h1>
+                <p class="mb-0 opacity-90">Generación en curso con Claude AI</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div id="connectionStatus" class="connection-status disconnected">
+                    <i class="fas fa-wifi"></i>
+                    <span>Conectando...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- Main Progress Section -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-body text-center py-4">
+                    <div class="progress-container">
+                        {% set display_progress = 100 if book.status.value == 'completed' else (book.progress or 0) %}
+                        <div id="progressCircle" class="progress-circle" style="background: conic-gradient(var(--accent-color) {{ display_progress * 3.6 }}deg, var(--background-tertiary) {{ display_progress * 3.6 }}deg);">
+                            <div class="progress-text">
+                                <div id="progressValue" class="progress-value">{{ display_progress }}</div>
+                                <div class="progress-label">PROGRESO</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 mb-3">
+                        <div id="statusBadge" class="status-badge {% if book.status.value == 'completed' %}badge-completed{% elif book.status.value == 'failed' %}badge-failed{% else %}badge-processing{% endif %}">
+                            {% if book.status.value == 'completed' %}
+                                <i class="fas fa-check-circle"></i>
+                                <span>Completado</span>
+                            {% elif book.status.value == 'failed' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Error</span>
+                            {% else %}
+                                <i class="fas fa-cog fa-spin"></i>
+                                <span>Procesando</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <h6 id="currentStep" class="text-muted mb-0">
+                        {% if book.status.value == 'completed' %}
+                            ¡Generación completada exitosamente!
+                        {% elif book.status.value == 'failed' %}
+                            Error en la generación
+                        {% else %}
+                            Iniciando generación...
+                        {% endif %}
+                    </h6>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Metrics Grid -->
+        <div class="col-lg-8">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-color);">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div id="elapsedTime" class="metric-value">
+                            {% if book.status.value == 'completed' and book.started_at and book.completed_at %}
+                                {% set elapsed_seconds = (book.completed_at - book.started_at).total_seconds() %}
+                                {% set minutes = (elapsed_seconds // 60)|int %}
+                                {% set seconds = (elapsed_seconds % 60)|int %}
+                                {{ minutes }}:{{ "%02d"|format(seconds) }}
+                            {% else %}
+                                0:00
+                            {% endif %}
+                        </div>
+                        <div class="metric-label">Tiempo</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success-color);">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div id="pageCount" class="metric-value">{{ book.final_pages or 0 }}</div>
+                        <div class="metric-label">Páginas</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                            <i class="fas fa-font"></i>
+                        </div>
+                        <div id="wordCount" class="metric-value">{{ book.final_words or 0 }}</div>
+                        <div class="metric-label">Palabras</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning-color);">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div id="aiStatus" class="metric-value">{% if book.status.value == 'completed' %}Completado{% elif book.status.value == 'failed' %}Error{% else %}Activo{% endif %}</div>
+                        <div class="metric-label">Claude AI</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Additional Info -->
+            <div class="row g-3 mt-1">
+                <div class="col-4">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: var(--background-secondary); color: var(--primary-color);">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <div class="metric-value">{{ book.language|upper }}</div>
+                        <div class="metric-label">Idioma</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: var(--background-secondary); color: var(--primary-color);">
+                            <i class="fas fa-tag"></i>
+                        </div>
+                        <div class="metric-value">{{ book.genre|title }}</div>
+                        <div class="metric-label">Género</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: var(--background-secondary); color: var(--primary-color);">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div id="chapterCount" class="metric-value">{{ book.chapter_count or 0 }}</div>
+                        <div class="metric-label">Capítulos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Claude Thinking Section -->
+    <div id="thinkingSection" class="row g-4 mt-3" style="display: none;">
+        <div class="col-12">
+            <div class="thinking-section">
+                <div class="thinking-header">
+                    <h6 class="mb-0" style="color: #92400e;">
+                        <i class="fas fa-brain me-2"></i>
+                        Claude AI - Pensamiento Extendido
+                    </h6>
+                    <div class="thinking-indicator">
+                        <i class="fas fa-circle"></i>
+                        Analizando
+                    </div>
+                </div>
+                <div id="thinkingContent" class="thinking-content">
+                    <!-- Thinking content will be streamed here -->
+                </div>
+                <div class="thinking-stats">
+                    <div>
+                        <strong id="thinkingChars">0</strong>
+                        <span class="text-muted">caracteres</span>
+                    </div>
+                    <div>
+                        <strong id="thinkingWords">0</strong>
+                        <span class="text-muted">palabras</span>
+                    </div>
+                    <div>
+                        <strong id="thinkingTime">0s</strong>
+                        <span class="text-muted">tiempo</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Professional Log Section -->
+    <div class="row g-4 mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-stream me-2" style="color: var(--accent-color);"></i>
+                        Registro de Generación en Tiempo Real
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="logContainer" class="log-container">
+                        <!-- Logs will be streamed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completion Actions -->
+    <div id="completionActions" class="row g-4 mt-4" style="{% if book.status.value == 'completed' %}display: block;{% else %}display: none;{% endif %}">
+        <div class="col-12">
+            <div class="card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color: var(--success-color);">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <div style="width: 80px; height: 80px; background: var(--success-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                            <i class="fas fa-check fa-2x" style="color: white;"></i>
+                        </div>
+                    </div>
+                    <h3 style="color: var(--primary-color);">¡Libro Completado!</h3>
+                    <p class="text-muted mb-4">Tu libro ha sido generado exitosamente</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/books/book/{{ book.id }}" class="btn btn-lg btn-success">
+                            <i class="fas fa-book-open me-2"></i>
+                            Ver Libro
+                        </a>
+                        <a href="{{ url_for('books.my_books') }}" class="btn btn-lg btn-outline-success">
+                            <i class="fas fa-list me-2"></i>
+                            Mis Libros
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Failed Actions -->
+    <div id="failedActions" class="row g-4 mt-4" style="{% if book.status.value == 'failed' %}display: block;{% else %}display: none;{% endif %}">
+        <div class="col-12">
+            <div class="card" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-color: var(--error-color);">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <div style="width: 80px; height: 80px; background: var(--error-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                            <i class="fas fa-exclamation-triangle fa-2x" style="color: white;"></i>
+                        </div>
+                    </div>
+                    <h3 style="color: var(--primary-color);">Error en la Generación</h3>
+                    <p class="text-muted mb-2">Se produjo un error durante la generación del libro</p>
+                    {% if book.error_message %}
+                    <div class="alert alert-danger mb-4" style="text-align: left;">
+                        <strong>Error:</strong> {{ book.error_message }}
+                    </div>
+                    {% endif %}
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button id="retryButton" class="btn btn-lg btn-danger" onclick="retryBookGeneration()">
+                            <i class="fas fa-redo me-2"></i>
+                            Reintentar Generación
+                        </button>
+                        <a href="{{ url_for('books.my_books') }}" class="btn btn-lg btn-outline-secondary">
+                            <i class="fas fa-list me-2"></i>
+                            Mis Libros
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+// Global state
+const state = {
+    bookId: {{ book.id }},
+    bookUuid: '{{ book.uuid }}',
+    bookStatus: '{{ book.status.value }}',
+    currentStatus: '{{ book.status.value }}',
+    startTime: new Date('{{ book.created_at.isoformat() }}'),
+    elapsedInterval: null,
+    statusPollingInterval: null,
+    socket: null,
+    currentProgress: {% if book.status.value == 'completed' %}100{% else %}{{ book.progress or 0 }}{% endif %},
+    thinkingStartTime: null,
+    stats: {
+        pages: {{ book.final_pages or 0 }},
+        words: {{ book.final_words or 0 }},
+        chapters: {{ book.chapter_count or 0 }},
+        thinkingChars: 0,
+        thinkingWords: 0
+    }
+};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initializing book generation status page...');
+    
+    // Asegurar valores iniciales válidos - usar 100% para libros completados
+    const initialProgress = {% if book.status.value == 'completed' %}100{% else %}{{ book.progress or 0 }}{% endif %};
+    console.log('Initial progress:', initialProgress, 'Book status:', '{{ book.status.value }}');
+    updateProgressCircle(initialProgress);
+    
+    // Inicializar estadísticas con valores por defecto si están vacías
+    const initialStats = {
+        pages: {{ book.final_pages or 0 }},
+        words: {{ book.final_words or 0 }},
+        chapters: {{ book.chapter_count or 0 }}
+    };
+    console.log('Initial stats:', initialStats);
+    updateStats(initialStats);
+    
+    // Añadir log inicial
+    addLog('info', 'Página de generación inicializada');
+    
+    {% if book.status.value == 'completed' %}
+    // Logs para libro completado
+    addLog('success', '¡Libro generado exitosamente!');
+    addLog('info', 'Estado: Completado - {{ book.completed_at.strftime('%d/%m/%Y %H:%M') if book.completed_at else 'N/A' }}');
+    {% elif book.status.value == 'failed' %}
+    // Logs para libro fallido
+    addLog('error', 'Error en la generación del libro');
+    {% if book.error_message %}
+    addLog('error', '{{ book.error_message }}');
+    {% endif %}
+    // Show failed actions on page load
+    document.getElementById('failedActions').style.display = 'block';
+    {% endif %}
+    
+    // Solo inicializar timer si está en proceso
+    {% if book.status.value not in ['completed', 'failed'] %}
+    initializeTimer();
+    {% endif %}
+    
+    initializeWebSocket();
+    checkInitialStatus();
+    
+    // Start periodic status polling for active books
+    if (state.bookStatus !== 'completed' && state.bookStatus !== 'failed') {
+        startStatusPolling();
+    }
+});
+
+// Periodic status polling as backup to WebSocket
+function startStatusPolling() {
+    console.log('🔄 Starting periodic status polling');
+    
+    state.statusPollingInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/books/api/${state.bookId}/status`);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('🔄 Polling status:', data.status, 'Progress:', data.progress);
+                
+                // If status changed to completed or failed, update UI
+                if (data.status === 'completed' && state.currentStatus !== 'completed') {
+                    console.log('🔄 Detected completion via polling');
+                    state.currentStatus = 'completed';
+                    handleBookCompleted({
+                        book_uuid: state.bookUuid,
+                        final_stats: data.stats || {}
+                    });
+                    clearInterval(state.statusPollingInterval);
+                } else if (data.status === 'failed' && state.currentStatus !== 'failed') {
+                    console.log('🔄 Detected failure via polling');
+                    state.currentStatus = 'failed';
+                    handleBookFailed({
+                        book_uuid: state.bookUuid,
+                        error_message: data.error_message || 'Error desconocido'
+                    });
+                    clearInterval(state.statusPollingInterval);
+                } else if (data.status === 'processing') {
+                    // Update progress for processing books
+                    if (data.progress !== undefined) {
+                        updateProgressCircle(data.progress);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('🔄 Error in status polling:', error);
+        }
+    }, 5000); // Poll every 5 seconds
+}
+
+// Timer functionality
+function initializeTimer() {
+    updateElapsedTime();
+    state.elapsedInterval = setInterval(updateElapsedTime, 1000);
+}
+
+function updateElapsedTime() {
+    const now = new Date();
+    const diff = Math.floor((now - state.startTime) / 1000);
+    const minutes = Math.floor(diff / 60);
+    const seconds = diff % 60;
+    document.getElementById('elapsedTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// WebSocket connection
+function initializeWebSocket() {
+    if (!window.io) {
+        console.error('Socket.IO not available');
+        updateConnectionStatus(false);
+        return;
+    }
+    
+    state.socket = io({
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000
+    });
+    
+    // Connection events
+    state.socket.on('connect', () => {
+        console.log('Connected to WebSocket');
+        updateConnectionStatus(true);
+        subscribeToBook();
+        addLog('info', 'Conectado al servidor en tiempo real');
+    });
+    
+    state.socket.on('disconnect', () => {
+        console.log('Disconnected from WebSocket');
+        updateConnectionStatus(false);
+        addLog('warning', 'Desconectado del servidor - Reconectando...');
+    });
+    
+    // Book generation events
+    state.socket.on('book_progress', handleProgressUpdate);
+    state.socket.on('thinking_start', handleThinkingStart);
+    state.socket.on('thinking_update', handleThinkingUpdate);
+    state.socket.on('thinking_complete', handleThinkingComplete);
+    state.socket.on('generation_log', handleGenerationLog);
+    state.socket.on('book_completed', handleBookCompleted);
+    state.socket.on('book_failed', handleBookFailed);
+}
+
+function subscribeToBook() {
+    if (state.socket && state.socket.connected) {
+        state.socket.emit('subscribe_book_progress', {
+            book_uuid: state.bookUuid
+        });
+    }
+}
+
+function updateConnectionStatus(connected) {
+    const status = document.getElementById('connectionStatus');
+    if (connected) {
+        status.className = 'connection-status connected';
+        status.innerHTML = '<i class="fas fa-wifi"></i><span>Conectado</span>';
+    } else {
+        status.className = 'connection-status disconnected';
+        status.innerHTML = '<i class="fas fa-wifi-slash"></i><span>Desconectado</span>';
+    }
+}
+
+// Progress handling
+function handleProgressUpdate(data) {
+    if (data.book_uuid !== state.bookUuid) return;
+    
+    // Update progress circle con validación robusta
+    const rawProgress = data.progress !== undefined ? data.progress : 0;
+    const progress = isNaN(rawProgress) ? 0 : Math.max(0, Math.min(100, Number(rawProgress)));
+    
+    updateProgressCircle(progress);
+    
+    // Update stats
+    if (data.stats) {
+        updateStats(data.stats);
+    }
+    
+    // Update current step
+    if (data.message) {
+        document.getElementById('currentStep').textContent = data.message;
+    }
+    
+    // Add log entry
+    if (data.message && data.message !== 'Procesando...') {
+        addLog('info', data.message);
+    }
+}
+
+function updateProgressCircle(progress) {
+    // Validar y limpiar el valor de progreso
+    const cleanProgress = isNaN(progress) || progress === null || progress === undefined ? 0 : Math.max(0, Math.min(100, Number(progress)));
+    
+    state.currentProgress = cleanProgress;
+    document.getElementById('progressValue').textContent = Math.round(cleanProgress);
+    const circle = document.getElementById('progressCircle');
+    circle.style.background = `conic-gradient(var(--accent-color) ${cleanProgress * 3.6}deg, var(--background-tertiary) ${cleanProgress * 3.6}deg)`;
+}
+
+function updateStats(stats) {
+    if (stats.pages !== undefined && !isNaN(stats.pages)) {
+        state.stats.pages = Number(stats.pages);
+        document.getElementById('pageCount').textContent = state.stats.pages;
+    }
+    if (stats.words !== undefined && !isNaN(stats.words)) {
+        state.stats.words = Number(stats.words);
+        document.getElementById('wordCount').textContent = formatNumber(state.stats.words);
+    }
+    if (stats.chapters !== undefined && !isNaN(stats.chapters)) {
+        state.stats.chapters = Number(stats.chapters);
+        document.getElementById('chapterCount').textContent = state.stats.chapters;
+    }
+}
+
+// Thinking handling
+function handleThinkingStart(data) {
+    if (data.book_uuid !== state.bookUuid) return;
+    
+    document.getElementById('thinkingSection').style.display = 'block';
+    document.getElementById('thinkingContent').innerHTML = '';
+    state.thinkingStartTime = new Date();
+    
+    addLog('thinking', 'Claude AI iniciando análisis profundo...');
+    updateAIStatus('Pensando');
+}
+
+function handleThinkingUpdate(data) {
+    if (data.book_uuid !== state.bookUuid) return;
+    
+    // Stream thinking content
+    const content = document.getElementById('thinkingContent');
+    const newText = document.createElement('span');
+    newText.className = 'stream-text';
+    newText.textContent = data.chunk || '';
+    content.appendChild(newText);
+    
+    // Scroll to bottom
+    content.scrollTop = content.scrollHeight;
+    
+    // Update stats
+    if (data.stats) {
+        state.stats.thinkingChars = data.stats.total_chars || 0;
+        state.stats.thinkingWords = data.stats.total_words || 0;
+        document.getElementById('thinkingChars').textContent = formatNumber(state.stats.thinkingChars);
+        document.getElementById('thinkingWords').textContent = state.stats.thinkingWords;
+    }
+    
+    // Update thinking time
+    if (state.thinkingStartTime) {
+        const elapsed = Math.floor((new Date() - state.thinkingStartTime) / 1000);
+        document.getElementById('thinkingTime').textContent = `${elapsed}s`;
+    }
+}
+
+function handleThinkingComplete(data) {
+    if (data.book_uuid !== state.bookUuid) return;
+    
+    const indicator = document.querySelector('.thinking-indicator');
+    indicator.innerHTML = '<i class="fas fa-check-circle"></i> Completo';
+    
+    addLog('thinking', `Análisis completado: ${state.stats.thinkingWords} palabras de pensamiento`);
+    updateAIStatus('Generando');
+}
+
+// Log handling
+function handleGenerationLog(data) {
+    if (data.book_uuid !== state.bookUuid) return;
+    
+    addLog(data.type || 'info', data.message, data.details, data.technical_details);
+}
+
+function addLog(type, message, details, technicalDetails = null) {
+    const container = document.getElementById('logContainer');
+    
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    
+    const iconMap = {
+        info: 'fa-info-circle',
+        success: 'fa-check-circle',
+        warning: 'fa-exclamation-triangle',
+        error: 'fa-exclamation-circle',
+        thinking: 'fa-brain'
+    };
+    
+    const colorMap = {
+        info: 'var(--info-color)',
+        success: 'var(--success-color)',
+        warning: 'var(--warning-color)',
+        error: 'var(--error-color)',
+        thinking: '#8b5cf6'
+    };
+    
+    // Generate unique ID for collapsible details
+    const detailsId = `details-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Handle structured technical details
+    let technicalDetailsHtml = '';
+    if (technicalDetails) {
+        if (typeof technicalDetails === 'object' && technicalDetails.expandable_details) {
+            // Enhanced structured technical details
+            const expandableDetails = technicalDetails.expandable_details;
+            technicalDetailsHtml = `
+                <div class="log-technical-toggle mt-2">
+                    <a href="#" onclick="toggleTechnicalDetails('${detailsId}'); return false;" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-chevron-right" id="icon-${detailsId}"></i> Ver detalles técnicos
+                    </a>
+                </div>
+                <div id="${detailsId}" class="log-technical-details card mt-2" style="display: none;">
+                    <div class="card-body p-3">
+                        <h6 class="card-title text-muted mb-3">
+                            <i class="fas fa-cogs"></i> Información Técnica Detallada
+                        </h6>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <strong class="text-primary">📋 Resumen del Error:</strong>
+                                <div class="small text-muted mt-1">
+                                    <strong>Tipo:</strong> ${expandableDetails.category || expandableDetails.error_type}<br>
+                                    <strong>Fecha:</strong> ${new Date(expandableDetails.timestamp).toLocaleString()}<br>
+                                    <strong>Reintentable:</strong> ${expandableDetails.is_retryable ? '✅ Sí' : '❌ No'}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <strong class="text-info">📖 Detalles del Libro:</strong>
+                                <div class="small text-muted mt-1">
+                                    <strong>Título:</strong> ${expandableDetails.book_params?.title || 'N/A'}<br>
+                                    <strong>Páginas:</strong> ${expandableDetails.book_params?.pages || 'N/A'}<br>
+                                    <strong>Idioma:</strong> ${expandableDetails.book_params?.language || 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${expandableDetails.recommendation ? `
+                            <div class="mt-3">
+                                <strong class="text-success">💡 Recomendación:</strong>
+                                <div class="alert alert-info p-2 mt-1 small">
+                                    ${expandableDetails.recommendation}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${expandableDetails.deficit_info ? `
+                            <div class="mt-3">
+                                <strong class="text-warning">📊 Información de Páginas:</strong>
+                                <div class="small text-muted mt-1">
+                                    <strong>Solicitadas:</strong> ${expandableDetails.deficit_info.requested} páginas<br>
+                                    <strong>Generadas:</strong> ${expandableDetails.deficit_info.generated} páginas<br>
+                                    <strong>Déficit:</strong> ${expandableDetails.deficit_info.deficit_pages} páginas (${expandableDetails.deficit_info.deficit_percentage}%)
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="mt-3">
+                            <details class="small">
+                                <summary class="text-muted" style="cursor: pointer;">
+                                    <strong>🔧 Información Técnica Avanzada</strong>
+                                </summary>
+                                <pre class="mt-2 p-2 bg-light border rounded" style="white-space: pre-wrap; font-size: 10px; max-height: 200px; overflow-y: auto;">${JSON.stringify(expandableDetails, null, 2)}</pre>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Fallback for simple technical details
+            technicalDetailsHtml = `
+                <div class="log-technical-toggle mt-1">
+                    <a href="#" onclick="toggleTechnicalDetails('${detailsId}'); return false;" class="text-muted small">
+                        <i class="fas fa-chevron-right" id="icon-${detailsId}"></i> Ver detalles técnicos
+                    </a>
+                </div>
+                <div id="${detailsId}" class="log-technical-details" style="display: none;">
+                    <pre class="small text-muted mt-2 p-2" style="background: rgba(0,0,0,0.05); border-radius: 5px; white-space: pre-wrap; font-size: 11px;">${typeof technicalDetails === 'string' ? technicalDetails : JSON.stringify(technicalDetails, null, 2)}</pre>
+                </div>
+            `;
+        }
+    }
+    
+    entry.innerHTML = `
+        <div class="log-icon" style="background: ${colorMap[type]}20; color: ${colorMap[type]};">
+            <i class="fas ${iconMap[type] || 'fa-circle'}"></i>
+        </div>
+        <div class="log-content">
+            <div class="log-message">${message}</div>
+            ${details && typeof details === 'string' ? `<div class="log-details text-muted small">${details}</div>` : ''}
+            ${technicalDetailsHtml}
+            <div class="log-timestamp">${new Date().toLocaleTimeString()}</div>
+        </div>
+    `;
+    
+    container.appendChild(entry);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Toggle technical details visibility
+function toggleTechnicalDetails(id) {
+    const details = document.getElementById(id);
+    const icon = document.getElementById(`icon-${id}`);
+    
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        icon.className = 'fas fa-chevron-down';
+    } else {
+        details.style.display = 'none';
+        icon.className = 'fas fa-chevron-right';
+    }
+}
+
+// Completion handling
+function handleBookCompleted(data) {
+    if (data.book_uuid !== state.bookUuid) return;
+    
+    clearInterval(state.elapsedInterval);
+    clearInterval(state.statusPollingInterval);
+    
+    state.currentStatus = 'completed';
+    updateProgressCircle(100);
+    
+    // Update status badge
+    const badge = document.getElementById('statusBadge');
+    badge.className = 'status-badge badge-completed';
+    badge.innerHTML = '<i class="fas fa-check-circle"></i><span>Completado</span>';
+    
+    // Update current step
+    document.getElementById('currentStep').textContent = '¡Generación completada exitosamente!';
+    
+    // Show completion actions
+    document.getElementById('completionActions').style.display = 'block';
+    document.getElementById('failedActions').style.display = 'none';
+    
+    // Final stats
+    if (data.final_stats) {
+        updateStats(data.final_stats);
+    }
+    
+    addLog('success', '¡Libro generado exitosamente!', `${state.stats.pages} páginas, ${formatNumber(state.stats.words)} palabras`);
+    updateAIStatus('Completado');
+}
+
+function handleBookFailed(data) {
+    console.log('📱 handleBookFailed called with data:', data);
+    
+    if (data.book_uuid !== state.bookUuid) {
+        console.log('📱 UUID mismatch in handleBookFailed');
+        return;
+    }
+    
+    console.log('📱 Processing book failure...');
+    
+    clearInterval(state.elapsedInterval);
+    clearInterval(state.statusPollingInterval);
+    
+    state.currentStatus = 'failed';
+    
+    const badge = document.getElementById('statusBadge');
+    badge.className = 'status-badge badge-failed';
+    badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Error</span>';
+    
+    document.getElementById('currentStep').textContent = 'Error en la generación';
+    
+    // Reset progress to 0 for failed books
+    updateProgressCircle(0);
+    
+    // Show failed actions section
+    document.getElementById('failedActions').style.display = 'block';
+    document.getElementById('completionActions').style.display = 'none';
+    
+    addLog('error', data.error_message || 'Error en la generación del libro', null, data.technical_details);
+    updateAIStatus('Error');
+    
+    console.log('📱 Book failure UI updated');
+}
+
+// Helper functions
+function updateAIStatus(status) {
+    document.getElementById('aiStatus').textContent = status;
+}
+
+function formatNumber(num) {
+    // Validar que el número sea válido
+    if (isNaN(num) || num === null || num === undefined) {
+        return "0";
+    }
+    return Number(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+// Initial status check
+async function checkInitialStatus() {
+    console.log('🔍 checkInitialStatus called');
+    try {
+        const response = await fetch(`/books/api/${state.bookId}/status`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('🔍 API Status Response:', data);
+            
+            // Actualizar progreso con validación - forzar 100% para completados
+            let progress = data.progress !== undefined ? data.progress : 0;
+            if (data.status === 'completed') {
+                progress = 100;
+            } else if (data.status === 'failed') {
+                progress = 0;
+            }
+            updateProgressCircle(progress);
+            
+            // Actualizar estadísticas si están disponibles
+            if (data.stats) {
+                updateStats(data.stats);
+            }
+            
+            // Actualizar step actual si está disponible
+            if (data.message) {
+                document.getElementById('currentStep').textContent = data.message;
+            }
+            
+            // Manejar estado completado
+            if (data.status === 'completed') {
+                console.log('🔍 Book is completed, updating UI');
+                const badge = document.getElementById('statusBadge');
+                badge.className = 'status-badge badge-completed';
+                badge.innerHTML = '<i class="fas fa-check-circle"></i><span>Completado</span>';
+                
+                document.getElementById('currentStep').textContent = '¡Generación completada exitosamente!';
+                document.getElementById('completionActions').style.display = 'block';
+                document.getElementById('failedActions').style.display = 'none';
+                updateAIStatus('Completado');
+                
+                // Detener timer si está corriendo
+                if (state.elapsedInterval) {
+                    clearInterval(state.elapsedInterval);
+                }
+            } else if (data.status === 'failed') {
+                console.log('🔍 Book is failed, updating UI');
+                const badge = document.getElementById('statusBadge');
+                badge.className = 'status-badge badge-failed';
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Error</span>';
+                
+                document.getElementById('currentStep').textContent = 'Error en la generación';
+                document.getElementById('failedActions').style.display = 'block';
+                document.getElementById('completionActions').style.display = 'none';
+                updateAIStatus('Error');
+                
+                // Detener timer si está corriendo
+                if (state.elapsedInterval) {
+                    clearInterval(state.elapsedInterval);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error checking initial status:', error);
+        addLog('error', 'Error al verificar estado inicial');
+    }
+}
+
+// Retry book generation function
+async function retryBookGeneration() {
+    if (confirm('¿Estás seguro de que quieres reintentar la generación de este libro?')) {
+        const retryButton = document.getElementById('retryButton');
+        retryButton.disabled = true;
+        retryButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Reintentando...';
+        
+        try {
+            const response = await fetch(`/books/${state.bookId}/retry`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                addLog('info', 'Reintento programado exitosamente');
+                
+                // Hide failed actions and reset UI
+                document.getElementById('failedActions').style.display = 'none';
+                
+                // Update status
+                const badge = document.getElementById('statusBadge');
+                badge.className = 'status-badge badge-processing';
+                badge.innerHTML = '<i class="fas fa-cog fa-spin"></i><span>Procesando</span>';
+                
+                document.getElementById('currentStep').textContent = 'Reintentando generación...';
+                updateProgressCircle(0);
+                
+                // Update local state
+                state.currentStatus = 'processing';
+                state.bookStatus = 'processing';
+                
+                // Restart timer and polling
+                initializeTimer();
+                startStatusPolling();
+                
+                addLog('info', 'Reintento iniciado. Monitoreando progreso en tiempo real...');
+                
+            } else {
+                throw new Error('Error al programar reintento');
+            }
+        } catch (error) {
+            console.error('Error retrying book generation:', error);
+            addLog('error', 'Error al reintentar la generación');
+            retryButton.disabled = false;
+            retryButton.innerHTML = '<i class="fas fa-redo me-2"></i>Reintentar Generación';
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,2192 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ book.title }} - Buko AI{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Bookerly:ital,wght@0,400;0,700;1,400&family=Amazon+Ember:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+    /* Professional Design System */
+    :root {
+        --primary-color: #1e293b;
+        --primary-dark: #0f172a;
+        --accent-color: #3b82f6;
+        --accent-dark: #1d4ed8;
+        --accent-light: #60a5fa;
+        --secondary-color: #64748b;
+        --secondary-light: #94a3b8;
+        --success-color: #059669;
+        --warning-color: #d97706;
+        --error-color: #dc2626;
+        --info-color: #0ea5e9;
+        --background-primary: #ffffff;
+        --background-secondary: #f8fafc;
+        --background-tertiary: #f1f5f9;
+        --border-color: #e2e8f0;
+        
+        /* Gradientes profesionales del sistema */
+        --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        --background-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        
+        /* Kindle-specific colors */
+        --kindle-bg: #f7f4ed;
+        --kindle-text: #111111;
+        --kindle-muted: #666666;
+        --kindle-border: #d5d9dd;
+        --kindle-highlight: #ffe69c;
+        --kindle-note: #ffd700;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--secondary-color);
+        background: var(--background-secondary);
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Professional Header Following Design System */
+    .book-header-premium {
+        background: var(--accent-gradient);
+        color: white;
+        padding: 2.5rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .book-header-premium::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+    }
+
+    .book-meta-premium {
+        background: var(--background-primary);
+        border-radius: 16px;
+        padding: 2.5rem;
+        margin-top: -1.5rem;
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 12px 28px rgba(30, 41, 59, 0.12);
+        border: 1px solid var(--border-color);
+    }
+
+    .book-title-premium {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        margin: 0 0 1rem 0;
+        line-height: 1.2;
+    }
+
+    /* Action Buttons - Simplified and High Contrast */
+    .action-btn-modern {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 200px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-btn-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-btn-modern .icon-container {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Professional status badges with proper contrast */
+    .status-badge-completed {
+        background: linear-gradient(135deg, var(--success-color) 0%, #10b981 100%);
+        color: white;
+        border: none;
+    }
+
+    .status-badge-processing {
+        background: linear-gradient(135deg, var(--info-color) 0%, var(--accent-color) 100%);
+        color: white;
+        border: none;
+    }
+
+    .status-badge-warning {
+        background: linear-gradient(135deg, var(--warning-color) 0%, #f59e0b 100%);
+        color: white;
+        border: none;
+    }
+
+    /* Interactive Book Content */
+    .book-interactive-container {
+        background: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    }
+
+    .book-nav-header {
+        background: var(--background-gradient);
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .book-nav-header h5 {
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .book-nav-header small {
+        color: var(--secondary-color);
+    }
+
+    .book-toc-toggle {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    }
+
+    .book-toc-toggle:hover {
+        background: var(--accent-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .book-toc-toggle i {
+        margin-right: 0.5rem;
+    }
+
+    .book-toc-sidebar {
+        position: fixed;
+        left: -400px;
+        top: 0;
+        width: 350px;
+        height: 100vh;
+        background: white;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        border-right: 1px solid var(--border-color);
+    }
+
+    .book-toc-sidebar.active {
+        left: 0;
+    }
+
+    .toc-header {
+        background: var(--accent-color);
+        color: white;
+        padding: 1.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 10001;
+    }
+
+    .toc-item {
+        padding: 0.75rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .toc-item:hover {
+        background: var(--background-secondary);
+        transform: translateX(5px);
+    }
+
+    .toc-item.active {
+        background: rgba(59, 130, 246, 0.1);
+        border-left: 4px solid var(--accent-color);
+    }
+
+    .book-content-interactive {
+        padding: 3rem;
+        font-family: 'Bookerly', Georgia, serif;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: var(--primary-color);
+        max-height: 70vh;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    .book-content-interactive h1,
+    .book-content-interactive h2,
+    .book-content-interactive h3 {
+        color: var(--primary-color);
+        font-weight: 700;
+        margin-top: 2.5rem;
+        margin-bottom: 1.5rem;
+        scroll-margin-top: 2rem;
+    }
+
+    .book-content-interactive h1 {
+        font-size: 2.2rem;
+        border-bottom: 3px solid var(--accent-color);
+        padding-bottom: 1rem;
+    }
+
+    .book-content-interactive h2 {
+        font-size: 1.8rem;
+        position: relative;
+    }
+
+    .book-content-interactive h2::before {
+        content: '';
+        position: absolute;
+        left: -1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 60%;
+        background: var(--accent-color);
+        border-radius: 2px;
+    }
+
+    .book-content-interactive h3 {
+        font-size: 1.4rem;
+        color: var(--accent-color);
+    }
+
+    .book-content-interactive p {
+        margin-bottom: 1.5rem;
+        text-align: justify;
+        hyphens: auto;
+    }
+
+    .book-content-interactive strong {
+        color: var(--primary-dark);
+        font-weight: 700;
+    }
+
+    .book-content-interactive em {
+        color: var(--accent-color);
+        font-style: italic;
+    }
+
+    .book-content-interactive blockquote {
+        background: rgba(59, 130, 246, 0.05);
+        border-left: 4px solid var(--accent-color);
+        margin: 2rem 0;
+        padding: 1.5rem 2rem;
+        border-radius: 0 12px 12px 0;
+        font-style: italic;
+        position: relative;
+    }
+
+    .book-content-interactive blockquote::before {
+        content: '"';
+        position: absolute;
+        top: -10px;
+        left: 10px;
+        font-size: 4rem;
+        color: var(--accent-color);
+        opacity: 0.3;
+    }
+
+    /* Ultra Realistic Kindle Simulator */
+    .kindle-overlay-realistic {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(5px);
+        z-index: 20000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    .kindle-overlay-realistic.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    .kindle-device-realistic {
+        width: 450px;
+        height: 650px;
+        background: linear-gradient(145deg, #2c2c2c, #404040);
+        border-radius: 25px;
+        padding: 40px 30px 50px;
+        position: relative;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        border: 3px solid #333;
+    }
+
+    .kindle-screen-realistic {
+        width: 100%;
+        height: 100%;
+        background: var(--kindle-bg);
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        font-family: 'Amazon Ember', -apple-system, sans-serif;
+    }
+
+    .kindle-status-bar {
+        background: var(--kindle-bg);
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--kindle-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.7rem;
+        color: var(--kindle-muted);
+        flex-shrink: 0;
+    }
+
+    .kindle-battery {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .battery-icon {
+        width: 20px;
+        height: 10px;
+        border: 1px solid var(--kindle-muted);
+        border-radius: 2px;
+        position: relative;
+    }
+
+    .battery-icon::after {
+        content: '';
+        position: absolute;
+        right: -3px;
+        top: 2px;
+        width: 2px;
+        height: 6px;
+        background: var(--kindle-muted);
+        border-radius: 0 1px 1px 0;
+    }
+
+    .battery-fill {
+        height: 100%;
+        background: var(--success-color);
+        border-radius: 1px;
+        width: 85%;
+    }
+
+    .kindle-content-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .kindle-book-header {
+        background: var(--kindle-bg);
+        padding: 1rem 1.5rem 0.5rem;
+        border-bottom: 1px solid var(--kindle-border);
+        flex-shrink: 0;
+    }
+
+    .kindle-book-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--kindle-text);
+        margin-bottom: 0.25rem;
+    }
+
+    .kindle-chapter-info {
+        font-size: 0.75rem;
+        color: var(--kindle-muted);
+    }
+
+    .kindle-reading-area {
+        flex: 1;
+        padding: 1.5rem;
+        font-family: 'Bookerly', Georgia, serif;
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--kindle-text);
+        overflow: hidden;
+        position: relative;
+        background: var(--kindle-bg);
+    }
+
+    .kindle-text-content {
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .kindle-text-content h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--kindle-text);
+        margin: 0 0 1.5rem 0;
+        text-align: center;
+        border-bottom: 2px solid var(--kindle-muted);
+        padding-bottom: 0.75rem;
+    }
+
+    .kindle-text-content h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--kindle-text);
+        margin: 1.5rem 0 1rem 0;
+    }
+
+    .kindle-text-content h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--kindle-text);
+        margin: 1.25rem 0 0.75rem 0;
+    }
+
+    .kindle-text-content p {
+        margin-bottom: 1rem;
+        text-align: justify;
+        text-indent: 1.2rem;
+        hyphens: auto;
+    }
+
+    .kindle-text-content p:first-of-type {
+        text-indent: 0;
+    }
+
+    .kindle-text-content strong {
+        font-weight: 700;
+        color: var(--kindle-text);
+    }
+
+    .kindle-text-content em {
+        font-style: italic;
+    }
+
+    .kindle-progress-bar {
+        background: var(--kindle-bg);
+        padding: 0.75rem 1.5rem;
+        border-top: 1px solid var(--kindle-border);
+        flex-shrink: 0;
+    }
+
+    .progress-track {
+        width: 100%;
+        height: 4px;
+        background: var(--kindle-border);
+        border-radius: 2px;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--kindle-text);
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+
+    .kindle-footer-info {
+        background: var(--kindle-bg);
+        padding: 0.5rem 1.5rem;
+        border-top: 1px solid var(--kindle-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.7rem;
+        color: var(--kindle-muted);
+        flex-shrink: 0;
+    }
+
+    .kindle-controls-realistic {
+        position: absolute;
+        bottom: -45px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 12px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 10px 20px;
+        border-radius: 25px;
+        backdrop-filter: blur(10px);
+    }
+
+    .kindle-btn-realistic {
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 18px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #333;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        font-weight: 500;
+    }
+
+    .kindle-btn-realistic:hover {
+        background: white;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .kindle-btn-realistic:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .kindle-menu-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(247, 244, 237, 0.95);
+        backdrop-filter: blur(5px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .kindle-menu-overlay.active {
+        display: flex;
+    }
+
+    .kindle-menu-content {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        max-width: 300px;
+        width: 90%;
+    }
+
+    .kindle-menu-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--kindle-text);
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .kindle-menu-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .kindle-menu-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--kindle-muted);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .kindle-setting-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--kindle-border);
+    }
+
+    .kindle-setting-row:last-child {
+        border-bottom: none;
+    }
+
+    .font-size-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .font-btn {
+        background: var(--kindle-border);
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.2s ease;
+    }
+
+    .font-btn:hover {
+        background: var(--kindle-muted);
+        color: white;
+    }
+
+    .theme-selector {
+        display: flex;
+        gap: 8px;
+    }
+
+    .theme-option {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .theme-option.active {
+        border-color: var(--kindle-text);
+    }
+
+    .theme-option::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .theme-option.active::after {
+        opacity: 1;
+    }
+
+    .theme-light { background: #f7f4ed; }
+    .theme-sepia { background: #f4ecd8; }
+    .theme-dark { background: #1a1a1a; }
+
+    .close-kindle-realistic {
+        position: absolute;
+        top: -45px;
+        right: 0;
+        background: #dc2626;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.2s ease;
+        font-size: 16px;
+    }
+
+    .close-kindle-realistic:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .kindle-device-realistic {
+            width: 90vw;
+            height: 80vh;
+            padding: 25px 20px 35px;
+        }
+        
+        .book-toc-sidebar {
+            width: 100vw;
+            left: -100vw;
+        }
+        
+        .book-content-interactive {
+            padding: 2rem;
+            font-size: 1rem;
+        }
+        
+        .action-btn-modern,
+        .btn-lg {
+            padding: 0.875rem 1.2rem;
+            font-size: 0.85rem;
+            min-width: auto;
+        }
+        
+        .book-meta-premium {
+            padding: 1.5rem;
+            margin-top: -1rem;
+        }
+        
+        .book-title-premium {
+            font-size: 1.5rem;
+        }
+        
+        /* Stack buttons vertically on mobile */
+        .d-flex.flex-wrap.gap-3.justify-content-center {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .d-flex.flex-wrap.gap-3.justify-content-center > * {
+            width: 100%;
+            max-width: 320px;
+        }
+    }
+    
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .btn-lg {
+            border: 2px solid currentColor !important;
+        }
+        
+        .book-meta-premium {
+            border: 2px solid var(--border-color) !important;
+        }
+    }
+
+    /* Premium Smooth animations */
+    .fade-in {
+        animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(30px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .slide-in {
+        animation: slideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(-100%) scale(0.98); opacity: 0.8; }
+        to { transform: translateX(0) scale(1); opacity: 1; }
+    }
+
+    /* Enhanced page transition animations */
+    .kindle-page-transition {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .kindle-page-fade-out {
+        opacity: 0;
+        transform: translateX(-20px) scale(0.98);
+    }
+
+    .kindle-page-fade-in {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    /* Micro-interactions */
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.6); }
+    }
+
+    .btn-premium:active {
+        transform: translateY(-1px) scale(0.98);
+        transition: transform 0.1s ease;
+    }
+
+    .kindle-btn-realistic:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+    }
+
+    /* Loading indicators */
+    .loading-shimmer {
+        background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.3) 50%, transparent 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    /* Auto night mode transition */
+    .auto-night-transition {
+        transition: background-color 0.8s ease, color 0.8s ease, border-color 0.8s ease;
+    }
+
+    /* Premium focus states */
+    .kindle-btn-realistic:focus,
+    .btn-premium:focus {
+        outline: none;
+        animation: pulse-glow 2s infinite;
+    }
+
+    /* Enhanced hover states */
+    .book-toc-toggle:hover {
+        background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
+    }
+
+    .toc-item:hover {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Reading themes */
+    .kindle-theme-sepia .kindle-screen-realistic,
+    .kindle-theme-sepia .kindle-status-bar,
+    .kindle-theme-sepia .kindle-book-header,
+    .kindle-theme-sepia .kindle-reading-area,
+    .kindle-theme-sepia .kindle-progress-bar,
+    .kindle-theme-sepia .kindle-footer-info {
+        background: #f4ecd8;
+        color: #5c4b33;
+    }
+
+    .kindle-theme-dark .kindle-screen-realistic,
+    .kindle-theme-dark .kindle-status-bar,
+    .kindle-theme-dark .kindle-book-header,
+    .kindle-theme-dark .kindle-reading-area,
+    .kindle-theme-dark .kindle-progress-bar,
+    .kindle-theme-dark .kindle-footer-info {
+        background: #1a1a1a;
+        color: #e5e5e5;
+    }
+
+    .kindle-theme-dark .kindle-text-content h1,
+    .kindle-theme-dark .kindle-text-content h2,
+    .kindle-theme-dark .kindle-text-content h3 {
+        color: #e5e5e5;
+        border-color: #555;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Premium Header -->
+<div class="book-header-premium">
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-12">
+                <div class="book-meta-premium fade-in">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div class="flex-grow-1">
+                            <h1 class="book-title-premium">{{ book.title }}</h1>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <div class="badge {% if book.status.value == 'completed' %}status-badge-completed{% elif book.status.value == 'failed' %}status-badge-warning{% else %}status-badge-processing{% endif %} fs-6 px-3 py-2 fw-semibold">
+                                    {% if book.status.value == 'completed' %}
+                                        <i class="fas fa-check-circle me-2"></i>Completado
+                                    {% elif book.status.value == 'failed' %}
+                                        <i class="fas fa-exclamation-triangle me-2"></i>{{ book.get_status_display() }}
+                                    {% else %}
+                                        <i class="fas fa-clock me-2"></i>{{ book.get_status_display() }}
+                                    {% endif %}
+                                </div>
+                                <span style="color: var(--secondary-color); font-weight: 500;">
+                                    <i class="fas fa-tag me-1" style="color: var(--accent-color);"></i>{{ book.genre|title }} • 
+                                    <i class="fas fa-language me-1" style="color: var(--accent-color);"></i>{{ book.language|upper }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="small" style="color: var(--secondary-light); font-weight: 500;">
+                                <i class="fas fa-calendar-plus me-1" style="color: var(--accent-color);"></i>Creado
+                            </div>
+                            <div class="fw-bold" style="color: var(--primary-color);">{{ book.created_at.strftime('%d/%m/%Y') }}</div>
+                            {% if book.completed_at %}
+                                <div class="small mt-1" style="color: var(--secondary-light); font-weight: 500;">
+                                    <i class="fas fa-calendar-check me-1" style="color: var(--success-color);"></i>Completado
+                                </div>
+                                <div class="fw-bold" style="color: var(--primary-color);">{{ book.completed_at.strftime('%d/%m/%Y') }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Premium Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-3 justify-content-center">
+                                {% if book.status.value == 'completed' %}
+                                    <button class="btn btn-lg fw-semibold d-flex align-items-center gap-3 px-4 py-3" 
+                                            onclick="openUltraRealisticKindle()"
+                                            style="background: var(--primary-gradient); color: white; border: none; border-radius: 12px; 
+                                                   box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3); transition: all 0.3s ease; min-width: 240px;"
+                                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(30, 41, 59, 0.4)';"
+                                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(30, 41, 59, 0.3)';">
+                                        <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px;">
+                                            <i class="fas fa-tablet-alt" style="font-size: 1.2rem;"></i>
+                                        </div>
+                                        <div class="text-start">
+                                            <div style="font-size: 1rem; line-height: 1.2;">Experiencia Kindle Real</div>
+                                            <small style="opacity: 0.9; font-size: 0.8rem;">✨ Simulador Premium</small>
+                                        </div>
+                                    </button>
+                                    
+                                    <button class="btn btn-lg fw-semibold d-flex align-items-center gap-3 px-4 py-3" 
+                                            onclick="toggleInteractiveBook()"
+                                            style="background: var(--accent-gradient); color: white; border: none; border-radius: 12px; 
+                                                   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.3s ease; min-width: 240px;"
+                                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(59, 130, 246, 0.4)';"
+                                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)';">
+                                        <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px;">
+                                            <i class="fas fa-book-reader" style="font-size: 1.2rem;"></i>
+                                        </div>
+                                        <div class="text-start">
+                                            <div style="font-size: 1rem; line-height: 1.2;">Lectura Interactiva</div>
+                                            <small style="opacity: 0.9; font-size: 0.8rem;">📖 Navegación Avanzada</small>
+                                        </div>
+                                    </button>
+                                    
+                                    <button class="btn btn-lg fw-semibold d-flex align-items-center gap-3 px-4 py-3" 
+                                            onclick="window.print()"
+                                            style="background: var(--success-color); color: white; border: none; border-radius: 12px; 
+                                                   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); transition: all 0.3s ease; min-width: 240px;"
+                                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(5, 150, 105, 0.4)';"
+                                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(5, 150, 105, 0.3)';">
+                                        <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px;">
+                                            <i class="fas fa-file-export" style="font-size: 1.2rem;"></i>
+                                        </div>
+                                        <div class="text-start">
+                                            <div style="font-size: 1rem; line-height: 1.2;">Exportar & Imprimir</div>
+                                            <small style="opacity: 0.9; font-size: 0.8rem;">🖨️ Formato Premium</small>
+                                        </div>
+                                    </button>
+                                {% else %}
+                                    <a href="{{ url_for('books.generation_status', book_id=book.id) }}" 
+                                       class="btn btn-lg fw-semibold d-flex align-items-center gap-3 px-4 py-3 text-decoration-none" 
+                                       style="background: var(--accent-gradient); color: white; border: none; border-radius: 12px; 
+                                              box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.3s ease; min-width: 240px;"
+                                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(59, 130, 246, 0.4)';"
+                                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)';">
+                                        <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px;">
+                                            <i class="fas fa-chart-line" style="font-size: 1.2rem;"></i>
+                                        </div>
+                                        <div class="text-start">
+                                            <div style="font-size: 1rem; line-height: 1.2; color: white;">Estado en Tiempo Real</div>
+                                            <small style="opacity: 0.9; font-size: 0.8rem; color: white;">📊 Monitoreo Live</small>
+                                        </div>
+                                    </a>
+                                {% endif %}
+                                
+                                <a href="{{ url_for('books.my_books') }}" 
+                                   class="btn btn-lg fw-semibold d-flex align-items-center gap-3 px-4 py-3 text-decoration-none" 
+                                   style="background: var(--background-tertiary); color: var(--primary-color); border: 2px solid var(--border-color); border-radius: 12px; 
+                                          box-shadow: 0 4px 12px rgba(30, 41, 59, 0.08); transition: all 0.3s ease; min-width: 220px;"
+                                   onmouseover="this.style.background='var(--accent-color)'; this.style.color='white'; this.style.borderColor='var(--accent-color)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(59, 130, 246, 0.25)'; this.querySelector('.icon-bg').style.background='rgba(255,255,255,0.2)';"
+                                   onmouseout="this.style.background='var(--background-tertiary)'; this.style.color='var(--primary-color)'; this.style.borderColor='var(--border-color)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(30, 41, 59, 0.08)'; this.querySelector('.icon-bg').style.background='rgba(30, 41, 59, 0.1)';">
+                                    <div class="icon-bg" style="background: rgba(30, 41, 59, 0.1); padding: 8px; border-radius: 8px; transition: background 0.3s ease;">
+                                        <i class="fas fa-books" style="font-size: 1.2rem; color: var(--primary-color);"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <div style="font-size: 1rem; line-height: 1.2; color: var(--primary-color);">Mi Biblioteca</div>
+                                        <small style="opacity: 0.8; font-size: 0.8rem; color: var(--secondary-color);">📚 Todos mis libros</small>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- Interactive Book Content -->
+    {% if book.status.value == 'completed' and book.content %}
+    <div class="book-interactive-container fade-in" id="interactiveBook" style="display: none;">
+        <div class="book-nav-header">
+            <div>
+                <h5 class="mb-1 fw-bold" style="color: var(--primary-color);">{{ book.title }}</h5>
+                <small style="color: var(--secondary-color); font-weight: 500;">
+                    <i class="fas fa-book-reader me-1" style="color: var(--accent-color);"></i>
+                    Lectura Interactiva • Capítulo <span id="currentChapter">1</span>
+                </small>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="book-toc-toggle" onclick="toggleTableOfContents()">
+                    <i class="fas fa-list me-2"></i>Índice
+                </button>
+                <button class="btn btn-sm" onclick="searchInBook()" 
+                        style="background: var(--background-tertiary); color: var(--primary-color); border: 2px solid var(--accent-color); border-radius: 8px; transition: all 0.2s ease;"
+                        onmouseover="this.style.background='var(--accent-color)'; this.style.color='white'; this.style.borderColor='var(--accent-color)';"
+                        onmouseout="this.style.background='var(--background-tertiary)'; this.style.color='var(--primary-color)'; this.style.borderColor='var(--accent-color)';">
+                    <i class="fas fa-search" style="color: var(--accent-color);"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="book-content-interactive" id="bookContentInteractive">
+            <div id="interactiveContent">
+                <!-- Interactive content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Table of Contents Sidebar -->
+    <div class="book-toc-sidebar" id="tocSidebar">
+        <div class="toc-header">
+            <h6 class="mb-0 fw-bold">Tabla de Contenidos</h6>
+            <button class="btn btn-sm mt-2" onclick="toggleTableOfContents()"
+                    style="background: var(--background-tertiary); color: var(--primary-color); border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s ease;"
+                    onmouseover="this.style.background='var(--accent-color)'; this.style.color='white';"
+                    onmouseout="this.style.background='var(--background-tertiary)'; this.style.color='var(--primary-color)';">
+                <i class="fas fa-times me-1" style="color: var(--secondary-color);"></i> Cerrar
+            </button>
+        </div>
+        <div id="tocContent">
+            <!-- TOC will be generated here -->
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Metrics & Download -->
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="row g-3">
+                <div class="col-md-3 col-6">
+                    <div class="text-center p-3 rounded-3 border" style="background: var(--background-primary); border-color: var(--border-color) !important;">
+                        <div class="d-flex align-items-center justify-content-center mb-2">
+                            <i class="fas fa-align-left me-2" style="color: var(--accent-color); font-size: 1.2rem;"></i>
+                        </div>
+                        <div class="h4 mb-1 fw-bold" style="color: var(--primary-color);">{{ '{:,}'.format(book.final_words or book.get_word_count() or 0) }}</div>
+                        <small style="color: var(--secondary-color); font-weight: 500;">Palabras</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="text-center p-3 rounded-3 border" style="background: var(--background-primary); border-color: var(--border-color) !important;">
+                        <div class="d-flex align-items-center justify-content-center mb-2">
+                            <i class="fas fa-file-alt me-2" style="color: var(--success-color); font-size: 1.2rem;"></i>
+                        </div>
+                        <div class="h4 mb-1 fw-bold" style="color: var(--primary-color);">{{ book.final_pages or book.page_count or 0 }}</div>
+                        <small style="color: var(--secondary-color); font-weight: 500;">Páginas</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="text-center p-3 rounded-3 border" style="background: var(--background-primary); border-color: var(--border-color) !important;">
+                        <div class="d-flex align-items-center justify-content-center mb-2">
+                            <i class="fas fa-list-ol me-2" style="color: var(--info-color); font-size: 1.2rem;"></i>
+                        </div>
+                        <div class="h4 mb-1 fw-bold" style="color: var(--primary-color);">{{ book.chapter_count or 10 }}</div>
+                        <small style="color: var(--secondary-color); font-weight: 500;">Capítulos</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="text-center p-3 rounded-3 border" style="background: var(--background-primary); border-color: var(--border-color) !important;">
+                        <div class="d-flex align-items-center justify-content-center mb-2">
+                            <i class="fas fa-clock me-2" style="color: var(--warning-color); font-size: 1.2rem;"></i>
+                        </div>
+                        <div class="h4 mb-1 fw-bold" style="color: var(--primary-color);">
+                            {% if book.final_words %}
+                                {% set reading_minutes = (book.final_words / 250)|round %}
+                                {% if reading_minutes < 60 %}{{ reading_minutes }}m{% else %}{{ (reading_minutes / 60)|round(1) }}h{% endif %}
+                            {% else %}--{% endif %}
+                        </div>
+                        <small style="color: var(--secondary-color); font-weight: 500;">Lectura</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="rounded-3 border p-4 text-center" style="background: var(--background-primary); border-color: var(--border-color) !important;">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <i class="fas fa-download me-2" style="color: var(--accent-color); font-size: 1.3rem;"></i>
+                    <h6 class="fw-bold mb-0" style="color: var(--primary-color);">Descargar Libro</h6>
+                </div>
+                <div class="d-flex justify-content-center gap-2">
+                    <button class="btn btn-sm download-btn" onclick="downloadBook('pdf')" 
+                            style="background: var(--error-color); color: white; border: none; padding: 0.5rem 0.8rem; font-weight: 500; border-radius: 8px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.3)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(220, 38, 38, 0.2)';">
+                        <i class="fas fa-file-pdf me-1"></i>PDF
+                    </button>
+                    <button class="btn btn-sm download-btn" onclick="downloadBook('epub')" 
+                            style="background: linear-gradient(135deg, var(--accent-color), var(--accent-light)); color: white; border: none; padding: 0.5rem 0.8rem; font-weight: 500; border-radius: 8px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(59, 130, 246, 0.2)';">
+                        <i class="fas fa-book me-1"></i>EPUB
+                    </button>
+                    <button class="btn btn-sm download-btn" onclick="downloadBook('docx')" 
+                            style="background: var(--info-color); color: white; border: none; padding: 0.5rem 0.8rem; font-weight: 500; border-radius: 8px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(14, 165, 233, 0.3)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(14, 165, 233, 0.2)';">
+                        <i class="fas fa-file-word me-1"></i>DOCX
+                    </button>
+                </div>
+                <small class="d-block mt-2" style="color: var(--secondary-color);">
+                    <i class="fas fa-shield-alt me-1" style="color: var(--success-color);"></i>
+                    Descarga segura y optimizada
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ultra Realistic Kindle Simulator -->
+<div id="kindleOverlayRealistic" class="kindle-overlay-realistic">
+    <div class="kindle-device-realistic">
+        <button class="close-kindle-realistic" onclick="closeUltraRealisticKindle()">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="kindle-screen-realistic" id="kindleScreen">
+            <!-- Status Bar -->
+            <div class="kindle-status-bar">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-wifi"></i>
+                    <span>Kindle</span>
+                </div>
+                <div class="kindle-battery">
+                    <span id="kindleTimeRealistic">--:--</span>
+                    <div class="battery-icon">
+                        <div class="battery-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Content Area -->
+            <div class="kindle-content-area">
+                <!-- Book Header -->
+                <div class="kindle-book-header">
+                    <div class="kindle-book-title">{{ book.title }}</div>
+                    <div class="kindle-chapter-info">Capítulo <span id="kindleChapterNum">1</span> • <span id="kindlePageNum">1</span> de <span id="kindleTotalPages">--</span></div>
+                </div>
+
+                <!-- Reading Area -->
+                <div class="kindle-reading-area">
+                    <div class="kindle-text-content" id="kindleTextRealistic">
+                        <!-- Book content will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="kindle-progress-bar">
+                    <div class="progress-track" onclick="jumpToProgress(event)">
+                        <div class="progress-fill" id="kindleProgressFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Footer Info -->
+                <div class="kindle-footer-info">
+                    <span>{{ book.genre|title }}</span>
+                    <span id="kindleReadingProgress">0% completado</span>
+                    <span>Buko AI</span>
+                </div>
+            </div>
+
+            <!-- Menu Overlay -->
+            <div class="kindle-menu-overlay" id="kindleMenuOverlay">
+                <div class="kindle-menu-content">
+                    <div class="kindle-menu-title">Configuración</div>
+                    
+                    <div class="kindle-menu-section">
+                        <div class="kindle-menu-label">Tamaño de Fuente</div>
+                        <div class="kindle-setting-row">
+                            <span>Tamaño del texto</span>
+                            <div class="font-size-controls">
+                                <button class="font-btn" onclick="UltraKindle.changeFontSize(-1)">A-</button>
+                                <span id="currentFontSize">16px</span>
+                                <button class="font-btn" onclick="UltraKindle.changeFontSize(1)">A+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="kindle-menu-section">
+                        <div class="kindle-menu-label">Tema de Lectura</div>
+                        <div class="kindle-setting-row">
+                            <span>Apariencia</span>
+                            <div class="theme-selector">
+                                <div class="theme-option theme-light active" onclick="UltraKindle.changeTheme('light')" title="Claro"></div>
+                                <div class="theme-option theme-sepia" onclick="UltraKindle.changeTheme('sepia')" title="Sepia"></div>
+                                <div class="theme-option theme-dark" onclick="UltraKindle.changeTheme('dark')" title="Oscuro"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="kindle-menu-section">
+                        <div class="kindle-menu-label">Configuración Avanzada</div>
+                        <div class="kindle-setting-row">
+                            <span>Modo Nocturno Automático</span>
+                            <div>
+                                <label class="switch-toggle" style="position: relative; display: inline-block; width: 40px; height: 20px;">
+                                    <input type="checkbox" id="autoNightToggle" onchange="UltraKindle.toggleAutoNightMode()" style="opacity: 0; width: 0; height: 0;">
+                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.4s; border-radius: 20px;">
+                                        <span style="position: absolute; content: ''; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: 0.4s; border-radius: 50%; transform: translateX(0);"></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="kindle-setting-row">
+                            <span>Efectos de Sonido</span>
+                            <div>
+                                <label class="switch-toggle" style="position: relative; display: inline-block; width: 40px; height: 20px;">
+                                    <input type="checkbox" id="soundToggle" onchange="UltraKindle.toggleSound()" checked style="opacity: 0; width: 0; height: 0;">
+                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3b82f6; transition: 0.4s; border-radius: 20px;">
+                                        <span style="position: absolute; content: ''; height: 16px; width: 16px; right: 2px; bottom: 2px; background-color: white; transition: 0.4s; border-radius: 50%; transform: translateX(0);"></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="kindle-menu-section">
+                        <div class="kindle-setting-row">
+                            <button class="btn btn-sm btn-primary w-100" onclick="UltraKindle.toggleMenu()">
+                                Cerrar Configuración
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Realistic Controls -->
+        <div class="kindle-controls-realistic">
+            <button class="kindle-btn-realistic" id="kindlePrevRealistic" onclick="UltraKindle.previousPage()" disabled>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="kindle-btn-realistic" onclick="UltraKindle.toggleMenu()">
+                <i class="fas fa-cog"></i>
+            </button>
+            <button class="kindle-btn-realistic" onclick="UltraKindle.toggleBookmark()">
+                <i class="fas fa-bookmark"></i>
+            </button>
+            <button class="kindle-btn-realistic" id="kindleNextRealistic" onclick="UltraKindle.nextPage()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden content for JavaScript -->
+<script type="application/json" id="bookDataAdvanced">
+{
+    "content": {{ book.content|tojson if book.content else '""' }},
+    "title": {{ book.title|tojson }},
+    "id": {{ book.id }},
+    "author": "Buko AI",
+    "genre": {{ book.genre|tojson }},
+    "chapters": {{ book.chapter_count or 10 }}
+}
+</script>
+
+<script>
+// Ultra Realistic Kindle Simulator with Premium Features
+class UltraRealisticKindle {
+    constructor() {
+        this.pages = [];
+        this.chapters = [];
+        this.currentPage = 0;
+        this.fontSize = 16;
+        this.lineHeight = 1.6;
+        this.theme = 'light';
+        this.wordsPerPage = 250;
+        this.bookmarks = [];
+        this.content = '';
+        this.isMenuOpen = false;
+        this.autoNightMode = true;
+        this.soundEnabled = true;
+        this.audioContext = null;
+        this.pageTransitionInProgress = false;
+        
+        // Initialize audio context for subtle sound effects
+        this.initAudioContext();
+        
+        // Setup auto night mode
+        this.setupAutoNightMode();
+    }
+    
+    initAudioContext() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.log('Web Audio API not supported');
+            this.soundEnabled = false;
+        }
+    }
+    
+    setupAutoNightMode() {
+        // Check time every minute
+        setInterval(() => this.checkAutoNightMode(), 60000);
+        this.checkAutoNightMode(); // Check immediately
+    }
+    
+    checkAutoNightMode() {
+        if (!this.autoNightMode) return;
+        
+        const hour = new Date().getHours();
+        const shouldBeDark = hour < 7 || hour >= 20; // Dark mode from 8 PM to 7 AM
+        const currentlyDark = this.theme === 'dark';
+        
+        if (shouldBeDark && !currentlyDark) {
+            this.changeTheme('dark');
+        } else if (!shouldBeDark && currentlyDark && this.autoNightMode) {
+            this.changeTheme('light');
+        }
+    }
+    
+    playSubtleSound(frequency = 800, duration = 50, volume = 0.1) {
+        if (!this.soundEnabled || !this.audioContext) return;
+        
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, this.audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + duration / 1000);
+        } catch (e) {
+            // Silently fail if audio doesn't work
+        }
+    }
+    
+    simulateHapticFeedback() {
+        // Simulate haptic feedback on mobile devices
+        if (navigator.vibrate) {
+            navigator.vibrate(10); // Very subtle vibration
+        }
+    }
+
+    init() {
+        try {
+            const bookData = JSON.parse(document.getElementById('bookDataAdvanced').textContent);
+            if (bookData.content) {
+                this.content = bookData.content;
+                this.bookTitle = bookData.title;
+                this.processContent();
+                this.updateDisplay();
+                this.updateTime();
+                setInterval(() => this.updateTime(), 30000);
+                
+                // Initialize toggle states
+                this.initializeToggles();
+            }
+        } catch (error) {
+            console.error('Error initializing Ultra Kindle:', error);
+        }
+    }
+    
+    initializeToggles() {
+        // Initialize auto night mode toggle
+        const autoNightToggle = document.getElementById('autoNightToggle');
+        const autoNightSpan = autoNightToggle?.nextElementSibling;
+        const autoNightButton = autoNightSpan?.querySelector('span');
+        
+        if (autoNightSpan && autoNightButton) {
+            if (this.autoNightMode) {
+                autoNightSpan.style.backgroundColor = '#3b82f6';
+                autoNightButton.style.transform = 'translateX(20px)';
+                autoNightToggle.checked = true;
+            } else {
+                autoNightSpan.style.backgroundColor = '#ccc';
+                autoNightButton.style.transform = 'translateX(0)';
+                autoNightToggle.checked = false;
+            }
+        }
+        
+        // Initialize sound toggle
+        const soundToggle = document.getElementById('soundToggle');
+        const soundSpan = soundToggle?.nextElementSibling;
+        const soundButton = soundSpan?.querySelector('span');
+        
+        if (soundSpan && soundButton) {
+            if (this.soundEnabled) {
+                soundSpan.style.backgroundColor = '#3b82f6';
+                soundButton.style.transform = 'translateX(20px)';
+                soundToggle.checked = true;
+            } else {
+                soundSpan.style.backgroundColor = '#ccc';
+                soundButton.style.transform = 'translateX(0)';
+                soundToggle.checked = false;
+            }
+        }
+    }
+
+    processContent() {
+        if (!this.content) return;
+        
+        // Process markdown-style content
+        let processed = this.content
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, ' ');
+
+        processed = '<p>' + processed + '</p>';
+        
+        // Extract chapters
+        this.extractChapters(processed);
+        
+        // Paginate content
+        this.paginateContent(processed);
+    }
+
+    extractChapters(content) {
+        this.chapters = [];
+        const chapterRegex = /<h1>(.*?)<\/h1>/g;
+        let match;
+        let chapterIndex = 0;
+        
+        while ((match = chapterRegex.exec(content)) !== null) {
+            this.chapters.push({
+                title: match[1],
+                startIndex: match.index,
+                number: ++chapterIndex
+            });
+        }
+        
+        if (this.chapters.length === 0) {
+            this.chapters.push({
+                title: this.bookTitle,
+                startIndex: 0,
+                number: 1
+            });
+        }
+    }
+
+    paginateContent(content) {
+        const words = content.split(' ');
+        this.pages = [];
+        
+        for (let i = 0; i < words.length; i += this.wordsPerPage) {
+            const pageWords = words.slice(i, i + this.wordsPerPage);
+            const pageContent = pageWords.join(' ');
+            this.pages.push({
+                content: pageContent,
+                chapter: this.getCurrentChapter(i),
+                wordStart: i,
+                wordEnd: Math.min(i + this.wordsPerPage, words.length)
+            });
+        }
+    }
+
+    getCurrentChapter(wordIndex) {
+        // Simplified chapter detection
+        const currentChapter = Math.floor((wordIndex / (this.content.split(' ').length)) * this.chapters.length);
+        return Math.max(0, Math.min(currentChapter, this.chapters.length - 1));
+    }
+
+    updateDisplay() {
+        const kindleText = document.getElementById('kindleTextRealistic');
+        const pageNum = document.getElementById('kindlePageNum');
+        const totalPages = document.getElementById('kindleTotalPages');
+        const chapterNum = document.getElementById('kindleChapterNum');
+        const progressFill = document.getElementById('kindleProgressFill');
+        const readingProgress = document.getElementById('kindleReadingProgress');
+        const prevBtn = document.getElementById('kindlePrevRealistic');
+        const nextBtn = document.getElementById('kindleNextRealistic');
+
+        if (kindleText && this.pages.length > 0) {
+            kindleText.innerHTML = this.pages[this.currentPage]?.content || '';
+            kindleText.style.fontSize = this.fontSize + 'px';
+            kindleText.style.lineHeight = this.lineHeight;
+        }
+
+        if (pageNum) pageNum.textContent = this.currentPage + 1;
+        if (totalPages) totalPages.textContent = this.pages.length;
+        
+        const currentPageData = this.pages[this.currentPage];
+        if (chapterNum && currentPageData) {
+            chapterNum.textContent = currentPageData.chapter + 1;
+        }
+        
+        const progress = this.pages.length > 0 ? ((this.currentPage + 1) / this.pages.length) * 100 : 0;
+        if (progressFill) progressFill.style.width = progress + '%';
+        if (readingProgress) readingProgress.textContent = Math.round(progress) + '% completado';
+        
+        if (prevBtn) prevBtn.disabled = this.currentPage === 0;
+        if (nextBtn) nextBtn.disabled = this.currentPage >= this.pages.length - 1;
+
+        document.getElementById('currentFontSize').textContent = this.fontSize + 'px';
+    }
+
+    nextPage() {
+        if (this.currentPage < this.pages.length - 1 && !this.pageTransitionInProgress) {
+            this.pageTransitionInProgress = true;
+            
+            // Play subtle page turn sound
+            this.playSubtleSound(900, 80, 0.08);
+            this.simulateHapticFeedback();
+            
+            // Enhanced page transition
+            this.animatePageTurnPremium('next', () => {
+                this.currentPage++;
+                this.updateDisplay();
+                this.pageTransitionInProgress = false;
+            });
+        }
+    }
+
+    previousPage() {
+        if (this.currentPage > 0 && !this.pageTransitionInProgress) {
+            this.pageTransitionInProgress = true;
+            
+            // Play subtle page turn sound (slightly different frequency)
+            this.playSubtleSound(700, 80, 0.08);
+            this.simulateHapticFeedback();
+            
+            // Enhanced page transition
+            this.animatePageTurnPremium('prev', () => {
+                this.currentPage--;
+                this.updateDisplay();
+                this.pageTransitionInProgress = false;
+            });
+        }
+    }
+
+    changeFontSize(delta) {
+        this.fontSize = Math.max(12, Math.min(28, this.fontSize + delta * 2));
+        
+        // Play UI interaction sound
+        this.playSubtleSound(delta > 0 ? 1000 : 600, 40, 0.06);
+        this.simulateHapticFeedback();
+        
+        // Recalculate pagination with new font size
+        this.wordsPerPage = Math.floor(250 * (16 / this.fontSize));
+        this.processContent();
+        this.updateDisplay();
+    }
+
+    changeTheme(theme) {
+        this.theme = theme;
+        const kindleScreen = document.getElementById('kindleScreen');
+        
+        // Play theme change sound
+        this.playSubtleSound(850, 60, 0.05);
+        this.simulateHapticFeedback();
+        
+        // Add transition class for smooth color changes
+        if (kindleScreen) {
+            kindleScreen.classList.add('auto-night-transition');
+            
+            // Remove all theme classes
+            kindleScreen.classList.remove('kindle-theme-light', 'kindle-theme-sepia', 'kindle-theme-dark');
+            
+            // Add new theme class
+            if (theme !== 'light') {
+                kindleScreen.classList.add('kindle-theme-' + theme);
+            }
+            
+            // Remove transition class after animation
+            setTimeout(() => {
+                kindleScreen.classList.remove('auto-night-transition');
+            }, 800);
+        }
+        
+        // Update theme selector
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.remove('active');
+        });
+        const themeOption = document.querySelector('.theme-' + theme);
+        if (themeOption) {
+            themeOption.classList.add('active');
+        }
+    }
+
+    toggleMenu() {
+        this.isMenuOpen = !this.isMenuOpen;
+        
+        // Play menu sound
+        this.playSubtleSound(this.isMenuOpen ? 1200 : 800, 40, 0.05);
+        this.simulateHapticFeedback();
+        
+        const menuOverlay = document.getElementById('kindleMenuOverlay');
+        if (menuOverlay) {
+            menuOverlay.classList.toggle('active', this.isMenuOpen);
+        }
+    }
+
+    toggleBookmark() {
+        const currentPageIndex = this.currentPage;
+        const bookmarkIndex = this.bookmarks.indexOf(currentPageIndex);
+        
+        if (bookmarkIndex > -1) {
+            this.bookmarks.splice(bookmarkIndex, 1);
+            this.playSubtleSound(600, 60, 0.06); // Lower tone for removal
+            console.log('Marcador eliminado de la página', currentPageIndex + 1);
+        } else {
+            this.bookmarks.push(currentPageIndex);
+            this.playSubtleSound(1100, 60, 0.06); // Higher tone for addition
+            console.log('Marcador agregado en la página', currentPageIndex + 1);
+        }
+        
+        this.simulateHapticFeedback();
+    }
+
+    toggleAutoNightMode() {
+        this.autoNightMode = !this.autoNightMode;
+        
+        // Play toggle sound
+        this.playSubtleSound(this.autoNightMode ? 1000 : 700, 50, 0.05);
+        this.simulateHapticFeedback();
+        
+        // Update toggle appearance
+        const toggle = document.getElementById('autoNightToggle');
+        const toggleSpan = toggle?.nextElementSibling;
+        const toggleButton = toggleSpan?.querySelector('span');
+        
+        if (toggleSpan && toggleButton) {
+            if (this.autoNightMode) {
+                toggleSpan.style.backgroundColor = '#3b82f6';
+                toggleButton.style.transform = 'translateX(20px)';
+                toggle.checked = true;
+                // Check immediately if we should switch themes
+                this.checkAutoNightMode();
+            } else {
+                toggleSpan.style.backgroundColor = '#ccc';
+                toggleButton.style.transform = 'translateX(0)';
+                toggle.checked = false;
+            }
+        }
+        
+        console.log('Modo nocturno automático:', this.autoNightMode ? 'activado' : 'desactivado');
+    }
+
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        
+        // Play confirmation sound (if sound is being enabled)
+        if (this.soundEnabled) {
+            this.playSubtleSound(900, 60, 0.08);
+        }
+        this.simulateHapticFeedback();
+        
+        // Update toggle appearance
+        const toggle = document.getElementById('soundToggle');
+        const toggleSpan = toggle?.nextElementSibling;
+        const toggleButton = toggleSpan?.querySelector('span');
+        
+        if (toggleSpan && toggleButton) {
+            if (this.soundEnabled) {
+                toggleSpan.style.backgroundColor = '#3b82f6';
+                toggleButton.style.transform = 'translateX(20px)';
+                toggle.checked = true;
+            } else {
+                toggleSpan.style.backgroundColor = '#ccc';
+                toggleButton.style.transform = 'translateX(0)';
+                toggle.checked = false;
+            }
+        }
+        
+        console.log('Efectos de sonido:', this.soundEnabled ? 'activados' : 'desactivados');
+    }
+
+    jumpToProgress(event) {
+        const progressTrack = event.currentTarget;
+        const rect = progressTrack.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const progressPercent = clickX / rect.width;
+        
+        const targetPage = Math.floor(progressPercent * this.pages.length);
+        this.jumpToPage(targetPage);
+    }
+    
+    jumpToPage(pageIndex) {
+        const targetPage = Math.max(0, Math.min(pageIndex, this.pages.length - 1));
+        if (targetPage !== this.currentPage) {
+            this.currentPage = targetPage;
+            this.updateDisplay();
+            this.playSubtleSound(850, 60, 0.06);
+            this.simulateHapticFeedback();
+        }
+    }
+    
+    jumpToFirstPage() {
+        this.jumpToPage(0);
+    }
+    
+    jumpToLastPage() {
+        this.jumpToPage(this.pages.length - 1);
+    }
+    
+    cycleTheme() {
+        const themes = ['light', 'sepia', 'dark'];
+        const currentIndex = themes.indexOf(this.theme);
+        const nextIndex = (currentIndex + 1) % themes.length;
+        this.changeTheme(themes[nextIndex]);
+    }
+
+    updateTime() {
+        const timeElement = document.getElementById('kindleTimeRealistic');
+        if (timeElement) {
+            const now = new Date();
+            timeElement.textContent = now.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+    }
+
+    animatePageTurnPremium(direction, callback) {
+        const kindleText = document.getElementById('kindleTextRealistic');
+        if (!kindleText) {
+            callback();
+            return;
+        }
+        
+        // Add transition class
+        kindleText.classList.add('kindle-page-transition');
+        
+        // Phase 1: Fade out current content
+        kindleText.classList.add('kindle-page-fade-out');
+        
+        setTimeout(() => {
+            // Execute the page change
+            callback();
+            
+            // Phase 2: Fade in new content
+            kindleText.classList.remove('kindle-page-fade-out');
+            kindleText.classList.add('kindle-page-fade-in');
+            
+            setTimeout(() => {
+                // Clean up classes
+                kindleText.classList.remove('kindle-page-transition', 'kindle-page-fade-in');
+            }, 300);
+        }, 200);
+    }
+
+    animatePageTurn() {
+        // Legacy method for backward compatibility
+        const kindleText = document.getElementById('kindleTextRealistic');
+        if (kindleText) {
+            kindleText.style.opacity = '0.7';
+            setTimeout(() => {
+                kindleText.style.opacity = '1';
+            }, 150);
+        }
+    }
+}
+
+// Interactive Book Reader
+class InteractiveBookReader {
+    constructor() {
+        this.content = '';
+        this.chapters = [];
+        this.currentChapter = 0;
+        this.isVisible = false;
+    }
+
+    init() {
+        try {
+            const bookData = JSON.parse(document.getElementById('bookDataAdvanced').textContent);
+            if (bookData.content) {
+                this.content = bookData.content;
+                this.processContent();
+                this.generateTOC();
+            }
+        } catch (error) {
+            console.error('Error initializing Interactive Reader:', error);
+        }
+    }
+
+    processContent() {
+        if (!this.content) return;
+        
+        // Split content by chapters (h1 headings)
+        const chapterSplits = this.content.split(/^# /gm);
+        this.chapters = [];
+        
+        for (let i = 1; i < chapterSplits.length; i++) {
+            const chapterContent = '# ' + chapterSplits[i];
+            const titleMatch = chapterContent.match(/^# (.+)$/m);
+            const title = titleMatch ? titleMatch[1] : `Capítulo ${i}`;
+            
+            this.chapters.push({
+                title: title,
+                content: this.formatContent(chapterContent),
+                number: i
+            });
+        }
+        
+        if (this.chapters.length === 0) {
+            this.chapters.push({
+                title: 'Contenido Principal',
+                content: this.formatContent(this.content),
+                number: 1
+            });
+        }
+    }
+
+    formatContent(content) {
+        return content
+            .replace(/^# (.+)$/gm, '<h1 id="chapter-$1">$1</h1>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, ' ')
+            .replace(/^<p>/, '<p>')
+            .replace(/<\/p>$/, '</p>');
+    }
+
+    generateTOC() {
+        const tocContent = document.getElementById('tocContent');
+        if (!tocContent) return;
+        
+        tocContent.innerHTML = '';
+        this.chapters.forEach((chapter, index) => {
+            const tocItem = document.createElement('div');
+            tocItem.className = 'toc-item';
+            if (index === this.currentChapter) tocItem.classList.add('active');
+            
+            tocItem.innerHTML = `
+                <div class="fw-semibold">${chapter.title}</div>
+                <small class="text-muted">Capítulo ${chapter.number}</small>
+            `;
+            
+            tocItem.addEventListener('click', () => {
+                this.jumpToChapter(index);
+                this.closeTOC();
+            });
+            
+            tocContent.appendChild(tocItem);
+        });
+    }
+
+    jumpToChapter(chapterIndex) {
+        this.currentChapter = chapterIndex;
+        this.displayCurrentChapter();
+        this.updateTOC();
+    }
+
+    displayCurrentChapter() {
+        const contentDiv = document.getElementById('interactiveContent');
+        const chapterSpan = document.getElementById('currentChapter');
+        
+        if (contentDiv && this.chapters[this.currentChapter]) {
+            contentDiv.innerHTML = '<p>' + this.chapters[this.currentChapter].content + '</p>';
+        }
+        
+        if (chapterSpan) {
+            chapterSpan.textContent = this.currentChapter + 1;
+        }
+    }
+
+    updateTOC() {
+        document.querySelectorAll('.toc-item').forEach((item, index) => {
+            item.classList.toggle('active', index === this.currentChapter);
+        });
+    }
+
+    show() {
+        this.isVisible = true;
+        const container = document.getElementById('interactiveBook');
+        if (container) {
+            container.style.display = 'block';
+            this.displayCurrentChapter();
+        }
+    }
+
+    hide() {
+        this.isVisible = false;
+        const container = document.getElementById('interactiveBook');
+        if (container) {
+            container.style.display = 'none';
+        }
+    }
+
+    toggle() {
+        if (this.isVisible) {
+            this.hide();
+        } else {
+            this.show();
+        }
+    }
+
+    closeTOC() {
+        const tocSidebar = document.getElementById('tocSidebar');
+        if (tocSidebar) {
+            tocSidebar.classList.remove('active');
+        }
+    }
+}
+
+// Global instances
+const UltraKindle = new UltraRealisticKindle();
+const InteractiveReader = new InteractiveBookReader();
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    UltraKindle.init();
+    InteractiveReader.init();
+});
+
+// Global functions with loading optimization
+function openUltraRealisticKindle() {
+    const overlay = document.getElementById('kindleOverlayRealistic');
+    if (overlay) {
+        // Show loading indicator
+        showKindleLoading();
+        
+        // Add smooth entrance animation
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Initialize audio context on user interaction
+        if (UltraKindle.audioContext && UltraKindle.audioContext.state === 'suspended') {
+            UltraKindle.audioContext.resume();
+        }
+        
+        // Delay content loading slightly for smooth animation
+        setTimeout(() => {
+            UltraKindle.updateDisplay();
+            hideKindleLoading();
+            
+            // Play welcome sound
+            UltraKindle.playSubtleSound(800, 100, 0.04);
+        }, 300);
+    }
+}
+
+function showKindleLoading() {
+    const kindleText = document.getElementById('kindleTextRealistic');
+    if (kindleText) {
+        kindleText.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--kindle-muted);">
+                <div class="loading-shimmer" style="width: 60px; height: 4px; border-radius: 2px; background: var(--kindle-border); margin-bottom: 1rem;"></div>
+                <div style="font-size: 0.9rem; opacity: 0.7;">Cargando experiencia Kindle...</div>
+            </div>
+        `;
+    }
+}
+
+function hideKindleLoading() {
+    // Loading will be replaced by actual content in updateDisplay()
+}
+
+function closeUltraRealisticKindle() {
+    const overlay = document.getElementById('kindleOverlayRealistic');
+    if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function toggleInteractiveBook() {
+    InteractiveReader.toggle();
+}
+
+function toggleTableOfContents() {
+    const tocSidebar = document.getElementById('tocSidebar');
+    if (tocSidebar) {
+        tocSidebar.classList.toggle('active');
+    }
+}
+
+function searchInBook() {
+    const query = prompt('¿Qué quieres buscar en el libro?');
+    if (query) {
+        // Simple search implementation
+        const content = InteractiveReader.content.toLowerCase();
+        const searchIndex = content.indexOf(query.toLowerCase());
+        
+        if (searchIndex !== -1) {
+            alert(`Encontrado: "${query}" en el contenido del libro.`);
+        } else {
+            alert(`No se encontró: "${query}" en el libro.`);
+        }
+    }
+}
+
+function downloadBook(format) {
+    const bookData = JSON.parse(document.getElementById('bookDataAdvanced').textContent);
+    window.location.href = `/books/book/${bookData.id}/download/${format}`;
+}
+
+// Advanced Keyboard navigation with help system
+document.addEventListener('keydown', function(e) {
+    const kindleOverlay = document.getElementById('kindleOverlayRealistic');
+    const isKindleOpen = kindleOverlay && kindleOverlay.classList.contains('active');
+    
+    // Global shortcuts
+    if (e.key === 'Escape') {
+        if (isKindleOpen) {
+            closeUltraRealisticKindle();
+        } else if (InteractiveReader.isVisible) {
+            InteractiveReader.hide();
+        }
+    }
+    
+    // Show keyboard shortcuts help
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        if (isKindleOpen) {
+            showKeyboardHelp();
+            e.preventDefault();
+        }
+    }
+    
+    // Kindle-specific shortcuts
+    if (isKindleOpen && !UltraKindle.isMenuOpen) {
+        switch(e.key) {
+            case 'ArrowLeft':
+            case 'PageUp':
+            case 'h': // Vim-style
+                UltraKindle.previousPage();
+                e.preventDefault();
+                break;
+                
+            case 'ArrowRight':
+            case 'PageDown':
+            case 'l': // Vim-style
+            case ' ': // Spacebar
+                UltraKindle.nextPage();
+                e.preventDefault();
+                break;
+                
+            case 'Home':
+                UltraKindle.jumpToFirstPage();
+                e.preventDefault();
+                break;
+                
+            case 'End':
+                UltraKindle.jumpToLastPage();
+                e.preventDefault();
+                break;
+                
+            case 'm':
+            case 'M':
+                UltraKindle.toggleMenu();
+                e.preventDefault();
+                break;
+                
+            case 'b':
+            case 'B':
+                UltraKindle.toggleBookmark();
+                e.preventDefault();
+                break;
+                
+            case 't':
+            case 'T':
+                UltraKindle.cycleTheme();
+                e.preventDefault();
+                break;
+                
+            case '+':
+            case '=':
+                UltraKindle.changeFontSize(1);
+                e.preventDefault();
+                break;
+                
+            case '-':
+            case '_':
+                UltraKindle.changeFontSize(-1);
+                e.preventDefault();
+                break;
+                
+            case 'f':
+            case 'F':
+                if (e.ctrlKey || e.metaKey) {
+                    // Future: implement search functionality
+                    console.log('Search functionality (future feature)');
+                    e.preventDefault();
+                }
+                break;
+                
+            case 'g':
+                if (e.ctrlKey || e.metaKey) {
+                    const page = prompt('Ir a página:');
+                    if (page && !isNaN(page)) {
+                        UltraKindle.jumpToPage(parseInt(page) - 1);
+                    }
+                    e.preventDefault();
+                }
+                break;
+        }
+    }
+});
+
+function showKeyboardHelp() {
+    const helpContent = `
+        <div style="color: var(--kindle-text); padding: 2rem; text-align: left; line-height: 1.6;">
+            <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--kindle-text);">⌨️ Atajos de Teclado</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; font-size: 0.9rem;">
+                <div>
+                    <strong>Navegación:</strong><br>
+                    <code>←/h</code> - Página anterior<br>
+                    <code>→/l/Espacio</code> - Página siguiente<br>
+                    <code>Home</code> - Primera página<br>
+                    <code>End</code> - Última página<br>
+                    <code>Ctrl+G</code> - Ir a página específica
+                </div>
+                <div>
+                    <strong>Configuración:</strong><br>
+                    <code>M</code> - Menú de configuración<br>
+                    <code>T</code> - Cambiar tema<br>
+                    <code>+</code> - Aumentar fuente<br>
+                    <code>-</code> - Reducir fuente<br>
+                    <code>B</code> - Marcar página
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <code>Escape</code> - Cerrar Kindle<br>
+                <code>Ctrl+/</code> - Mostrar esta ayuda
+            </div>
+            
+            <div style="text-align: center; margin-top: 1rem;">
+                <button onclick="UltraKindle.toggleMenu()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;">
+                    Cerrar Ayuda
+                </button>
+            </div>
+        </div>
+    `;
+    
+    const kindleText = document.getElementById('kindleTextRealistic');
+    if (kindleText) {
+        kindleText.innerHTML = helpContent;
+        UltraKindle.playSubtleSound(950, 60, 0.05);
+    }
+}
+
+// Click outside to close overlays
+document.addEventListener('click', function(e) {
+    const kindleOverlay = document.getElementById('kindleOverlayRealistic');
+    const tocSidebar = document.getElementById('tocSidebar');
+    
+    if (e.target === kindleOverlay) {
+        closeUltraRealisticKindle();
+    }
+    
+    if (tocSidebar && tocSidebar.classList.contains('active') && !tocSidebar.contains(e.target)) {
+        const tocToggle = e.target.closest('.book-toc-toggle');
+        if (!tocToggle) {
+            tocSidebar.classList.remove('active');
+        }
+    }
+});
+</script>
+{% endblock %}

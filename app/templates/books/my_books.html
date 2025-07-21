@@ -1,0 +1,393 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Mis Libros - Buko AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .book-card {
+        transition: transform 0.2s ease-in-out;
+        height: 100%;
+    }
+    .book-card:hover {
+        transform: translateY(-2px);
+    }
+    .book-cover {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    .book-cover .title {
+        padding: 1rem;
+        font-size: 1rem;
+        line-height: 1.3;
+    }
+    .status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.75rem;
+    }
+    .progress-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 0 0 8px 8px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6b7280;
+    }
+    .filter-tabs {
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 2rem;
+    }
+    .filter-tab {
+        border: none;
+        background: none;
+        padding: 1rem 1.5rem;
+        color: #6b7280;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .filter-tab.active {
+        color: #3b82f6;
+        border-bottom-color: #3b82f6;
+    }
+    .filter-tab:hover:not(.active) {
+        color: #374151;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5" x-data="myBooksPage()">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Mis Libros</h1>
+        <a href="{{ url_for('books.generate') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            Generar Nuevo Libro
+        </a>
+    </div>
+    
+    <!-- Filter Tabs -->
+    <div class="filter-tabs mb-4">
+        <button 
+            class="filter-tab"
+            :class="currentFilter === 'all' ? 'active' : ''"
+            @click="setFilter('all')"
+        >
+            Todos ({{ books|length }})
+        </button>
+        <button 
+            class="filter-tab"
+            :class="currentFilter === 'completed' ? 'active' : ''"
+            @click="setFilter('completed')"
+        >
+            Completados ({{ books|selectattr('status', 'equalto', 'completed')|list|length }})
+        </button>
+        <button 
+            class="filter-tab"
+            :class="currentFilter === 'processing' ? 'active' : ''"
+            @click="setFilter('processing')"
+        >
+            En Proceso ({{ books|selectattr('status', 'equalto', 'processing')|list|length }})
+        </button>
+        <button 
+            class="filter-tab"
+            :class="currentFilter === 'failed' ? 'active' : ''"
+            @click="setFilter('failed')"
+        >
+            Con Errores ({{ books|selectattr('status', 'equalto', 'failed')|list|length }})
+        </button>
+    </div>
+    
+    <!-- Search -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    placeholder="Buscar libros..."
+                    x-model="searchQuery"
+                >
+            </div>
+        </div>
+        <div class="col-md-6">
+            <select class="form-select" x-model="sortBy">
+                <option value="created_desc">Más recientes primero</option>
+                <option value="created_asc">Más antiguos primero</option>
+                <option value="title_asc">Título A-Z</option>
+                <option value="title_desc">Título Z-A</option>
+                <option value="status">Por estado</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Books Grid -->
+    <div class="row g-4" x-show="filteredBooks.length > 0">
+        {% for book in books %}
+        <div 
+            class="col-lg-3 col-md-4 col-sm-6 book-item"
+            data-status="{{ book.status }}"
+            data-title="{{ book.title|lower }}"
+            data-created="{{ book.created_at.isoformat() }}"
+            x-show="shouldShowBook($el)"
+        >
+            <div class="card book-card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="book-cover" style="background: {{ book.get_cover_gradient() }}">
+                        <span 
+                            class="badge status-badge"
+                            data-status="{{ book.status }}"
+                        >
+                            {% if book.status == 'completed' %}
+                                <span class="badge bg-success">Completado</span>
+                            {% elif book.status == 'processing' %}
+                                <span class="badge bg-primary">En Proceso</span>
+                            {% elif book.status == 'failed' %}
+                                <span class="badge bg-danger">Error</span>
+                            {% elif book.status == 'pending' %}
+                                <span class="badge bg-warning">Pendiente</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ book.status|title }}</span>
+                            {% endif %}
+                        </span>
+                        
+                        <div class="title">{{ book.title }}</div>
+                        
+                        {% if book.status == 'processing' %}
+                        <div class="progress-overlay">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ book.progress }}%</span>
+                                <div class="spinner-border spinner-border-sm" role="status"></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="p-3">
+                        <h6 class="mb-2">{{ book.title }}</h6>
+                        <div class="small text-muted mb-2">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ book.created_at.strftime('%d/%m/%Y') }}
+                        </div>
+                        <div class="small text-muted mb-3">
+                            <i class="fas fa-book me-1"></i>
+                            {{ book.genre|title }}
+                            {% if book.language %}
+                            <span class="ms-2">
+                                <i class="fas fa-language me-1"></i>
+                                {% if book.language == 'es' %}🇪🇸 Español
+                                {% elif book.language == 'en' %}🇺🇸 Inglés
+                                {% elif book.language == 'pt' %}🇵🇹 Portugués
+                                {% elif book.language == 'fr' %}🇫🇷 Francés
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            {% if book.status == 'completed' %}
+                                <a 
+                                    href="{{ url_for('books.view_book', book_id=book.id) }}" 
+                                    class="btn btn-primary btn-sm flex-fill"
+                                >
+                                    <i class="fas fa-book-open me-1"></i>
+                                    Ver
+                                </a>
+                                <div class="dropdown">
+                                    <button 
+                                        class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                        type="button" 
+                                        data-bs-toggle="dropdown"
+                                    >
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a 
+                                                class="dropdown-item" 
+                                                href="{{ url_for('books.download_book', book_id=book.id, format='pdf') }}"
+                                            >
+                                                <i class="fas fa-file-pdf me-2"></i>PDF
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a 
+                                                class="dropdown-item" 
+                                                href="{{ url_for('books.download_book', book_id=book.id, format='epub') }}"
+                                            >
+                                                <i class="fas fa-book me-2"></i>EPUB
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a 
+                                                class="dropdown-item" 
+                                                href="{{ url_for('books.download_book', book_id=book.id, format='docx') }}"
+                                            >
+                                                <i class="fas fa-file-word me-2"></i>DOCX
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            {% elif book.status == 'processing' %}
+                                <a 
+                                    href="{{ url_for('books.generation_status', book_id=book.id) }}" 
+                                    class="btn btn-primary btn-sm flex-fill"
+                                >
+                                    <i class="fas fa-eye me-1"></i>
+                                    Ver Progreso
+                                </a>
+                            {% elif book.status == 'failed' %}
+                                <a 
+                                    href="{{ url_for('books.generation_status', book_id=book.id) }}" 
+                                    class="btn btn-outline-danger btn-sm flex-fill"
+                                >
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Ver Error
+                                </a>
+                            {% else %}
+                                <a 
+                                    href="{{ url_for('books.generation_status', book_id=book.id) }}" 
+                                    class="btn btn-outline-secondary btn-sm flex-fill"
+                                >
+                                    <i class="fas fa-clock me-1"></i>
+                                    Ver Estado
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Empty State -->
+    {% if books|length == 0 %}
+    <div class="empty-state">
+        <i class="fas fa-book-open fa-4x mb-4"></i>
+        <h3>Aún no tienes libros</h3>
+        <p class="mb-4">Comienza creando tu primer libro con inteligencia artificial</p>
+        <a href="{{ url_for('books.generate') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-magic me-2"></i>
+            Generar Mi Primer Libro
+        </a>
+    </div>
+    {% else %}
+    <div class="empty-state" x-show="filteredBooks.length === 0" style="display: none;">
+        <i class="fas fa-search fa-4x mb-4"></i>
+        <h3>No se encontraron libros</h3>
+        <p class="mb-4">Intenta cambiar los filtros o buscar con otros términos</p>
+        <button class="btn btn-outline-primary" @click="clearFilters">
+            <i class="fas fa-undo me-2"></i>
+            Limpiar Filtros
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function myBooksPage() {
+    return {
+        currentFilter: 'all',
+        searchQuery: '',
+        sortBy: 'created_desc',
+        
+        get filteredBooks() {
+            return this.getFilteredAndSortedBooks();
+        },
+        
+        init() {
+            // Auto-refresh processing books every 30 seconds
+            setInterval(() => {
+                this.refreshProcessingBooks();
+            }, 30000);
+        },
+        
+        setFilter(filter) {
+            this.currentFilter = filter;
+        },
+        
+        clearFilters() {
+            this.currentFilter = 'all';
+            this.searchQuery = '';
+            this.sortBy = 'created_desc';
+        },
+        
+        shouldShowBook(element) {
+            const status = element.dataset.status;
+            const title = element.dataset.title;
+            
+            // Filter by status
+            if (this.currentFilter !== 'all' && status !== this.currentFilter) {
+                return false;
+            }
+            
+            // Filter by search query
+            if (this.searchQuery && !title.includes(this.searchQuery.toLowerCase())) {
+                return false;
+            }
+            
+            return true;
+        },
+        
+        getFilteredAndSortedBooks() {
+            const books = Array.from(document.querySelectorAll('.book-item'));
+            return books.filter(book => this.shouldShowBook(book));
+        },
+        
+        async refreshProcessingBooks() {
+            const processingBooks = document.querySelectorAll('.book-item[data-status="processing"]');
+            
+            for (const bookElement of processingBooks) {
+                const bookId = this.extractBookId(bookElement);
+                if (bookId) {
+                    try {
+                        const response = await fetch(`/books/api/book/${bookId}/status`);
+                        const data = await response.json();
+                        
+                        if (data.status !== 'processing') {
+                            // Reload page if status changed
+                            window.location.reload();
+                        }
+                    } catch (error) {
+                        console.error('Error refreshing book status:', error);
+                    }
+                }
+            }
+        },
+        
+        extractBookId(element) {
+            // Extract book ID from the element's links
+            const link = element.querySelector('a[href*="/books/"]');
+            if (link) {
+                const match = link.href.match(/\/books\/\w+\/(\d+)/);
+                return match ? match[1] : null;
+            }
+            return null;
+        }
+    }
+}
+</script>
+{% endblock %}

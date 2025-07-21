@@ -1,0 +1,795 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Generar Nuevo Libro - Buko AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-step {
+        display: none;
+    }
+    .wizard-step.active {
+        display: block;
+    }
+    .step-indicator {
+        background: #e5e7eb;
+        height: 4px;
+        border-radius: 2px;
+        margin-bottom: 2rem;
+    }
+    .step-progress {
+        background: #3b82f6;
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+    .genre-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+    }
+    .genre-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .genre-card.selected {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+    .preview-panel {
+        position: sticky;
+        top: 1rem;
+    }
+    .validation-error {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5" x-data="bookWizard()">
+    <div class="row">
+        <div class="col-lg-8">
+            <h1 class="h2 mb-4">Crear Nuevo Libro con IA</h1>
+            
+            <!-- Progress Bar -->
+            <div class="step-indicator mb-4">
+                <div class="step-progress" :style="'width: ' + progressPercentage + '%'"></div>
+            </div>
+            
+            <!-- Wizard Steps -->
+            <form @submit.prevent="submitForm">
+                <!-- Step 1: Información Básica -->
+                <div class="wizard-step" :class="currentStep === 1 ? 'active' : ''" x-show="currentStep === 1">
+                    <div class="card shadow-sm fade-in">
+                        <div class="card-body p-4">
+                            <h3 class="h4 mb-4">Paso 1: Información Básica</h3>
+                            
+                            <!-- Título -->
+                            <div class="mb-4">
+                                <label for="title" class="form-label">Título del Libro *</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="title" 
+                                    x-model="formData.title"
+                                    @input="validateField('title')"
+                                    placeholder="Ej: El Misterio de la Luna Azul"
+                                    maxlength="100"
+                                    required
+                                >
+                                <div class="validation-error" x-show="errors.title" x-text="errors.title"></div>
+                                <small class="text-muted">
+                                    <span x-text="formData.title.length"></span>/100 caracteres
+                                </small>
+                            </div>
+                            
+                            <!-- Género -->
+                            <div class="mb-4">
+                                <label class="form-label">Género del Libro *</label>
+                                <div class="row g-3">
+                                    {% for genre in genres %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div 
+                                            class="card genre-card p-3 text-center"
+                                            :class="formData.genre === '{{ genre.id }}' ? 'selected' : ''"
+                                            @click="selectGenre('{{ genre.id }}')"
+                                        >
+                                            <i class="fas fa-{{ genre.icon }} fa-2x mb-2 text-primary"></i>
+                                            <div class="small">{{ genre.name }}</div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="validation-error" x-show="errors.genre" x-text="errors.genre"></div>
+                            </div>
+                            
+                            <!-- Idioma -->
+                            <div class="mb-4">
+                                <label for="language" class="form-label">Idioma *</label>
+                                <select class="form-select" id="language" x-model="formData.language" required>
+                                    {% for lang in languages %}
+                                    <option value="{{ lang.id }}">{{ lang.flag }} {{ lang.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <button type="button" class="btn btn-primary" @click="nextStep">
+                                Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Descripción y Audiencia -->
+                <div class="wizard-step" :class="currentStep === 2 ? 'active' : ''" x-show="currentStep === 2">
+                    <div class="card shadow-sm fade-in">
+                        <div class="card-body p-4">
+                            <h3 class="h4 mb-4">Paso 2: Descripción y Audiencia</h3>
+                            
+                            <!-- Descripción -->
+                            <div class="mb-4">
+                                <label for="description" class="form-label">Descripción del Libro *</label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="description" 
+                                    rows="5"
+                                    x-model="formData.description"
+                                    @input="validateField('description')"
+                                    placeholder="Describe de qué trata tu libro, los temas principales, el mensaje que quieres transmitir..."
+                                    maxlength="1000"
+                                    required
+                                ></textarea>
+                                <div class="validation-error" x-show="errors.description" x-text="errors.description"></div>
+                                <small class="text-muted">
+                                    <span x-text="formData.description.length"></span>/1000 caracteres
+                                </small>
+                            </div>
+                            
+                            <!-- Audiencia -->
+                            <div class="mb-4">
+                                <label for="audience" class="form-label">Audiencia Objetivo *</label>
+                                <select class="form-select" id="audience" x-model="formData.audience" required>
+                                    <option value="">Selecciona la audiencia</option>
+                                    <option value="children">Niños (6-12 años)</option>
+                                    <option value="young_adult">Adolescentes (13-17 años)</option>
+                                    <option value="adult">Adultos (18+ años)</option>
+                                    <option value="all">Todas las edades</option>
+                                </select>
+                                <div class="validation-error" x-show="errors.audience" x-text="errors.audience"></div>
+                            </div>
+                            
+                            <!-- Tono -->
+                            <div class="mb-4">
+                                <label for="tone" class="form-label">Tono del Libro *</label>
+                                <select class="form-select" id="tone" x-model="formData.tone" required>
+                                    <option value="">Selecciona el tono</option>
+                                    {% for tone in tones %}
+                                    <option value="{{ tone.id }}">{{ tone.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" @click="previousStep">
+                                <i class="fas fa-arrow-left me-2"></i> Anterior
+                            </button>
+                            <button type="button" class="btn btn-primary" @click="nextStep">
+                                Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Configuración Avanzada -->
+                <div class="wizard-step" :class="currentStep === 3 ? 'active' : ''" x-show="currentStep === 3">
+                    <div class="card shadow-sm fade-in">
+                        <div class="card-body p-4">
+                            <h3 class="h4 mb-4">Paso 3: Configuración Avanzada</h3>
+                            
+                            <!-- Número de Capítulos -->
+                            <div class="mb-4">
+                                <label for="chapters" class="form-label">Número de Capítulos</label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="chapters" 
+                                    x-model.number="formData.chapters"
+                                    min="1" 
+                                    max="50" 
+                                    required
+                                >
+                                <div class="validation-error" x-show="errors.chapters" x-text="errors.chapters"></div>
+                                <small class="text-muted">Entre 1 y 50 capítulos</small>
+                            </div>
+                            
+                            <!-- Longitud -->
+                            <div class="mb-4">
+                                <label class="form-label">Longitud del Libro</label>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.length === 'short' ? 'selected' : ''"
+                                            @click="formData.length = 'short'"
+                                        >
+                                            <i class="fas fa-file-alt fa-2x mb-2 text-primary"></i>
+                                            <div class="small">Corto</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">50-100 páginas</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.length === 'medium' ? 'selected' : ''"
+                                            @click="formData.length = 'medium'"
+                                        >
+                                            <i class="fas fa-book fa-2x mb-2 text-primary"></i>
+                                            <div class="small">Medio</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">100-200 páginas</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.length === 'long' ? 'selected' : ''"
+                                            @click="formData.length = 'long'"
+                                        >
+                                            <i class="fas fa-book-open fa-2x mb-2 text-primary"></i>
+                                            <div class="small">Largo</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">200+ páginas</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tamaño de Página -->
+                            <div class="mb-4">
+                                <label class="form-label">Tamaño de Página</label>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <div 
+                                            class="card p-3 text-center genre-card position-relative"
+                                            :class="formData.pageSize === 'pocket' ? 'selected' : ''"
+                                            @click="formData.pageSize = 'pocket'"
+                                        >
+                                            <span class="badge bg-success position-absolute top-0 end-0 m-2">
+                                                <i class="fas fa-star"></i> Recomendado
+                                            </span>
+                                            <i class="fas fa-mobile-alt fa-2x mb-2 text-primary"></i>
+                                            <div class="small fw-bold">Pocket</div>
+                                            <div class="text-muted" style="font-size: 0.7rem">110 × 180 mm</div>
+                                            <div class="text-success" style="font-size: 0.65rem">Como un Kindle</div>
+                                            <small class="text-muted" style="font-size: 0.6rem">Cómodo para leer</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.pageSize === 'A5' ? 'selected' : ''"
+                                            @click="formData.pageSize = 'A5'"
+                                        >
+                                            <i class="fas fa-book fa-2x mb-2 text-primary"></i>
+                                            <div class="small fw-bold">A5</div>
+                                            <div class="text-muted" style="font-size: 0.7rem">148 × 210 mm</div>
+                                            <div class="text-info" style="font-size: 0.65rem">Libro de bolsillo</div>
+                                            <small class="text-muted" style="font-size: 0.6rem">Como novelas</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.pageSize === 'B5' ? 'selected' : ''"
+                                            @click="formData.pageSize = 'B5'"
+                                        >
+                                            <i class="fas fa-book-open fa-2x mb-2 text-primary"></i>
+                                            <div class="small fw-bold">B5</div>
+                                            <div class="text-muted" style="font-size: 0.7rem">176 × 250 mm</div>
+                                            <div class="text-warning" style="font-size: 0.65rem">Libro estándar</div>
+                                            <small class="text-muted" style="font-size: 0.6rem">Libros técnicos</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.pageSize === 'letter' ? 'selected' : ''"
+                                            @click="formData.pageSize = 'letter'"
+                                        >
+                                            <i class="fas fa-file-alt fa-2x mb-2 text-primary"></i>
+                                            <div class="small fw-bold">Letter</div>
+                                            <div class="text-muted" style="font-size: 0.7rem">216 × 279 mm</div>
+                                            <div class="text-danger" style="font-size: 0.65rem">Más contenido</div>
+                                            <small class="text-muted" style="font-size: 0.6rem">Documentos</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-3 py-2">
+                                    <i class="fas fa-lightbulb me-2"></i>
+                                    <small><strong>Tip:</strong> El formato <strong>Pocket</strong> es similar al tamaño de un Kindle (6") - perfecto para lectura cómoda en dispositivos móviles o tablets.</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Interlineado -->
+                            <div class="mb-4">
+                                <label class="form-label">Interlineado</label>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.lineSpacing === 'single' ? 'selected' : ''"
+                                            @click="formData.lineSpacing = 'single'"
+                                        >
+                                            <i class="fas fa-align-justify fa-2x mb-2 text-primary"></i>
+                                            <div class="small">Sencillo</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">1.0</div>
+                                            <div class="text-success" style="font-size: 0.65rem">Más texto por página</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.lineSpacing === 'medium' ? 'selected' : ''"
+                                            @click="formData.lineSpacing = 'medium'"
+                                        >
+                                            <i class="fas fa-align-justify fa-2x mb-2 text-primary"></i>
+                                            <div class="small">Medio</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">1.5</div>
+                                            <div class="text-info" style="font-size: 0.65rem">Lectura cómoda</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div 
+                                            class="card p-3 text-center genre-card"
+                                            :class="formData.lineSpacing === 'double' ? 'selected' : ''"
+                                            @click="formData.lineSpacing = 'double'"
+                                        >
+                                            <i class="fas fa-align-justify fa-2x mb-2 text-primary"></i>
+                                            <div class="small">Doble</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">2.0</div>
+                                            <div class="text-warning" style="font-size: 0.65rem">Más espaciado</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Elige el espaciado que prefieras para una lectura más cómoda</small>
+                            </div>
+                            
+                            <!-- Instrucciones Adicionales -->
+                            <div class="mb-4">
+                                <label for="additional_instructions" class="form-label">
+                                    Instrucciones Adicionales (Opcional)
+                                </label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="additional_instructions" 
+                                    rows="3"
+                                    x-model="formData.additional_instructions"
+                                    placeholder="Cualquier instrucción específica para la IA..."
+                                    maxlength="500"
+                                ></textarea>
+                                <small class="text-muted">
+                                    <span x-text="formData.additional_instructions.length"></span>/500 caracteres
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" @click="previousStep">
+                                <i class="fas fa-arrow-left me-2"></i> Anterior
+                            </button>
+                            <button type="button" class="btn btn-primary" @click="nextStep">
+                                Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Revisión y Confirmación -->
+                <div class="wizard-step" :class="currentStep === 4 ? 'active' : ''" x-show="currentStep === 4">
+                    <div class="card shadow-sm fade-in">
+                        <div class="card-body p-4">
+                            <h3 class="h4 mb-4">Paso 4: Revisión y Confirmación</h3>
+                            
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Revisa los detalles de tu libro antes de iniciar la generación.
+                            </div>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <h5>Información Básica</h5>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td class="text-muted">Título:</td>
+                                            <td x-text="formData.title"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Género:</td>
+                                            <td x-text="getGenreName(formData.genre)"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Idioma:</td>
+                                            <td x-text="getLanguageName(formData.language)"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Configuración</h5>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td class="text-muted">Audiencia:</td>
+                                            <td x-text="getAudienceName(formData.audience)"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Tono:</td>
+                                            <td x-text="getToneName(formData.tone)"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Capítulos:</td>
+                                            <td x-text="formData.chapters"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Longitud:</td>
+                                            <td x-text="getLengthName(formData.length)"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Tamaño Página:</td>
+                                            <td x-text="formData.pageSize"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Interlineado:</td>
+                                            <td x-text="getLineSpacingName(formData.lineSpacing)"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h5>Descripción</h5>
+                                <p class="text-muted" x-text="formData.description"></p>
+                            </div>
+                            
+                            <div class="mt-4 text-center">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-clock me-2"></i>
+                                    La generación del libro puede tomar entre 5 a 15 minutos dependiendo de la longitud.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" @click="previousStep">
+                                <i class="fas fa-arrow-left me-2"></i> Anterior
+                            </button>
+                            <button 
+                                type="submit" 
+                                class="btn btn-success btn-lg"
+                                :disabled="isSubmitting"
+                                x-text="isSubmitting ? 'Generando...' : 'Generar Libro'"
+                            >
+                                <i class="fas fa-magic me-2" x-show="!isSubmitting"></i>
+                                <span class="spinner-border spinner-border-sm me-2" x-show="isSubmitting"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Preview Panel -->
+        <div class="col-lg-4">
+            <div class="preview-panel">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Vista Previa</h5>
+                    </div>
+                    <div class="card-body">
+                        <div x-show="!previewData" class="text-center text-muted py-4">
+                            <i class="fas fa-eye fa-3x mb-3"></i>
+                            <p>Completa los campos para ver una vista previa</p>
+                        </div>
+                        
+                        <div x-show="previewData">
+                            <h6 x-text="previewData?.title || 'Sin título'"></h6>
+                            <hr>
+                            <div class="small text-muted mb-2">
+                                <i class="fas fa-book me-1"></i> 
+                                <span x-text="previewData?.estimated_pages || '0'"></span> páginas aprox.
+                            </div>
+                            <div class="small text-muted mb-3">
+                                <i class="fas fa-file-word me-1"></i> 
+                                <span x-text="previewData?.estimated_words || '0'"></span> palabras aprox.
+                            </div>
+                            
+                            <h6 class="mt-3">Tabla de Contenidos</h6>
+                            <ul class="list-unstyled small">
+                                <template x-for="chapter in previewData?.table_of_contents || []">
+                                    <li class="mb-1">
+                                        <i class="fas fa-chevron-right text-muted me-1"></i>
+                                        <span x-text="chapter.title"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información de Suscripción -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6>Tu Plan: {{ subscription.plan.name }}</h6>
+                        <div class="small text-muted">
+                            Libros este mes: {{ subscription.books_generated_this_month }} / {{ subscription.plan.books_per_month }}
+                        </div>
+                        <div class="progress mt-2" style="height: 10px;">
+                            <div 
+                                class="progress-bar" 
+                                style="width: {{ (subscription.books_generated_this_month / subscription.plan.books_per_month * 100) }}%"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function bookWizard() {
+    return {
+        currentStep: 1,
+        totalSteps: 4,
+        isSubmitting: false,
+        previewData: null,
+        formData: {
+            title: '',
+            genre: '',
+            description: '',
+            audience: '',
+            tone: '',
+            language: 'es',
+            chapters: 10,
+            length: 'medium',
+            pageSize: 'pocket',
+            lineSpacing: 'medium',
+            additional_instructions: ''
+        },
+        errors: {},
+        genres: {{ genres | tojson }},
+        languages: {{ languages | tojson }},
+        tones: {{ tones | tojson }},
+        
+        get progressPercentage() {
+            return (this.currentStep / this.totalSteps) * 100;
+        },
+        
+        init() {
+            // Actualizar preview cuando cambien los datos
+            this.$watch('formData', () => {
+                this.updatePreview();
+            }, { deep: true });
+        },
+        
+        selectGenre(genreId) {
+            this.formData.genre = genreId;
+            this.validateField('genre');
+        },
+        
+        validateField(field) {
+            const data = {
+                step: this.currentStep,
+                ...this.formData
+            };
+            
+            fetch('/books/generate/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.errors) {
+                    result.errors.forEach(error => {
+                        if (error.field === field) {
+                            this.errors[field] = error.message;
+                        }
+                    });
+                } else {
+                    delete this.errors[field];
+                }
+            });
+        },
+        
+        async validateStep() {
+            // Reset errors
+            this.errors = {};
+            
+            try {
+                const data = {
+                    step: this.currentStep,
+                    ...this.formData
+                };
+                
+                const response = await fetch('/books/generate/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    console.error('Validation request failed:', response.status, response.statusText);
+                    // Fallback to local validation if server fails
+                    return this.validateStepLocal();
+                }
+                
+                const result = await response.json();
+                
+                if (result.errors && result.errors.length > 0) {
+                    result.errors.forEach(error => {
+                        this.errors[error.field] = error.message;
+                    });
+                    return false;
+                }
+                
+                return result.valid !== false;
+                
+            } catch (error) {
+                console.error('Validation error:', error);
+                // Fallback to local validation if network fails
+                return this.validateStepLocal();
+            }
+        },
+        
+        validateStepLocal() {
+            // Local validation fallback
+            if (this.currentStep === 1) {
+                if (!this.formData.title || this.formData.title.length < 3) {
+                    this.errors.title = 'El título debe tener al menos 3 caracteres';
+                    return false;
+                }
+                if (!this.formData.genre) {
+                    this.errors.genre = 'Debes seleccionar un género';
+                    return false;
+                }
+            }
+            
+            if (this.currentStep === 2) {
+                if (!this.formData.description || this.formData.description.length < 20) {
+                    this.errors.description = 'La descripción debe tener al menos 20 caracteres';
+                    return false;
+                }
+                if (!this.formData.audience) {
+                    this.errors.audience = 'Debes seleccionar una audiencia';
+                    return false;
+                }
+            }
+            
+            if (this.currentStep === 3) {
+                if (!this.formData.tone) {
+                    this.errors.tone = 'Debes seleccionar un tono';
+                    return false;
+                }
+                if (!this.formData.language) {
+                    this.errors.language = 'Debes seleccionar un idioma';
+                    return false;
+                }
+            }
+            
+            return true;
+        },
+        
+        async nextStep() {
+            if (await this.validateStep()) {
+                if (this.currentStep < this.totalSteps) {
+                    this.currentStep++;
+                }
+            }
+        },
+        
+        previousStep() {
+            if (this.currentStep > 1) {
+                this.currentStep--;
+            }
+        },
+        
+        async updatePreview() {
+            if (this.formData.title && this.formData.genre) {
+                const response = await fetch('/books/generate/preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(this.formData)
+                });
+                
+                this.previewData = await response.json();
+            }
+        },
+        
+        async submitForm() {
+            if (!await this.validateStep()) {
+                return;
+            }
+            
+            this.isSubmitting = true;
+            
+            try {
+                const response = await fetch('/books/generate/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(this.formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.href = result.redirect_url;
+                } else {
+                    alert(result.error || 'Error al generar el libro');
+                }
+            } catch (error) {
+                alert('Error al procesar la solicitud');
+            } finally {
+                this.isSubmitting = false;
+            }
+        },
+        
+        getGenreName(genreId) {
+            const genre = this.genres.find(g => g.id === genreId);
+            return genre ? genre.name : '';
+        },
+        
+        getLanguageName(langId) {
+            const lang = this.languages.find(l => l.id === langId);
+            return lang ? lang.name : '';
+        },
+        
+        getToneName(toneId) {
+            const tone = this.tones.find(t => t.id === toneId);
+            return tone ? tone.name : '';
+        },
+        
+        getAudienceName(audienceId) {
+            const audiences = {
+                'children': 'Niños (6-12 años)',
+                'young_adult': 'Adolescentes (13-17 años)',
+                'adult': 'Adultos (18+ años)',
+                'all': 'Todas las edades'
+            };
+            return audiences[audienceId] || '';
+        },
+        
+        getLengthName(length) {
+            const lengths = {
+                'short': 'Corto (50-100 páginas)',
+                'medium': 'Medio (100-200 páginas)',
+                'long': 'Largo (200+ páginas)'
+            };
+            return lengths[length] || '';
+        },
+        
+        getLineSpacingName(spacing) {
+            const spacings = {
+                'single': 'Sencillo (1.0)',
+                'medium': 'Medio (1.5)',
+                'double': 'Doble (2.0)'
+            };
+            return spacings[spacing] || '';
+        }
+    }
+}
+</script>
+{% endblock %}
