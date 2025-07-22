@@ -72,11 +72,22 @@
     .filter-tab:hover:not(.active) {
         color: #374151;
     }
+    .dropdown-menu {
+        z-index: 1050 !important;
+    }
+    .book-card:hover {
+        z-index: 10;
+        position: relative;
+    }
+    .book-card .dropdown.show {
+        z-index: 1050;
+        position: relative;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-5" x-data="myBooksPage()">
+<div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Mis Libros</h1>
         <a href="{{ url_for('books.generate') }}" class="btn btn-primary">
@@ -87,33 +98,17 @@
     
     <!-- Filter Tabs -->
     <div class="filter-tabs mb-4">
-        <button 
-            class="filter-tab"
-            :class="currentFilter === 'all' ? 'active' : ''"
-            @click="setFilter('all')"
-        >
+        <button class="filter-tab active">
             Todos ({{ books|length }})
         </button>
-        <button 
-            class="filter-tab"
-            :class="currentFilter === 'completed' ? 'active' : ''"
-            @click="setFilter('completed')"
-        >
-            Completados ({{ books|selectattr('status', 'equalto', 'completed')|list|length }})
+        <button class="filter-tab">
+            Completados ({{ books|selectattr('status.value', 'equalto', 'completed')|list|length }})
         </button>
-        <button 
-            class="filter-tab"
-            :class="currentFilter === 'processing' ? 'active' : ''"
-            @click="setFilter('processing')"
-        >
-            En Proceso ({{ books|selectattr('status', 'equalto', 'processing')|list|length }})
+        <button class="filter-tab">
+            En Proceso ({{ books|selectattr('status.value', 'equalto', 'processing')|list|length }})
         </button>
-        <button 
-            class="filter-tab"
-            :class="currentFilter === 'failed' ? 'active' : ''"
-            @click="setFilter('failed')"
-        >
-            Con Errores ({{ books|selectattr('status', 'equalto', 'failed')|list|length }})
+        <button class="filter-tab">
+            Con Errores ({{ books|selectattr('status.value', 'equalto', 'failed')|list|length }})
         </button>
     </div>
     
@@ -128,12 +123,11 @@
                     type="text" 
                     class="form-control" 
                     placeholder="Buscar libros..."
-                    x-model="searchQuery"
                 >
             </div>
         </div>
         <div class="col-md-6">
-            <select class="form-select" x-model="sortBy">
+            <select class="form-select">
                 <option value="created_desc">Más recientes primero</option>
                 <option value="created_asc">Más antiguos primero</option>
                 <option value="title_asc">Título A-Z</option>
@@ -144,41 +138,39 @@
     </div>
     
     <!-- Books Grid -->
-    <div class="row g-4" x-show="filteredBooks.length > 0">
+    <div class="row g-4" id="books-grid">
         {% for book in books %}
         <div 
             class="col-lg-3 col-md-4 col-sm-6 book-item"
-            data-status="{{ book.status }}"
+            data-id="{{ book.id }}"
+            data-status="{{ book.status.value }}"
             data-title="{{ book.title|lower }}"
             data-created="{{ book.created_at.isoformat() }}"
-            x-show="shouldShowBook($el)"
+            data-genre="{{ book.genre|lower }}"
         >
             <div class="card book-card shadow-sm">
                 <div class="card-body p-0">
                     <div class="book-cover" style="background: {{ book.get_cover_gradient() }}">
-                        <span 
-                            class="badge status-badge"
-                            data-status="{{ book.status }}"
-                        >
-                            {% if book.status == 'completed' %}
+                        <span class="badge status-badge">
+                            {% if book.status.value == 'completed' %}
                                 <span class="badge bg-success">Completado</span>
-                            {% elif book.status == 'processing' %}
+                            {% elif book.status.value == 'processing' %}
                                 <span class="badge bg-primary">En Proceso</span>
-                            {% elif book.status == 'failed' %}
+                            {% elif book.status.value == 'failed' %}
                                 <span class="badge bg-danger">Error</span>
-                            {% elif book.status == 'pending' %}
+                            {% elif book.status.value == 'pending' %}
                                 <span class="badge bg-warning">Pendiente</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ book.status|title }}</span>
+                                <span class="badge bg-secondary">{{ book.status.value|title }}</span>
                             {% endif %}
                         </span>
                         
                         <div class="title">{{ book.title }}</div>
                         
-                        {% if book.status == 'processing' %}
+                        {% if book.status.value == 'processing' %}
                         <div class="progress-overlay">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span>{{ book.progress }}%</span>
+                                <span>{{ book.progress or 0 }}%</span>
                                 <div class="spinner-border spinner-border-sm" role="status"></div>
                             </div>
                         </div>
@@ -207,7 +199,7 @@
                         </div>
                         
                         <div class="d-flex gap-2">
-                            {% if book.status == 'completed' %}
+                            {% if book.status.value == 'completed' %}
                                 <a 
                                     href="{{ url_for('books.view_book', book_id=book.id) }}" 
                                     class="btn btn-primary btn-sm flex-fill"
@@ -250,7 +242,7 @@
                                         </li>
                                     </ul>
                                 </div>
-                            {% elif book.status == 'processing' %}
+                            {% elif book.status.value == 'processing' %}
                                 <a 
                                     href="{{ url_for('books.generation_status', book_id=book.id) }}" 
                                     class="btn btn-primary btn-sm flex-fill"
@@ -258,7 +250,7 @@
                                     <i class="fas fa-eye me-1"></i>
                                     Ver Progreso
                                 </a>
-                            {% elif book.status == 'failed' %}
+                            {% elif book.status.value == 'failed' %}
                                 <a 
                                     href="{{ url_for('books.generation_status', book_id=book.id) }}" 
                                     class="btn btn-outline-danger btn-sm flex-fill"
@@ -282,6 +274,7 @@
         </div>
         {% endfor %}
     </div>
+
     
     <!-- Empty State -->
     {% if books|length == 0 %}
@@ -295,11 +288,11 @@
         </a>
     </div>
     {% else %}
-    <div class="empty-state" x-show="filteredBooks.length === 0" style="display: none;">
+    <div class="empty-state d-none" id="no-results-state">
         <i class="fas fa-search fa-4x mb-4"></i>
         <h3>No se encontraron libros</h3>
         <p class="mb-4">Intenta cambiar los filtros o buscar con otros términos</p>
-        <button class="btn btn-outline-primary" @click="clearFilters">
+        <button class="btn btn-outline-primary" onclick="clearFilters()">
             <i class="fas fa-undo me-2"></i>
             Limpiar Filtros
         </button>
@@ -308,84 +301,192 @@
 </div>
 
 <script>
-function myBooksPage() {
-    return {
-        currentFilter: 'all',
-        searchQuery: '',
-        sortBy: 'created_desc',
-        
-        get filteredBooks() {
-            return this.getFilteredAndSortedBooks();
-        },
-        
-        init() {
-            // Auto-refresh processing books every 30 seconds
-            setInterval(() => {
-                this.refreshProcessingBooks();
-            }, 30000);
-        },
-        
-        setFilter(filter) {
-            this.currentFilter = filter;
-        },
-        
-        clearFilters() {
-            this.currentFilter = 'all';
-            this.searchQuery = '';
-            this.sortBy = 'created_desc';
-        },
-        
-        shouldShowBook(element) {
-            const status = element.dataset.status;
-            const title = element.dataset.title;
+// Simplified Vanilla JavaScript for Book Filtering
+let currentFilter = 'all';
+let searchQuery = '';
+let sortBy = 'created_desc';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize event listeners
+    initializeFilters();
+    initializeSearch();
+    initializeSort();
+    
+    // Auto-refresh processing books every 30 seconds
+    setInterval(refreshProcessingBooks, 30000);
+});
+
+function initializeFilters() {
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const filter = this.textContent.toLowerCase().includes('todos') ? 'all' :
+                           this.textContent.toLowerCase().includes('completados') ? 'completed' :
+                           this.textContent.toLowerCase().includes('proceso') ? 'processing' :
+                           this.textContent.toLowerCase().includes('errores') ? 'failed' : 'all';
             
-            // Filter by status
-            if (this.currentFilter !== 'all' && status !== this.currentFilter) {
-                return false;
-            }
-            
-            // Filter by search query
-            if (this.searchQuery && !title.includes(this.searchQuery.toLowerCase())) {
-                return false;
-            }
-            
-            return true;
-        },
+            setFilter(filter);
+        });
+    });
+}
+
+function initializeSearch() {
+    const searchInput = document.querySelector('input[placeholder="Buscar libros..."]');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            searchQuery = this.value;
+            applyFilters();
+        });
+    }
+}
+
+function initializeSort() {
+    const sortSelect = document.querySelector('select.form-select');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            sortBy = this.value;
+            applyFilters();
+        });
+    }
+}
+
+function setFilter(filter) {
+    currentFilter = filter;
+    
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    const activeTab = document.querySelector(`.filter-tab:nth-child(${getFilterIndex(filter)})`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
+    
+    applyFilters();
+}
+
+function getFilterIndex(filter) {
+    switch(filter) {
+        case 'all': return 1;
+        case 'completed': return 2;
+        case 'processing': return 3;
+        case 'failed': return 4;
+        default: return 1;
+    }
+}
+
+function clearFilters() {
+    currentFilter = 'all';
+    searchQuery = '';
+    sortBy = 'created_desc';
+    
+    // Reset UI
+    document.querySelector('input[placeholder="Buscar libros..."]').value = '';
+    document.querySelector('select.form-select').value = 'created_desc';
+    
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelector('.filter-tab:first-child').classList.add('active');
+    
+    applyFilters();
+}
+
+function applyFilters() {
+    const bookItems = document.querySelectorAll('.book-item');
+    let visibleBooks = [];
+    
+    // Filter and collect visible books
+    bookItems.forEach(book => {
+        const status = book.dataset.status;
+        const title = book.dataset.title;
         
-        getFilteredAndSortedBooks() {
-            const books = Array.from(document.querySelectorAll('.book-item'));
-            return books.filter(book => this.shouldShowBook(book));
-        },
+        let shouldShow = true;
         
-        async refreshProcessingBooks() {
-            const processingBooks = document.querySelectorAll('.book-item[data-status="processing"]');
-            
-            for (const bookElement of processingBooks) {
-                const bookId = this.extractBookId(bookElement);
-                if (bookId) {
-                    try {
-                        const response = await fetch(`/books/api/book/${bookId}/status`);
-                        const data = await response.json();
-                        
-                        if (data.status !== 'processing') {
-                            // Reload page if status changed
-                            window.location.reload();
-                        }
-                    } catch (error) {
-                        console.error('Error refreshing book status:', error);
-                    }
+        // Filter by status
+        if (currentFilter !== 'all' && status !== currentFilter) {
+            shouldShow = false;
+        }
+        
+        // Filter by search query
+        if (searchQuery && !title.includes(searchQuery.toLowerCase())) {
+            shouldShow = false;
+        }
+        
+        if (shouldShow) {
+            visibleBooks.push(book);
+            book.style.display = '';
+        } else {
+            book.style.display = 'none';
+        }
+    });
+    
+    // Sort visible books
+    if (visibleBooks.length > 0) {
+        sortBooks(visibleBooks);
+    }
+    
+    // Show/hide empty state
+    const noResultsState = document.getElementById('no-results-state');
+    const booksGrid = document.getElementById('books-grid');
+    
+    if (visibleBooks.length === 0) {
+        booksGrid.style.display = 'none';
+        if (noResultsState) {
+            noResultsState.classList.remove('d-none');
+        }
+    } else {
+        booksGrid.style.display = '';
+        if (noResultsState) {
+            noResultsState.classList.add('d-none');
+        }
+    }
+}
+
+function sortBooks(books) {
+    const container = document.getElementById('books-grid');
+    
+    books.sort((a, b) => {
+        switch (sortBy) {
+            case 'created_desc':
+                return new Date(b.dataset.created) - new Date(a.dataset.created);
+            case 'created_asc':
+                return new Date(a.dataset.created) - new Date(b.dataset.created);
+            case 'title_asc':
+                return a.dataset.title.localeCompare(b.dataset.title);
+            case 'title_desc':
+                return b.dataset.title.localeCompare(a.dataset.title);
+            case 'status':
+                const statusOrder = { 'processing': 0, 'pending': 1, 'completed': 2, 'failed': 3 };
+                return (statusOrder[a.dataset.status] || 4) - (statusOrder[b.dataset.status] || 4);
+            default:
+                return 0;
+        }
+    });
+    
+    // Reorder DOM elements
+    books.forEach(book => {
+        container.appendChild(book);
+    });
+}
+
+async function refreshProcessingBooks() {
+    const processingBooks = document.querySelectorAll('.book-item[data-status="processing"]');
+    
+    for (const bookElement of processingBooks) {
+        const bookId = bookElement.dataset.id;
+        if (bookId) {
+            try {
+                const response = await fetch(`/books/api/${bookId}/status`);
+                const data = await response.json();
+                
+                if (data.status !== 'processing') {
+                    // Reload page if status changed
+                    window.location.reload();
                 }
+            } catch (error) {
+                console.error('Error refreshing book status:', error);
             }
-        },
-        
-        extractBookId(element) {
-            // Extract book ID from the element's links
-            const link = element.querySelector('a[href*="/books/"]');
-            if (link) {
-                const match = link.href.match(/\/books\/\w+\/(\d+)/);
-                return match ? match[1] : null;
-            }
-            return null;
         }
     }
 }

@@ -324,13 +324,16 @@ def my_books():
 @bp.route('/book/<int:book_id>')
 @login_required
 def view_book(book_id):
-    """Vista detallada de un libro."""
+    """Vista detallada de un libro con formato profesional compacto."""
     book = BookGeneration.query.filter_by(
         id=book_id, 
         user_id=current_user.id
     ).first_or_404()
     
-    return render_template('books/view_book.html', book=book)
+    # Usar plantilla limpia y compacta
+    return render_template('books/view_book_compact.html', book=book)
+
+
 
 
 @bp.route('/book/<int:book_id>/download/<format>')

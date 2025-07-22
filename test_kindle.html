@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Ultra Realistic Kindle Reader</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        #test-container {
+            min-height: 650px;
+        }
+        
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #7f8c8d;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e3f2fd;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .test-buttons {
+            text-align: center;
+            margin-top: 20px;
+            gap: 10px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn.secondary {
+            background: #95a5a6;
+        }
+        
+        .btn.secondary:hover {
+            background: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Test - Ultra Realistic Kindle Reader v2.0</h1>
+        
+        <!-- Contenedor del Kindle -->
+        <div id="test-container" 
+             data-kindle
+             data-kindle-content="# LIBRO DE PRUEBA
+
+## Capítulo 1: Introducción
+
+Este es un libro de prueba para verificar que el Ultra Realistic Kindle Reader funciona correctamente. 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+## Capítulo 2: Desarrollo
+
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+
+Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
+
+Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+
+## Capítulo 3: Conclusión
+
+At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.
+
+Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio."
+             data-kindle-theme="white"
+             data-kindle-font-size="3"
+             data-kindle-device-type="paperwhite"
+             data-kindle-screen-size="large">
+            
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Cargando Ultra Realistic Kindle...</div>
+            </div>
+        </div>
+        
+        <!-- Botones de prueba -->
+        <div class="test-buttons">
+            <button class="btn" onclick="openMenu()">🔧 Configuración</button>
+            <button class="btn secondary" onclick="changeTheme('dark')">🌙 Oscuro</button>
+            <button class="btn secondary" onclick="changeTheme('sepia')">🍂 Sepia</button>
+            <button class="btn secondary" onclick="changeTheme('white')">☀️ Claro</button>
+            <button class="btn secondary" onclick="showDebug()">🐛 Debug</button>
+        </div>
+        
+        <div id="debug-info" style="display: none; margin-top: 20px; background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 10px; font-family: monospace;">
+            <strong>Debug Info:</strong><br>
+            <div id="debug-content">Esperando inicialización...</div>
+        </div>
+    </div>
+    
+    <script src="app/static/js/ultra-realistic-kindle.js"></script>
+    <script>
+        // Variables globales
+        let kindleInstance = null;
+        
+        // Esperar a que se inicialice
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Página de test cargada');
+            
+            const container = document.getElementById('test-container');
+            
+            // Escuchar eventos
+            container.addEventListener('kindle:kindleInitialized', function(e) {
+                console.log('✅ Kindle inicializado en test:', e.detail);
+                kindleInstance = container.kindleInstance;
+                
+                // Ocultar loading
+                const loading = container.querySelector('.loading');
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+            });
+            
+            // Debug automático después de 8 segundos
+            setTimeout(() => {
+                if (!kindleInstance) {
+                    console.warn('⚠️ Kindle no inicializado, mostrando debug');
+                    showDebug();
+                }
+            }, 8000);
+        });
+        
+        // Funciones de control
+        function openMenu() {
+            if (kindleInstance) {
+                kindleInstance.openMenu();
+            } else {
+                alert('⚠️ Kindle aún no está inicializado');
+            }
+        }
+        
+        function changeTheme(theme) {
+            if (kindleInstance) {
+                kindleInstance.changeTheme(theme);
+            } else {
+                alert('⚠️ Kindle aún no está inicializado');
+            }
+        }
+        
+        function showDebug() {
+            const debug = document.getElementById('debug-info');
+            const content = document.getElementById('debug-content');
+            
+            debug.style.display = debug.style.display === 'none' ? 'block' : 'none';
+            
+            if (debug.style.display === 'block') {
+                const container = document.getElementById('test-container');
+                const info = {
+                    'Kindle Instance': kindleInstance ? 'Initialized' : 'Not initialized',
+                    'Container Found': container ? 'Yes' : 'No',
+                    'UltraRealisticKindleReader': window.UltraRealisticKindleReader ? 'Loaded' : 'Not loaded',
+                    'Data Attributes': container ? Object.keys(container.dataset).join(', ') : 'None',
+                    'Timestamp': new Date().toISOString()
+                };
+                
+                if (kindleInstance) {
+                    try {
+                        const state = kindleInstance.getState();
+                        info['Total Pages'] = state.totalPages;
+                        info['Current Page'] = state.currentPage;
+                        info['Theme'] = state.theme;
+                        info['Device Type'] = kindleInstance.config.deviceType;
+                    } catch (e) {
+                        info['State Error'] = e.message;
+                    }
+                }
+                
+                content.innerHTML = Object.entries(info)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join('<br>');
+            }
+        }
+    </script>
+</body>
+</html>

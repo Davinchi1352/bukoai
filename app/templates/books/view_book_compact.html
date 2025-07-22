@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ book.title }} - Lectura Profesional</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
+            min-height: 100vh;
+            color: #1f2937;
+        }
+        
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 16px 0;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        
+        .back-btn {
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .book-header {
+            flex: 1;
+        }
+        
+        .book-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.7em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .book-author {
+            color: #6b7280;
+            font-size: 1em;
+        }
+        
+        .book-stats {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .stat {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            display: block;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #3b82f6;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #6b7280;
+        }
+        
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 25px 20px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 35px;
+            align-items: start;
+        }
+        
+        /* Book 3D Preview - CENTRADO EN ÁREA AZUL SIN HEADER */
+        .book-preview {
+            position: sticky;
+            top: 90px;
+            height: calc(100vh - 139px);
+            perspective: 1000px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .book-3d {
+            width: 300px;
+            height: 450px;
+            transform-style: preserve-3d;
+            transform: rotateY(-25deg) rotateX(5deg);
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .book-3d:hover {
+            transform: rotateY(-15deg) rotateX(2deg) scale(1.05);
+        }
+        
+        .book-cover {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1e3a8a 100%);
+            border-radius: 8px;
+            transform: translateZ(25px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 35px 25px;
+            text-align: center;
+            box-shadow: 
+                0 0 40px rgba(0, 0, 0, 0.3),
+                inset 0 0 40px rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .cover-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6em;
+            font-weight: 900;
+            margin-bottom: 16px;
+            line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .cover-author {
+            font-size: 0.9em;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+        
+        .cover-decoration {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        .book-spine {
+            position: absolute;
+            width: 25px;
+            height: 100%;
+            background: linear-gradient(to right, #1e3a8a 0%, #1e40af 100%);
+            transform: rotateY(-90deg) translateZ(12px);
+            writing-mode: vertical-rl;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 3px;
+        }
+        
+        .book-pages {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: calc(100% - 4px);
+            height: calc(100% - 4px);
+            background: #f8fafc;
+            border-radius: 6px;
+            transform: translateZ(-1px);
+        }
+        
+        /* Reading Panel - COMPACTO */
+        .reading-panel {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .reading-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 22px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .reading-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .reading-subtitle {
+            color: #6b7280;
+            font-size: 1em;
+            margin-bottom: 18px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .action-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .action-btn.secondary {
+            background: #6b7280;
+        }
+        
+        .action-btn.secondary:hover {
+            background: #4b5563;
+        }
+        
+        /* Tabs */
+        .content-tabs {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 14px 18px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: #3b82f6;
+            border-bottom: 2px solid #3b82f6;
+        }
+        
+        .tab-btn:hover:not(.active) {
+            color: #374151;
+            background: #e5e7eb;
+        }
+        
+        /* Reading Content - COMPACTO */
+        .reading-content {
+            padding: 28px;
+            max-height: 342px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .reading-content.active {
+            display: block;
+        }
+        
+        .content-preview {
+            font-family: 'Crimson Text', Georgia, serif;
+            font-size: 1.1em;
+            line-height: 1.75;
+            color: #374151;
+        }
+        
+        /* Markdown Formatting - PROFESIONAL COMPACTO */
+        .markdown-content h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2em;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 28px 0 18px 0;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #3b82f6;
+            text-align: center;
+        }
+        
+        .markdown-content h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6em;
+            font-weight: 600;
+            color: #374151;
+            margin: 24px 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .markdown-content h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #4b5563;
+            margin: 20px 0 12px 0;
+        }
+        
+        .markdown-content p {
+            margin-bottom: 1.3em;
+            text-align: justify;
+            text-indent: 1.5em;
+            line-height: 1.75;
+        }
+        
+        .markdown-content p:first-child,
+        .markdown-content h1 + p,
+        .markdown-content h2 + p,
+        .markdown-content h3 + p {
+            text-indent: 0;
+        }
+        
+        .markdown-content strong {
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .markdown-content em {
+            font-style: italic;
+            color: #4b5563;
+        }
+        
+        .markdown-content code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+            color: #dc2626;
+        }
+        
+        .markdown-content pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 18px;
+            border-radius: 8px;
+            margin: 18px 0;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        .markdown-content pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        
+        .markdown-content hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+            margin: 32px 0;
+        }
+        
+        .markdown-content blockquote {
+            margin: 18px 0;
+            padding: 18px;
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            font-style: italic;
+            color: #4b5563;
+        }
+        
+        .markdown-content ul,
+        .markdown-content ol {
+            margin: 14px 0;
+            padding-left: 28px;
+        }
+        
+        .markdown-content li {
+            margin-bottom: 6px;
+            line-height: 1.6;
+        }
+        
+        /* TOC */
+        .toc-section {
+            background: #f8fafc;
+            padding: 22px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .toc-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .toc-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dotted #cbd5e1;
+            margin-bottom: 4px;
+        }
+        
+        .toc-item:last-child {
+            border-bottom: none;
+        }
+        
+        .toc-chapter {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .toc-page {
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        /* Full Reading Mode */
+        .reading-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1f2937;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .reading-mode.active {
+            display: flex;
+        }
+        
+        .reading-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .reading-toolbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        
+        .close-reading {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .toolbar-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .toolbar-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .font-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .font-btn {
+            background: #e5e7eb;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .font-btn:hover {
+            background: #d1d5db;
+        }
+        
+        .reading-page {
+            flex: 1;
+            background: #fefefe;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 900px;
+            padding: 50px 70px;
+            overflow-y: auto;
+            font-family: 'Crimson Text', Georgia, serif;
+            font-size: 18px;
+            line-height: 1.7;
+            color: #1f2937;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 25px;
+                padding: 20px 15px;
+            }
+            
+            .book-preview {
+                position: relative;
+                top: 0;
+                margin-bottom: 20px;
+            }
+            
+            .book-3d {
+                width: 260px;
+                height: 390px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+            
+            .book-stats {
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .reading-header {
+                padding: 18px;
+            }
+            
+            .reading-content {
+                padding: 20px;
+                max-height: 400px;
+            }
+            
+            .reading-page {
+                padding: 35px 25px;
+                font-size: 16px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <a href="/books/my-books" class="back-btn">
+                ← Biblioteca
+            </a>
+            
+            <div class="book-header">
+                <div class="book-title">{{ book.title }}</div>
+                <div class="book-author">{{ book.author or 'BukoAI' }}</div>
+            </div>
+            
+            <div class="book-stats">
+                <div class="stat">
+                    <span class="stat-value">{{ book.final_pages or '--' }}</span>
+                    <span class="stat-label">Páginas</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ book.final_words or '--' }}</span>
+                    <span class="stat-label">Palabras</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ book.format_size or 'A4' }}</span>
+                    <span class="stat-label">Formato</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Book 3D Preview -->
+        <div class="book-preview">
+            <div class="book-3d" onclick="openFullReading()">
+                <div class="book-cover">
+                    <div class="cover-decoration"></div>
+                    <div class="cover-title">{{ book.title }}</div>
+                    <div class="cover-author">{{ book.author or 'BukoAI' }}</div>
+                </div>
+                <div class="book-spine">{{ book.title[:15] }}</div>
+                <div class="book-pages"></div>
+            </div>
+        </div>
+        
+        <!-- Reading Panel -->
+        <div class="reading-panel">
+            <div class="reading-header">
+                <div class="reading-title">{{ book.title }}</div>
+                <div class="reading-subtitle">{{ book.author or 'BukoAI' }} • {{ book.format_size or 'A4' }} • {{ book.final_pages or '--' }} páginas</div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="openFullReading()">
+                        📖 Leer Completo
+                    </button>
+                    <button class="action-btn secondary" onclick="downloadBook()">
+                        ⬇️ Descargar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Content Tabs -->
+            <div class="content-tabs">
+                <button class="tab-btn active" onclick="showTab('overview')">Resumen</button>
+                <button class="tab-btn" onclick="showTab('preview')">Vista Previa</button>
+                <button class="tab-btn" onclick="showTab('toc')">Contenido</button>
+            </div>
+            
+            <!-- Overview Tab -->
+            <div class="reading-content active" id="overviewContent">
+                <div class="content-preview">
+                    <h3 style="margin-bottom: 15px;">Información del libro</h3>
+                    <p><strong>Título:</strong> {{ book.title }}</p>
+                    <p><strong>Autor:</strong> {{ book.author or 'BukoAI' }}</p>
+                    {% if book.genre %}<p><strong>Género:</strong> {{ book.genre|title }}</p>{% endif %}
+                    <p><strong>Páginas:</strong> {{ book.final_pages or '--' }}</p>
+                    <p><strong>Palabras:</strong> {{ book.final_words or '--' }}</p>
+                    <p><strong>Formato:</strong> {{ book.format_size or 'A4' }}</p>
+                    <p><strong>Estado:</strong> {% if book.status.value == 'completed' %}✅ Completado{% else %}⏳ En proceso{% endif %}</p>
+                    
+                    {% if book.key_topics %}
+                    <h4 style="margin-top: 25px; margin-bottom: 12px; color: #374151;">Descripción</h4>
+                    <p style="text-indent: 0; font-style: italic;">{{ book.key_topics }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Preview Tab -->
+            <div class="reading-content" id="previewContent">
+                <div class="markdown-content" id="contentPreview">
+                    <!-- Preview content loaded here -->
+                </div>
+            </div>
+            
+            <!-- Table of Contents Tab -->
+            <div class="reading-content" id="tocContent">
+                <div id="tableOfContents">
+                    <!-- TOC loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Full Reading Mode -->
+    <div class="reading-mode" id="readingMode">
+        <div class="reading-container">
+            <div class="reading-toolbar">
+                <div class="toolbar-left">
+                    <button class="close-reading" onclick="closeFullReading()">✕ Cerrar</button>
+                    <div class="toolbar-title">{{ book.title }}</div>
+                </div>
+                
+                <div class="toolbar-controls">
+                    <div class="font-controls">
+                        <button class="font-btn" onclick="changeFontSize(-1)">A-</button>
+                        <span id="fontSize">18</span>px
+                        <button class="font-btn" onclick="changeFontSize(1)">A+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="reading-page markdown-content" id="readingPage">
+                <!-- Full content loaded here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Estado global
+        let bookContent = {{ book.content|tojson if book.content else '""' }};
+        let currentFontSize = 18;
+        let parsedContent = null;
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            parseMarkdownContent();
+        });
+        
+        function parseMarkdownContent() {
+            if (!bookContent || bookContent.trim() === '') {
+                parsedContent = {
+                    sections: [{ type: 'paragraph', content: 'No hay contenido disponible.' }],
+                    toc: []
+                };
+                return;
+            }
+            
+            parsedContent = parseMarkdown(bookContent);
+        }
+        
+        function parseMarkdown(content) {
+            const lines = content.split('\n');
+            const sections = [];
+            const toc = [];
+            let currentSection = '';
+            let inCodeBlock = false;
+            let codeBlockContent = '';
+            let codeLanguage = '';
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                
+                if (line.startsWith('```')) {
+                    if (inCodeBlock) {
+                        sections.push({
+                            type: 'code',
+                            language: codeLanguage,
+                            content: codeBlockContent.trim()
+                        });
+                        inCodeBlock = false;
+                        codeBlockContent = '';
+                        codeLanguage = '';
+                    } else {
+                        inCodeBlock = true;
+                        codeLanguage = line.substring(3).trim();
+                    }
+                    continue;
+                }
+                
+                if (inCodeBlock) {
+                    codeBlockContent += line + '\n';
+                    continue;
+                }
+                
+                if (line.startsWith('#')) {
+                    if (currentSection.trim()) {
+                        sections.push({ type: 'paragraph', content: currentSection.trim() });
+                        currentSection = '';
+                    }
+                    
+                    const level = line.match(/^#+/)[0].length;
+                    const title = line.replace(/^#+\s*/, '');
+                    
+                    sections.push({ type: `h${level}`, content: title });
+                    
+                    if (level <= 2) {
+                        toc.push({
+                            level: level,
+                            title: title,
+                            id: title.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-')
+                        });
+                    }
+                    continue;
+                }
+                
+                if (line.trim() === '---') {
+                    if (currentSection.trim()) {
+                        sections.push({ type: 'paragraph', content: currentSection.trim() });
+                        currentSection = '';
+                    }
+                    sections.push({ type: 'hr' });
+                    continue;
+                }
+                
+                if (line.trim() === '') {
+                    if (currentSection.trim()) {
+                        sections.push({ type: 'paragraph', content: currentSection.trim() });
+                        currentSection = '';
+                    }
+                    continue;
+                }
+                
+                currentSection += (currentSection ? ' ' : '') + line.trim();
+            }
+            
+            if (currentSection.trim()) {
+                sections.push({ type: 'paragraph', content: currentSection.trim() });
+            }
+            
+            return { sections: sections, toc: toc };
+        }
+        
+        function formatMarkdownText(text) {
+            return text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/`(.+?)`/g, '<code>$1</code>');
+        }
+        
+        function renderMarkdownToHTML(sections) {
+            let html = '';
+            
+            sections.forEach(section => {
+                switch (section.type) {
+                    case 'h1':
+                        html += `<h1>${formatMarkdownText(section.content)}</h1>`;
+                        break;
+                    case 'h2':
+                        html += `<h2>${formatMarkdownText(section.content)}</h2>`;
+                        break;
+                    case 'h3':
+                        html += `<h3>${formatMarkdownText(section.content)}</h3>`;
+                        break;
+                    case 'paragraph':
+                        html += `<p>${formatMarkdownText(section.content)}</p>`;
+                        break;
+                    case 'code':
+                        html += `<pre><code>${section.content}</code></pre>`;
+                        break;
+                    case 'hr':
+                        html += `<hr>`;
+                        break;
+                }
+            });
+            
+            return html;
+        }
+        
+        function showTab(tabName) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Hide all content
+            document.querySelectorAll('.reading-content').forEach(content => content.classList.remove('active'));
+            
+            // Show selected
+            const contentMap = {
+                'overview': 'overviewContent',
+                'preview': 'previewContent',
+                'toc': 'tocContent'
+            };
+            
+            document.getElementById(contentMap[tabName]).classList.add('active');
+            
+            // Load content
+            if (tabName === 'preview') {
+                loadPreview();
+            } else if (tabName === 'toc') {
+                loadTableOfContents();
+            }
+        }
+        
+        function loadPreview() {
+            const previewDiv = document.getElementById('contentPreview');
+            
+            if (!parsedContent) {
+                previewDiv.innerHTML = '<p>No hay contenido disponible.</p>';
+                return;
+            }
+            
+            const previewSections = parsedContent.sections.slice(0, 8);
+            const html = renderMarkdownToHTML(previewSections);
+            
+            previewDiv.innerHTML = html + 
+                '<div style="text-align: center; margin-top: 25px; padding: 18px; background: #f8fafc; border-radius: 8px; color: #6b7280; font-style: italic;">' +
+                '📖 Haz clic en "Leer Completo" para ver todo el contenido' +
+                '</div>';
+        }
+        
+        function loadTableOfContents() {
+            const tocDiv = document.getElementById('tableOfContents');
+            
+            if (!parsedContent || !parsedContent.toc || parsedContent.toc.length === 0) {
+                tocDiv.innerHTML = '<p>No se encontró tabla de contenido.</p>';
+                return;
+            }
+            
+            let html = '<div class="toc-section"><div class="toc-title">Tabla de Contenido</div>';
+            
+            parsedContent.toc.forEach((item, index) => {
+                const pageNum = Math.floor(index * 3) + 3;
+                html += `
+                    <div class="toc-item">
+                        <span class="toc-chapter">${item.title}</span>
+                        <span class="toc-page">${pageNum}</span>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            tocDiv.innerHTML = html;
+        }
+        
+        function openFullReading() {
+            const readingMode = document.getElementById('readingMode');
+            const readingPage = document.getElementById('readingPage');
+            
+            if (!parsedContent) {
+                readingPage.innerHTML = '<h1>Sin contenido</h1><p>No hay contenido disponible.</p>';
+            } else {
+                const html = renderMarkdownToHTML(parsedContent.sections);
+                readingPage.innerHTML = html;
+            }
+            
+            readingMode.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeFullReading() {
+            document.getElementById('readingMode').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        function changeFontSize(delta) {
+            currentFontSize = Math.max(14, Math.min(24, currentFontSize + delta));
+            const readingPage = document.getElementById('readingPage');
+            readingPage.style.fontSize = currentFontSize + 'px';
+            document.getElementById('fontSize').textContent = currentFontSize;
+        }
+        
+        function downloadBook() {
+            alert('Función de descarga próximamente:\n\n• PDF (Profesional)\n• EPUB (E-readers)\n• DOCX (Editable)');
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('readingMode').classList.contains('active')) {
+                switch(e.key) {
+                    case 'Escape':
+                        closeFullReading();
+                        break;
+                    case '+':
+                    case '=':
+                        changeFontSize(1);
+                        break;
+                    case '-':
+                        changeFontSize(-1);
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
