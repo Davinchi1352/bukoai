@@ -39,6 +39,190 @@ def get_celery_app():
     return celery
 
 # Define tasks with manual decorator application
+
+def _generate_book_architecture_task_impl(self, book_id):
+    """
+    Tarea para generar únicamente la arquitectura del libro (primera etapa del flujo de dos pasos).
+    Mucho más rápida que la generación completa.
+    """
+    try:
+        logger.info("starting_book_architecture_generation", book_id=book_id)
+        
+        # Obtener el libro de la base de datos
+        book = BookGeneration.query.get(book_id)
+        if not book:
+            logger.error("book_not_found", book_id=book_id)
+            return {'status': 'error', 'message': 'Libro no encontrado'}
+        
+        # Verificar que el libro esté en estado correcto
+        if book.status != BookStatus.QUEUED:
+            logger.warning("book_not_queued_for_architecture", 
+                          book_id=book_id, 
+                          current_status=book.status.value)
+            return {'status': 'error', 'message': 'El libro no está en estado válido para generar arquitectura'}
+        
+        # Actualizar estado y timestamp de inicio
+        book.status = BookStatus.PROCESSING
+        book.started_at = datetime.now(timezone.utc)
+        book.retry_count = 0
+        get_db().session.commit()
+        
+        # Obtener usuario
+        user = User.query.get(book.user_id)
+        if not user:
+            raise Exception("Usuario no encontrado")
+        
+        # Log del evento
+        log_system_event(
+            user_id=user.id,
+            action="book_architecture_generation_started",
+            details={"book_id": book_id, "title": book.title}
+        )
+        
+        # Obtener servicio de Claude
+        claude_service = get_claude_service()
+        
+        # Validar parámetros del libro
+        validated_params = claude_service.validate_book_params(book._build_parameters())
+        
+        # Actualizar progreso inicial
+        progress_data = {
+            'current': 5, 
+            'total': 100, 
+            'status': 'Generando arquitectura del libro con Claude AI...'
+        }
+        
+        try:
+            self.update_state(state='PROGRESS', meta=progress_data)
+        except:
+            pass
+        
+        # Emit WebSocket progress update
+        if emit_book_progress_update:
+            emit_book_progress_update(book_id, progress_data)
+        
+        # Generar arquitectura usando el nuevo método
+        result = asyncio.run(claude_service.generate_book_architecture(book_id, validated_params))
+        
+        # Actualizar progreso - arquitectura completada
+        progress_data = {
+            'current': 95, 
+            'total': 100, 
+            'status': 'Arquitectura generada, preparando para revisión...'
+        }
+        
+        try:
+            self.update_state(state='PROGRESS', meta=progress_data)
+        except:
+            pass
+        
+        if emit_book_progress_update:
+            emit_book_progress_update(book_id, progress_data)
+        
+        # Actualizar libro con la arquitectura generada
+        book.thinking_content = result.get('thinking', '')
+        
+        # Actualizar estadísticas de tokens
+        if 'usage' in result:
+            usage = result['usage']
+            book.prompt_tokens = usage.get('prompt_tokens', 0)
+            book.completion_tokens = usage.get('completion_tokens', 0)
+            book.thinking_tokens = usage.get('thinking_tokens', 0)
+            book.total_tokens = usage.get('total_tokens', 0)
+        
+        # Marcar como esperando revisión de arquitectura
+        book.mark_architecture_review(result['architecture'])
+        
+        # Progreso final
+        progress_data = {
+            'current': 100, 
+            'total': 100, 
+            'status': '¡Arquitectura generada! Esperando tu revisión.'
+        }
+        self.update_state(state='SUCCESS', meta=progress_data)
+        
+        # Emit final WebSocket updates
+        if emit_book_progress_update:
+            emit_book_progress_update(book_id, progress_data)
+        
+        # Emitir notificación específica para arquitectura completada
+        try:
+            from app.routes.websocket import emit_system_notification, emit_architecture_ready
+            
+            # Notificación general al usuario
+            emit_system_notification(user.id, {
+                'type': 'success',
+                'title': 'Arquitectura Lista',
+                'message': f'La arquitectura de "{book.title}" está lista para revisión.',
+                'book_id': book_id,
+                'redirect_url': f'/books/architecture/{book_id}'
+            })
+            
+            # Evento específico para la página de generación
+            emit_architecture_ready(book_id, {
+                'book_uuid': str(book.uuid),
+                'architecture': result['architecture']
+            })
+        except ImportError:
+            pass
+        
+        # Log del evento de completado
+        log_system_event(
+            user_id=user.id,
+            action="book_architecture_generation_completed",
+            details={
+                "book_id": book_id,
+                "title": book.title,
+                "total_tokens": book.total_tokens,
+                "processing_time": book.processing_time
+            }
+        )
+        
+        logger.info("book_architecture_generation_completed",
+                   book_id=book_id,
+                   tokens=book.total_tokens)
+        
+        return {
+            'status': 'architecture_ready',
+            'book_id': book_id,
+            'architecture': result['architecture'],
+            'stats': {
+                'tokens': book.total_tokens,
+                'processing_time': book.processing_time
+            }
+        }
+        
+    except Exception as exc:
+        logger.error("book_architecture_generation_failed",
+                    book_id=book_id,
+                    error=str(exc),
+                    traceback=traceback.format_exc())
+        
+        # Actualizar el libro con error
+        book = BookGeneration.query.get(book_id)
+        if book:
+            book.status = BookStatus.FAILED
+            book.error_message = f"Error generando arquitectura: {str(exc)}"
+            get_db().session.commit()
+            
+            # Log del error
+            log_system_event(
+                user_id=book.user_id,
+                action="book_architecture_generation_failed",
+                details={
+                    "book_id": book_id,
+                    "error": str(exc)
+                },
+                level="ERROR"
+            )
+            
+            # Emit WebSocket failure notification
+            if emit_book_failed:
+                emit_book_failed(book_id, f"Error generando arquitectura: {str(exc)}")
+        
+        return {'status': 'failed', 'error': str(exc)}
+
+
 def _generate_book_task_impl(self, book_id):
     """
     Tarea principal para generar un libro completo usando Claude AI.
@@ -97,10 +281,21 @@ def _generate_book_task_impl(self, book_id):
         if emit_book_progress_update:
             emit_book_progress_update(book_id, progress_data)
         
-        # Generar libro completo usando streaming
-        # Nota: El streaming se maneja internamente en el servicio Claude
-        # con WebSocket events para progreso en tiempo real
-        result = asyncio.run(claude_service.generate_book_content_stream(book_id, validated_params))
+        # Verificar si el libro tiene arquitectura aprobada
+        if book.has_architecture and book.is_architecture_approved:
+            # Generar libro basado en arquitectura aprobada
+            logger.info("generating_book_from_approved_architecture", 
+                       book_id=book_id,
+                       architecture_approved_at=book.architecture_approved_at)
+            
+            result = asyncio.run(claude_service.generate_book_from_architecture(
+                book_id, validated_params, book.architecture
+            ))
+        else:
+            # Generar libro completo usando streaming (flujo original)
+            # Nota: El streaming se maneja internamente en el servicio Claude
+            # con WebSocket events para progreso en tiempo real
+            result = asyncio.run(claude_service.generate_book_content_stream(book_id, validated_params))
         
         # Actualizar progreso - generación completada
         progress_data = {
@@ -441,6 +636,12 @@ def _update_book_generation_stats_impl(self):
 
 
 # Task wrappers that will be decorated properly
+@shared_task(bind=True, name='app.tasks.book_generation.generate_book_architecture_task')
+def generate_book_architecture_task(self, book_id):
+    """Wrapper para la tarea de generación de arquitectura de libros"""
+    return _generate_book_architecture_task_impl(self, book_id)
+
+
 @shared_task(bind=True, name='app.tasks.book_generation.generate_book_task')
 def generate_book_task(self, book_id):
     """Wrapper para la tarea principal de generación de libros"""
@@ -457,3 +658,193 @@ def send_book_completion_email(self, book_id):
 def update_book_generation_stats(self):
     """Wrapper para la tarea de actualización de estadísticas"""
     return _update_book_generation_stats_impl(self)
+
+
+def _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedback_how, current_architecture):
+    """
+    Tarea para regenerar la arquitectura del libro basada en feedback del usuario.
+    """
+    try:
+        logger.info("starting_architecture_regeneration", 
+                   book_id=book_id,
+                   feedback_what_length=len(feedback_what),
+                   feedback_how_length=len(feedback_how))
+        
+        # Obtener el libro de la base de datos
+        book = BookGeneration.query.get(book_id)
+        if not book:
+            logger.error("book_not_found", book_id=book_id)
+            return {'status': 'error', 'message': 'Libro no encontrado'}
+        
+        # Actualizar estado y timestamp de inicio
+        book.status = BookStatus.PROCESSING
+        book.started_at = datetime.now(timezone.utc)
+        get_db().session.commit()
+        
+        # Obtener usuario
+        user = User.query.get(book.user_id)
+        if not user:
+            raise Exception("Usuario no encontrado")
+        
+        # Log del evento
+        log_system_event(
+            user_id=user.id,
+            action="architecture_regeneration_started",
+            details={
+                "book_id": book_id, 
+                "title": book.title,
+                "feedback_provided": True
+            }
+        )
+        
+        # Obtener servicio de Claude
+        claude_service = get_claude_service()
+        
+        # Validar parámetros del libro
+        validated_params = claude_service.validate_book_params(book._build_parameters())
+        
+        # Actualizar progreso inicial
+        progress_data = {
+            'current': 5, 
+            'total': 100, 
+            'status': 'Analizando tu feedback para mejorar la arquitectura...'
+        }
+        
+        try:
+            self.update_state(state='PROGRESS', meta=progress_data)
+        except:
+            pass
+        
+        # Emit WebSocket progress update
+        if emit_book_progress_update:
+            emit_book_progress_update(book_id, progress_data)
+        
+        # Regenerar arquitectura usando el nuevo método con feedback
+        result = asyncio.run(claude_service.regenerate_book_architecture(
+            book_id, validated_params, current_architecture, feedback_what, feedback_how
+        ))
+        
+        # Actualizar progreso - arquitectura regenerada
+        progress_data = {
+            'current': 95, 
+            'total': 100, 
+            'status': 'Arquitectura regenerada, preparando para revisión...'
+        }
+        
+        try:
+            self.update_state(state='PROGRESS', meta=progress_data)
+        except:
+            pass
+        
+        if emit_book_progress_update:
+            emit_book_progress_update(book_id, progress_data)
+        
+        # Actualizar libro con la arquitectura regenerada
+        book.thinking_content = result.get('thinking', '')
+        
+        # Actualizar estadísticas de tokens
+        if 'usage' in result:
+            usage = result['usage']
+            book.prompt_tokens = usage.get('prompt_tokens', 0)
+            book.completion_tokens = usage.get('completion_tokens', 0)
+            book.thinking_tokens = usage.get('thinking_tokens', 0)
+            book.total_tokens = usage.get('total_tokens', 0)
+        
+        # Marcar como esperando revisión de arquitectura
+        book.mark_architecture_review(result['architecture'])
+        
+        # Progreso final
+        progress_data = {
+            'current': 100, 
+            'total': 100, 
+            'status': '¡Arquitectura regenerada! Lista para tu revisión.'
+        }
+        self.update_state(state='SUCCESS', meta=progress_data)
+        
+        # Emit final WebSocket updates
+        if emit_book_progress_update:
+            emit_book_progress_update(book_id, progress_data)
+        
+        # Emitir notificación específica para arquitectura regenerada
+        try:
+            from app.routes.websocket import emit_system_notification, emit_architecture_ready
+            
+            # Notificación general al usuario
+            emit_system_notification(user.id, {
+                'type': 'success',
+                'title': 'Arquitectura Regenerada',
+                'message': f'La arquitectura de "{book.title}" ha sido regenerada según tu feedback.',
+                'book_id': book_id,
+                'redirect_url': f'/books/architecture/{book_id}'
+            })
+            
+            # Evento específico para la página de generación
+            emit_architecture_ready(book_id, {
+                'book_uuid': str(book.uuid),
+                'architecture': result['architecture'],
+                'regenerated': True
+            })
+        except ImportError:
+            pass
+        
+        # Log del evento de completado
+        log_system_event(
+            user_id=user.id,
+            action="architecture_regeneration_completed",
+            details={
+                "book_id": book_id,
+                "title": book.title,
+                "total_tokens": book.total_tokens,
+                "processing_time": book.processing_time
+            }
+        )
+        
+        logger.info("architecture_regeneration_completed",
+                   book_id=book_id,
+                   tokens=book.total_tokens)
+        
+        return {
+            'status': 'architecture_regenerated',
+            'book_id': book_id,
+            'architecture': result['architecture'],
+            'stats': {
+                'tokens': book.total_tokens,
+                'processing_time': book.processing_time
+            }
+        }
+        
+    except Exception as exc:
+        logger.error("architecture_regeneration_failed",
+                    book_id=book_id,
+                    error=str(exc),
+                    traceback=traceback.format_exc())
+        
+        # Actualizar el libro con error
+        book = BookGeneration.query.get(book_id)
+        if book:
+            book.status = BookStatus.FAILED
+            book.error_message = f"Error regenerando arquitectura: {str(exc)}"
+            get_db().session.commit()
+            
+            # Log del error
+            log_system_event(
+                user_id=book.user_id,
+                action="architecture_regeneration_failed",
+                details={
+                    "book_id": book_id,
+                    "error": str(exc)
+                },
+                level="ERROR"
+            )
+            
+            # Emit WebSocket failure notification
+            if emit_book_failed:
+                emit_book_failed(book_id, f"Error regenerando arquitectura: {str(exc)}")
+        
+        return {'status': 'failed', 'error': str(exc)}
+
+
+@shared_task(bind=True, name='app.tasks.book_generation.regenerate_book_architecture_task')
+def regenerate_book_architecture_task(self, book_id, feedback_what, feedback_how, current_architecture):
+    """Wrapper para la tarea de regeneración de arquitectura de libros"""
+    return _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedback_how, current_architecture)

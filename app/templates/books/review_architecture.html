@@ -1,0 +1,3016 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Revisar Arquitectura - {{ book.title }} - Buko AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        /* Buko AI Design System Colors */
+        --primary-color: #1e293b;
+        --primary-dark: #0f172a;
+        --primary-light: #334155;
+        --accent-color: #3b82f6;
+        --accent-dark: #1d4ed8;
+        --accent-light: #60a5fa;
+        --secondary-color: #64748b;
+        --secondary-dark: #475569;
+        --secondary-light: #94a3b8;
+        --success-color: #059669;
+        --warning-color: #d97706;
+        --error-color: #dc2626;
+        --info-color: #0ea5e9;
+        --background-primary: #ffffff;
+        --background-secondary: #f8fafc;
+        --background-tertiary: #f1f5f9;
+        --border-color: #e2e8f0;
+        --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    }
+
+    .architecture-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .architecture-header {
+        background: linear-gradient(135deg, #1e293b 0%, #3b82f6 50%, #1d4ed8 100%);
+        color: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+    }
+    
+    .architecture-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 2px,
+            rgba(255, 255, 255, 0.03) 2px,
+            rgba(255, 255, 255, 0.03) 4px
+        );
+        animation: shimmer 20s linear infinite;
+        pointer-events: none;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+    
+    .architecture-header h1 {
+        font-size: 2.2em;
+        font-weight: 800;
+        margin-bottom: 8px;
+        color: #ffffff;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        letter-spacing: -0.02em;
+    }
+    
+    .architecture-header h2 {
+        font-size: 1.4em;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #f8fafc;
+        opacity: 0.98;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        line-height: 1.4;
+    }
+    
+    .architecture-header p {
+        font-size: 1.05em;
+        opacity: 0.9;
+        font-weight: 400;
+        line-height: 1.6;
+        max-width: 600px;
+        margin: 0 auto;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    .architecture-content {
+        background: var(--background-primary);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(30, 41, 59, 0.1);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+    
+    .tabs {
+        display: flex;
+        background: var(--background-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .tab {
+        flex: 1;
+        padding: 15px 20px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--secondary-color);
+        transition: all 0.2s;
+    }
+    
+    .tab.active {
+        background: var(--background-primary);
+        color: var(--accent-color);
+        border-bottom: 3px solid var(--accent-color);
+    }
+    
+    .tab:hover:not(.active) {
+        background: var(--background-tertiary);
+        color: var(--primary-color);
+    }
+    
+    .tab-content {
+        display: none;
+        padding: 30px;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .architecture-section {
+        margin-bottom: 25px;
+        padding: 20px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--background-secondary);
+        transition: all 0.2s ease;
+    }
+    
+    .architecture-section:hover {
+        box-shadow: 0 2px 12px rgba(30, 41, 59, 0.08);
+        border-color: var(--accent-light);
+    }
+    
+    .section-title {
+        font-size: 1.3em;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .chapter-item {
+        background: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .chapter-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 41, 59, 0.1);
+        border-color: var(--accent-light);
+    }
+    
+    .chapter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .chapter-title {
+        font-weight: 600;
+        color: var(--primary-color);
+        font-size: 1.1em;
+    }
+    
+    .chapter-pages {
+        background: var(--accent-color);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: 600;
+    }
+    
+    .chapter-summary {
+        color: var(--secondary-color);
+        line-height: 1.6;
+        margin-bottom: 8px;
+    }
+    
+    .key-points {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .key-points li {
+        background: #ecfdf5;
+        border-left: 3px solid #10b981;
+        padding: 5px 10px;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+    }
+    
+    .action-buttons {
+        position: sticky;
+        bottom: 20px;
+        background: white;
+        padding: 20px;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    /* ACTION BUTTONS - Premium Professional Design con Buko AI Colors */
+    
+    /* Botón Primario - Aprobar (Hero Button) */
+    .btn-approve {
+        background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 50%, #1e40af 100%);
+        color: white;
+        border: none;
+        padding: 16px 36px;
+        border-radius: 16px;
+        font-weight: 800;
+        font-size: 1.1em;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 
+            0 8px 32px rgba(59, 130, 246, 0.4),
+            0 4px 16px rgba(29, 78, 216, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        position: relative;
+        overflow: hidden;
+        letter-spacing: 0.025em;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(12px);
+    }
+    
+    .btn-approve::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 50%, rgba(255, 255, 255, 0.05) 100%);
+        border-radius: 16px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .btn-approve::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.6s ease;
+    }
+    
+    .btn-approve:hover::before {
+        opacity: 1;
+    }
+    
+    .btn-approve:hover::after {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .btn-approve:hover {
+        background: linear-gradient(135deg, var(--accent-dark) 0%, #1e40af 50%, #1e3a8a 100%);
+        transform: translateY(-4px) scale(1.03);
+        box-shadow: 
+            0 16px 48px rgba(59, 130, 246, 0.5),
+            0 8px 24px rgba(29, 78, 216, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-approve:active {
+        transform: translateY(-2px) scale(1.02);
+        transition: all 0.2s ease;
+    }
+    
+    /* Botón Secundario - Regenerar (Premium Outline) */
+    .btn-regenerate {
+        background: linear-gradient(135deg, var(--background-primary) 0%, var(--background-secondary) 100%);
+        color: var(--accent-color);
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        padding: 14px 32px;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 1.05em;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 
+            0 6px 24px rgba(59, 130, 246, 0.15),
+            0 2px 8px rgba(30, 41, 59, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        position: relative;
+        overflow: hidden;
+        letter-spacing: 0.02em;
+    }
+    
+    .btn-regenerate::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
+        border-radius: 14px;
+        opacity: 0;
+        transform: scale(0.9);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: -1;
+    }
+    
+    .btn-regenerate::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 50%, var(--accent-light) 100%);
+        border-radius: 16px;
+        z-index: -2;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .btn-regenerate:hover::before {
+        opacity: 1;
+        transform: scale(1);
+    }
+    
+    .btn-regenerate:hover::after {
+        opacity: 1;
+    }
+    
+    .btn-regenerate:hover {
+        color: white;
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 
+            0 12px 32px rgba(59, 130, 246, 0.3),
+            0 6px 16px rgba(30, 41, 59, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    
+    .btn-regenerate:active {
+        transform: translateY(-1px) scale(1.01);
+        transition: all 0.2s ease;
+    }
+    
+    /* Botón Terciario - Guía (Elegant Neutral) */
+    .btn-edit {
+        background: linear-gradient(135deg, var(--background-primary) 0%, var(--background-tertiary) 100%);
+        color: var(--primary-color);
+        border: 1px solid var(--border-color);
+        padding: 14px 32px;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 1.05em;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 
+            0 4px 16px rgba(30, 41, 59, 0.08),
+            0 2px 8px rgba(100, 116, 139, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+        letter-spacing: 0.01em;
+    }
+    
+    .btn-edit::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent-color) 100%);
+        opacity: 0;
+        transform: scale(0.8) rotate(1deg);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: -1;
+        border-radius: 16px;
+    }
+    
+    .btn-edit:hover::before {
+        opacity: 0.08;
+        transform: scale(1) rotate(0deg);
+    }
+    
+    .btn-edit:hover {
+        color: var(--accent-color);
+        border-color: var(--accent-light);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 
+            0 8px 24px rgba(59, 130, 246, 0.15),
+            0 4px 12px rgba(30, 41, 59, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 1);
+        text-decoration: none;
+    }
+    
+    .btn-edit:active {
+        transform: translateY(-1px) scale(1.01);
+        transition: all 0.2s ease;
+    }
+    
+    /* Botón de Navegación - Volver (Sophisticated Minimal) */
+    .btn-back {
+        background: linear-gradient(135deg, var(--background-primary) 0%, rgba(248, 250, 252, 0.8) 100%);
+        color: var(--secondary-color);
+        border: 1px solid var(--border-color);
+        text-decoration: none;
+        padding: 14px 28px;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 1.05em;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 
+            0 3px 12px rgba(100, 116, 139, 0.1),
+            0 1px 4px rgba(148, 163, 184, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.95);
+        position: relative;
+        letter-spacing: 0.01em;
+    }
+    
+    .btn-back::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, var(--secondary-light) 0%, var(--secondary-color) 100%);
+        opacity: 0;
+        transform: scale(0.9);
+        transition: all 0.3s ease;
+        z-index: -1;
+        border-radius: 16px;
+    }
+    
+    .btn-back:hover::before {
+        opacity: 0.06;
+        transform: scale(1);
+    }
+    
+    .btn-back:hover {
+        color: var(--primary-color);
+        border-color: var(--secondary-light);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 
+            0 6px 20px rgba(100, 116, 139, 0.15),
+            0 3px 8px rgba(148, 163, 184, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 1);
+        text-decoration: none;
+    }
+    
+    .btn-back:active {
+        transform: translateY(-1px) scale(1.01);
+        transition: all 0.2s ease;
+    }
+    
+    /* Estados de Focus Mejorados */
+    .btn-approve:focus,
+    .btn-regenerate:focus,
+    .btn-edit:focus,
+    .btn-back:focus {
+        outline: none;
+        box-shadow: 
+            0 0 0 4px rgba(59, 130, 246, 0.3),
+            0 0 0 2px var(--background-primary),
+            var(--current-shadow, 0 8px 32px rgba(59, 130, 246, 0.4));
+    }
+    
+    /* Responsive Premium */
+    @media (max-width: 768px) {
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+            padding: 16px;
+        }
+        
+        .btn-approve,
+        .btn-regenerate,
+        .btn-edit,
+        .btn-back {
+            justify-content: center;
+            padding: 16px 24px;
+            font-size: 1.05em;
+        }
+        
+        .btn-approve {
+            order: 1;
+        }
+        
+        .btn-regenerate {
+            order: 2;
+        }
+        
+        .btn-edit {
+            order: 3;
+        }
+        
+        .btn-back {
+            order: 4;
+            margin-top: 8px;
+            padding: 12px 20px;
+            font-size: 1em;
+        }
+    }
+    
+    .loading {
+        display: none;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ffffff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card {
+        background: var(--background-primary);
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        text-align: center;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 2px;
+        background: var(--accent-gradient);
+        transition: left 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+        border-color: var(--accent-light);
+    }
+    
+    .stat-card:hover::before {
+        left: 0;
+    }
+    
+    .stat-value {
+        font-size: 1.5em;
+        font-weight: 700;
+        color: var(--accent-color);
+    }
+    
+    .stat-label {
+        color: var(--secondary-color);
+        font-size: 0.9em;
+        margin-top: 5px;
+        font-weight: 500;
+    }
+    
+    /* In-Place Editing Styles */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .btn-edit-section {
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--primary-color);
+        border: 1px solid var(--border-color);
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.8em;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        opacity: 0;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 2px 8px rgba(30, 41, 59, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: 0.02em;
+    }
+    
+    .editable-section:hover .btn-edit-section {
+        opacity: 1;
+        transform: translateY(-1px);
+    }
+    
+    .btn-edit-section:hover {
+        background: var(--accent-color);
+        color: white;
+        border-color: var(--accent-color);
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .btn-edit-section::before {
+        content: '✎';
+        font-size: 0.9em;
+    }
+    
+    .section-content.editing {
+        position: relative;
+    }
+    
+    .inline-edit-textarea {
+        width: 100%;
+        min-height: 60px;
+        padding: 12px;
+        border: 2px solid var(--accent-color);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: inherit;
+        line-height: 1.6;
+        background: var(--background-primary);
+        box-shadow: 0 2px 12px rgba(59, 130, 246, 0.15);
+        resize: vertical;
+    }
+    
+    .inline-edit-textarea:focus {
+        outline: none;
+        border-color: var(--accent-dark);
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
+    }
+    
+    .edit-controls {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    
+    .btn-save-edit {
+        background: var(--success-color);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        font-size: 0.85em;
+    }
+    
+    .btn-save-edit:hover {
+        background: #047857;
+        transform: translateY(-1px);
+    }
+    
+    .btn-cancel-edit {
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        font-size: 0.85em;
+    }
+    
+    .btn-cancel-edit:hover {
+        background: var(--secondary-dark);
+        transform: translateY(-1px);
+    }
+    
+    .editable-content {
+        transition: all 0.2s ease;
+        padding: 8px;
+        border-radius: 6px;
+    }
+    
+    .editable-content:hover {
+        background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .chapter-item.editable {
+        position: relative;
+    }
+    
+    .btn-edit-chapter {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8em;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        align-self: flex-start;
+    }
+    
+    .btn-edit-chapter:hover {
+        background: var(--accent-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-edit-chapter::before {
+        content: '✏️';
+        font-size: 0.9em;
+    }
+    
+    .chapter-item {
+        position: relative;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .chapter-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 8px;
+    }
+    
+    .chapter-content {
+        flex: 1;
+    }
+    
+    .save-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--success-color);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 0.85em;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    /* Enhanced styling for structure and details sections */
+    .chapter-number {
+        color: var(--accent-color);
+        font-weight: 800;
+        margin-right: 8px;
+    }
+    
+    .chapter-name {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .character-icon {
+        font-size: 1.1em;
+        margin-right: 8px;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+    }
+    
+    .character-name {
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+    
+    .character-role {
+        font-size: 0.8em !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .special-icon {
+        font-size: 1.1em;
+        margin-right: 8px;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+    }
+    
+    .special-name {
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+    
+    /* Improved section styling */
+    .architecture-section {
+        margin-bottom: 30px;
+        padding: 25px;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        background: var(--background-secondary);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .architecture-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--accent-gradient);
+    }
+    
+    .section-title {
+        font-size: 1.4em;
+        font-weight: 800;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    /* Better spacing for content areas */
+    #introductionSection .architecture-section,
+    #chaptersSection .architecture-section,
+    #conclusionSection .architecture-section {
+        background: linear-gradient(135deg, var(--background-primary), var(--background-secondary));
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        box-shadow: 0 4px 20px rgba(30, 41, 59, 0.05);
+    }
+    
+    #charactersSection .architecture-section,
+    #specialSectionsArea .architecture-section {
+        background: linear-gradient(135deg, #fefefe, var(--background-secondary));
+        border: 1px solid rgba(100, 116, 139, 0.1);
+        box-shadow: 0 6px 25px rgba(30, 41, 59, 0.06);
+    }
+    
+    /* Fix for chapter header compatibility */
+    .chapter-header,
+    .chapter-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        gap: 15px;
+        min-height: 32px;
+    }
+    
+    /* Add/Remove buttons styling */
+    .section-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        justify-content: flex-end;
+        padding-top: 15px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .btn-add-item, .btn-remove-item-main {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85em;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-add-item {
+        background: var(--success-color);
+        color: white;
+    }
+    
+    .btn-add-item:hover {
+        background: #047857;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
+    }
+    
+    .btn-remove-item-main {
+        background: var(--error-color);
+        color: white;
+    }
+    
+    .btn-remove-item-main:hover {
+        background: #b91c1c;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+    }
+    
+    .item-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .chapter-item:hover .item-actions,
+    .character-item:hover .item-actions,
+    .special-item:hover .item-actions {
+        opacity: 1;
+    }
+    
+    .btn-delete-item {
+        background: var(--error-color);
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75em;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-delete-item:hover {
+        background: #b91c1c;
+        transform: scale(1.1);
+    }
+    
+    /* Enhanced item styling with actions */
+    .chapter-item, .character-item, .special-item {
+        position: relative;
+    }
+    
+    .chapter-item-header .item-actions {
+        margin-left: auto;
+    }
+    
+    /* List editor styles */
+    .list-editor {
+        background: var(--background-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    
+    .list-items {
+        margin: 10px 0;
+    }
+    
+    .list-item-editor {
+        background: var(--background-primary);
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        border-radius: 6px;
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .list-item-editor:hover {
+        border-color: var(--accent-light);
+        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
+    }
+    
+    .btn-add-item {
+        transition: all 0.2s ease;
+    }
+    
+    .btn-add-item:hover {
+        background: #047857 !important;
+        transform: translateY(-1px);
+    }
+    
+    .btn-remove-item:hover {
+        background: #b91c1c !important;
+        transform: scale(1.1);
+    }
+    
+    /* Modal styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+    
+    .modal-content {
+        background: var(--background-primary);
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: modalAppear 0.3s ease;
+    }
+    
+    @keyframes modalAppear {
+        from {
+            opacity: 0;
+            transform: scale(0.8) translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    
+    .modal-header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    
+    .modal-header h2 {
+        color: var(--primary-color);
+        font-size: 1.6em;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .modal-header p {
+        color: var(--secondary-color);
+        line-height: 1.6;
+    }
+    
+    .feedback-section {
+        margin-bottom: 25px;
+    }
+    
+    .feedback-section h3 {
+        color: var(--accent-color);
+        font-size: 1.2em;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .feedback-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 15px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        line-height: 1.6;
+        resize: vertical;
+        transition: border-color 0.2s;
+    }
+    
+    .feedback-textarea:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .feedback-textarea::placeholder {
+        color: var(--secondary-light);
+    }
+    
+    .modal-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        margin-top: 30px;
+    }
+    
+    .modal-actions-left {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .modal-actions-right {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-modal {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.9em;
+    }
+    
+    .btn-modal-danger {
+        background: var(--error-color);
+        color: white;
+    }
+    
+    .btn-modal-danger:hover {
+        background: #b91c1c;
+        transform: translateY(-1px);
+    }
+    
+    .btn-modal-secondary {
+        background: var(--secondary-color);
+        color: white;
+    }
+    
+    .btn-modal-secondary:hover {
+        background: var(--secondary-dark);
+        transform: translateY(-1px);
+    }
+    
+    .btn-modal-primary {
+        background: var(--accent-color);
+        color: white;
+    }
+    
+    .btn-modal-primary:hover {
+        background: var(--accent-dark);
+        transform: translateY(-1px);
+    }
+    
+    .btn-modal-warning {
+        background: var(--warning-color);
+        color: white;
+    }
+    
+    .btn-modal-warning:hover {
+        background: #b45309;
+        transform: translateY(-1px);
+    }
+    
+    .warning-box-modal {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 1px solid #d97706;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+        font-size: 0.9em;
+    }
+    
+    .warning-box-modal strong {
+        color: #92400e;
+    }
+    
+    .warning-box-modal p {
+        color: #b45309;
+        margin: 5px 0 0 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="architecture-container">
+    <!-- Header -->
+    <div class="architecture-header">
+        <h1>📐 Arquitectura del Libro</h1>
+        <h2>{{ book.title }}</h2>
+        <p>Revisa la estructura propuesta y aprueba o modifica según tus necesidades</p>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="architecture-content">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview', this)">📋 Resumen</button>
+            <button class="tab" onclick="showTab('structure', this)">🏗️ Estructura</button>
+            <button class="tab" onclick="showTab('details', this)">📝 Detalles</button>
+            <button class="tab" onclick="showTab('raw', this)">🔧 JSON</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div class="tab-content active" id="overview">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPages">--</div>
+                    <div class="stat-label">Páginas Estimadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalWords">--</div>
+                    <div class="stat-label">Palabras Estimadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalChapters">--</div>
+                    <div class="stat-label">Capítulos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ book.genre|title }}</div>
+                    <div class="stat-label">Género</div>
+                </div>
+            </div>
+            
+            <div class="architecture-section editable-section" data-section="summary">
+                <div class="section-header">
+                    <div class="section-title">
+                        📖 Descripción del Libro
+                    </div>
+                    <button class="btn-edit-section" onclick="editSection('summary')">Editar</button>
+                </div>
+                <div class="section-content">
+                    <div id="bookSummary" class="editable-content">--</div>
+                </div>
+            </div>
+            
+            <div class="architecture-section editable-section" data-section="approach">
+                <div class="section-header">
+                    <div class="section-title">
+                        🎯 Enfoque de Escritura
+                    </div>
+                    <button class="btn-edit-section" onclick="editSection('approach')">Editar</button>
+                </div>
+                <div class="section-content">
+                    <div id="writingApproach" class="editable-content">--</div>
+                </div>
+            </div>
+            
+            <div class="architecture-section">
+                <div class="section-title">
+                    🔑 Temas Clave
+                </div>
+                <div id="keyThemes">--</div>
+            </div>
+        </div>
+        
+        <!-- Structure Tab -->
+        <div class="tab-content" id="structure">
+            <div id="introductionSection">
+                <!-- Introduction will be loaded here -->
+            </div>
+            
+            <div id="chaptersSection">
+                <!-- Chapters will be loaded here -->
+            </div>
+            
+            <div id="conclusionSection">
+                <!-- Conclusion will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Details Tab -->
+        <div class="tab-content" id="details">
+            <div id="charactersSection" class="editable-area" data-section="characters">
+                <!-- Characters will be loaded here -->
+            </div>
+            
+            <div id="specialSectionsArea" class="editable-area" data-section="special">
+                <!-- Special sections will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Raw JSON Tab -->
+        <div class="tab-content" id="raw">
+            <div class="architecture-section">
+                <div class="section-title">
+                    🔧 Arquitectura JSON (Para Editores Avanzados)
+                </div>
+                <pre><code id="architectureJson"></code></pre>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="{{ url_for('books.my_books') }}" class="btn-back">
+            ← Volver a Mis Libros
+        </a>
+        <button class="btn-regenerate" onclick="showRegenerateModal()">
+            🔄 Regenerar Arquitectura
+        </button>
+        <a href="{{ url_for('books.architecture_help', book_id=book.id) }}" class="btn-edit" target="_blank">
+            📚 Guía de Revisión, Edición y Aprobación
+        </a>
+        <button class="btn-approve" onclick="approveArchitecture()">
+            ✅ Aprobar y Generar Libro
+            <div class="loading">
+                <div class="spinner"></div>
+                Iniciando...
+            </div>
+        </button>
+    </div>
+</div>
+
+<!-- Modal para Regenerar Arquitectura -->
+<div id="regenerateModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🔄 Regenerar Arquitectura del Libro</h2>
+            <p>Ayúdanos a mejorar la arquitectura según tus preferencias específicas</p>
+        </div>
+        
+        <div class="feedback-section">
+            <h3>💭 ¿Qué no te gustó de la arquitectura actual?</h3>
+            <textarea 
+                id="feedbackWhat" 
+                class="feedback-textarea" 
+                placeholder="Ejemplo: Los capítulos están muy teóricos, falta más contenido práctico, los personajes no son relevantes para mi audiencia, etc."
+            ></textarea>
+        </div>
+        
+        <div class="feedback-section">
+            <h3>✨ ¿Qué te gustaría cambiar o mejorar específicamente?</h3>
+            <textarea 
+                id="feedbackHow" 
+                class="feedback-textarea" 
+                placeholder="Ejemplo: Agregar más casos de estudio reales, enfocar los capítulos en aplicación práctica, incluir ejercicios al final de cada capítulo, cambiar el enfoque de los personajes, etc."
+            ></textarea>
+        </div>
+        
+        <div class="warning-box-modal">
+            <strong>⚠️ Importante:</strong>
+            <p>Si los cambios que necesitas incluyen modificar la configuración básica del libro (número de páginas, formato, género, audiencia, etc.), es mejor que rechaces esta arquitectura y generes un nuevo libro desde cero.</p>
+        </div>
+        
+        <div class="modal-actions">
+            <div class="modal-actions-left">
+                <button class="btn-modal btn-modal-danger" onclick="showRejectConfirmation()">
+                    🗑️ Rechazar y Eliminar Libro
+                </button>
+            </div>
+            <div class="modal-actions-right">
+                <button class="btn-modal btn-modal-secondary" onclick="closeRegenerateModal()">
+                    Cancelar
+                </button>
+                <button class="btn-modal btn-modal-warning" onclick="startRegeneration()">
+                    🔄 Regenerar Arquitectura
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Rechazar -->
+<div id="rejectModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h2>🗑️ Rechazar y Eliminar Libro</h2>
+            <p>Esta acción eliminará permanentemente este libro y su arquitectura</p>
+        </div>
+        
+        <div style="text-align: center; margin: 25px 0;">
+            <p style="color: var(--error-color); font-weight: 600; font-size: 1.1em;">
+                ⚠️ Esta acción no se puede deshacer
+            </p>
+            <p style="color: var(--secondary-color); margin-top: 10px;">
+                El libro "{{ book.title }}" será eliminado completamente. Podrás generar un nuevo libro con una configuración diferente.
+            </p>
+        </div>
+        
+        <div class="modal-actions" style="justify-content: center;">
+            <button class="btn-modal btn-modal-secondary" onclick="closeRejectModal()">
+                Cancelar
+            </button>
+            <button class="btn-modal btn-modal-danger" onclick="confirmRejectBook()">
+                🗑️ Sí, Eliminar Libro
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentArchitecture = {{ book.architecture|tojson if book.architecture else '{}' }};
+const bookId = {{ book.id }};
+
+// Global format multipliers - definido una sola vez para evitar duplicación
+const FORMAT_MULTIPLIERS = {
+    'pocket': 220,      // Pocket format: ~220 words per page
+    'A5': 250,          // A5 format: ~250 words per page
+    'B5': 280,          // B5 format: ~280 words per page
+    'letter': 350       // Letter format: ~350 words per page
+};
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Log book configuration on page load
+    console.log('Book ID {{ book.id }} Configuration:', {
+        page_count: {{ book.page_count }},
+        format_size: '{{ book.format_size }}',
+        line_spacing: '{{ book.line_spacing }}',
+        chapter_count: {{ book.chapter_count }}
+    });
+    
+    loadArchitectureData();
+});
+
+function showTab(tabName, clickedButton) {
+    // Update tab buttons
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    
+    // Find the clicked button or get from onclick context
+    const targetButton = clickedButton || event.target || document.querySelector(`[onclick*="showTab('${tabName}')"]`);
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+}
+
+function parseMarkdownArchitecture(rawArchitecture) {
+    const content = rawArchitecture.raw_content || '';
+    
+    // Use REAL book parameters from database (rendered by Jinja2)
+    const bookParams = {{ book.parameters|tojson if book.parameters else '{}' }};
+    const bookTitle = {{ book.title|tojson if book.title else '"Nuevo Libro"' }};
+    const bookDescription = {{ book.key_topics|tojson if book.key_topics else '"Descripción del libro basada en los temas seleccionados"' }};
+    const bookGenre = {{ book.genre|tojson if book.genre else '"self_help"' }};
+    const bookAudience = {{ book.target_audience|tojson if book.target_audience else '"all"' }};
+    const bookTone = {{ book.tone|tojson if book.tone else '"formal"' }};
+    const bookStyle = {{ book.writing_style|tojson if book.writing_style else '"professional"' }};
+    
+    // Use REAL user-configured parameters
+    const userConfiguredPages = {{ book.page_count or 60 }};
+    const userConfiguredFormat = '{{ book.format_size or "pocket" }}';
+    const userConfiguredChapters = {{ book.chapter_count or 10 }};
+    
+    // Calculate words based on REAL format and pages configured by user
+    const wordsPerPage = FORMAT_MULTIPLIERS[userConfiguredFormat] || FORMAT_MULTIPLIERS['pocket'];
+    const estimatedWords = userConfiguredPages * wordsPerPage;
+    
+    // Extract chapters from table of contents first
+    const chapters = parseChaptersFromTableOfContents(content);
+    
+    // Extract introduction and conclusion  
+    const introduction = parseIntroductionFromMarkdown(content);
+    const conclusion = parseConclusionFromMarkdown(content);
+    
+    // Build structured architecture with REAL USER DATA
+    const structuredArch = {
+        // Use real user-configured parameters - ALWAYS from database
+        target_pages: userConfiguredPages,  // This is the REAL page count from DB
+        estimated_words: estimatedWords,    // Calculated from REAL pages and format
+        format_size: userConfiguredFormat,  // REAL format from DB
+        chapter_count: userConfiguredChapters,  // REAL chapter count from DB
+        
+        // Use real book information
+        title: bookTitle,
+        summary: bookDescription,
+        genre: bookGenre.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        target_audience: bookAudience.charAt(0).toUpperCase() + bookAudience.slice(1),
+        tone: bookTone.charAt(0).toUpperCase() + bookTone.slice(1),
+        
+        // Create contextual writing approach based on real data
+        writing_approach: `Enfoque ${bookStyle} diseñado para ${bookAudience}, con tono ${bookTone} y estrategias específicas del género ${bookGenre.replace('_', ' ')}`,
+        
+        // Generate contextual themes based on book topic
+        key_themes: generateContextualThemes(bookDescription, bookGenre),
+        
+        structure: {
+            introduction: introduction,
+            chapters: chapters,
+            conclusion: conclusion
+        },
+        
+        // Add contextual characters and special sections
+        characters: generateContextualCharacters(bookGenre, bookDescription),
+        special_sections: generateSpecialSections(bookGenre),
+        
+        // Keep original raw content
+        raw_content: content,
+        type: rawArchitecture.type || 'book_architecture'
+    };
+    
+    console.log('Parsed architecture with real params:', structuredArch);
+    return structuredArch;
+}
+
+function extractValue(text, regex) {
+    const match = text.match(regex);
+    return match ? match[1].trim() : null;
+}
+
+function parseChaptersFromTableOfContents(content) {
+    const chapters = [];
+    
+    // Find table of contents section
+    const tocMatch = content.match(/## \*\*TABLA DE CONTENIDOS\*\*(.*?)(?=---)/s);
+    if (!tocMatch) {
+        // Fallback to default chapters
+        return createDefaultChapters();
+    }
+    
+    const tocContent = tocMatch[1];
+    
+    // Extract chapter lines
+    const chapterLines = tocContent.match(/\*\*Capítulo \d+:\*\* ([^\n]+)/g);
+    
+    if (!chapterLines || chapterLines.length === 0) {
+        return createDefaultChapters();
+    }
+    
+    chapterLines.forEach((line, index) => {
+        const match = line.match(/\*\*Capítulo (\d+):\*\* (.+)/);
+        if (match) {
+            const number = parseInt(match[1]);
+            const title = match[2].trim();
+            
+            chapters.push({
+                number: number,
+                title: title,
+                summary: `Desarrollo de estrategias y herramientas para ${title.toLowerCase()}`,
+                estimated_pages: 5,
+                key_points: [
+                    `Conceptos fundamentales de ${title}`,
+                    'Estrategias prácticas de implementación',
+                    'Herramientas y recursos recomendados'
+                ],
+                learning_objectives: [
+                    `Dominar los principios de ${title}`,
+                    'Aplicar técnicas en situaciones reales'
+                ]
+            });
+        }
+    });
+    
+    return chapters;
+}
+
+function createDefaultChapters() {
+    return [
+        {
+            number: 1,
+            title: 'El Mito del Inglés Perfecto',
+            summary: 'Deconstruir creencias limitantes sobre el dominio del inglés',
+            estimated_pages: 5,
+            key_points: ['Diferencia entre inglés académico vs. laboral básico', 'El poder de la especialización técnica', 'Mindset del "inglés suficiente"'],
+            learning_objectives: ['Cambiar perspectiva sobre requisitos de inglés', 'Identificar habilidades técnicas valoradas']
+        },
+        {
+            number: 2,
+            title: 'Descubriendo Tu Nicho Sin Fronteras',
+            summary: 'Identificar áreas profesionales con menor barrera idiomática',
+            estimated_pages: 5,
+            key_points: ['Sectores que priorizan habilidades técnicas', 'Roles con mínima comunicación verbal', 'Nichos emergentes en trabajo remoto'],
+            learning_objectives: ['Identificar sectores apropiados', 'Evaluar fortalezas personales']
+        },
+        {
+            number: 3,
+            title: 'Construyendo Tu Perfil Profesional Global',
+            summary: 'Crear una presencia profesional que trascienda las barreras del idioma',
+            estimated_pages: 5,
+            key_points: ['Optimización de LinkedIn internacional', 'Portfolio visual efectivo', 'Certificaciones que abren puertas'],
+            learning_objectives: ['Optimizar perfil profesional', 'Construir credibilidad sin inglés fluido']
+        },
+        {
+            number: 4,
+            title: 'Arsenal Digital: Herramientas Que Hablan Por Ti',
+            summary: 'Dominar las tecnologías que facilitan la comunicación profesional',
+            estimated_pages: 6,
+            key_points: ['Traductores avanzados y sus usos', 'Herramientas de comunicación asíncrona', 'Software de colaboración visual'],
+            learning_objectives: ['Configurar herramientas de comunicación', 'Establecer workflows eficientes']
+        },
+        {
+            number: 5,
+            title: 'Comunicación Estratégica Sin Fluidez',
+            summary: 'Desarrollar estrategias de comunicación efectiva con inglés limitado',
+            estimated_pages: 6,
+            key_points: ['Principios de comunicación clara', 'Técnicas para reuniones internacionales', 'Construcción de confianza'],
+            learning_objectives: ['Comunicarse efectivamente', 'Manejar malentendidos profesionalmente']
+        }
+    ];
+}
+
+function parseIntroductionFromMarkdown(content) {
+    const introMatch = content.match(/## \*\*INTRODUCCIÓN\*\* \*\((\d+) páginas\)\*/);
+    const titleMatch = content.match(/### "([^"]+)"/);
+    
+    if (introMatch || titleMatch) {
+        return {
+            title: titleMatch ? titleMatch[1] : 'La Revolución del Trabajo Remoto Sin Barreras',
+            summary: 'Presentación del contexto actual del trabajo remoto y desmitificación de barreras lingüísticas.',
+            estimated_pages: introMatch ? parseInt(introMatch[1]) : 4
+        };
+    }
+    return {
+        title: 'Introducción',
+        summary: 'Introducción al tema principal del libro.',
+        estimated_pages: 4
+    };
+}
+
+function parseConclusionFromMarkdown(content) {
+    const conclusionMatch = content.match(/## \*\*CONCLUSIÓN\*\* \*\((\d+) páginas\)\*/);
+    const titleMatch = content.match(/### "([^"]+)".*conclusión/i);
+    
+    if (conclusionMatch || titleMatch) {
+        return {
+            title: titleMatch ? titleMatch[1] : 'Tu Nuevo Futuro Profesional',
+            summary: 'Resumen de estrategias y plan de acción para implementar lo aprendido.',
+            estimated_pages: conclusionMatch ? parseInt(conclusionMatch[1]) : 4
+        };
+    }
+    return {
+        title: 'Conclusión',
+        summary: 'Conclusiones y próximos pasos.',
+        estimated_pages: 4
+    };
+}
+
+function generateContextualThemes(bookDescription, bookGenre) {
+    // Generate themes based on actual book content
+    const baseThemes = {
+        'self_help': ['Desarrollo Personal', 'Crecimiento Profesional', 'Habilidades Prácticas', 'Motivación'],
+        'business': ['Estrategias Empresariales', 'Liderazgo', 'Innovación', 'Productividad'],
+        'technology': ['Tendencias Tecnológicas', 'Transformación Digital', 'Herramientas', 'Futuro'],
+        'health': ['Bienestar', 'Hábitos Saludables', 'Prevención', 'Calidad de Vida'],
+        'fiction': ['Narrativa', 'Personajes', 'Conflicto', 'Resolución']
+    };
+    
+    // Extract themes from description if available
+    if (bookDescription && bookDescription.length > 20) {
+        // Use actual book description to extract relevant themes
+        return extractThemesFromDescription(bookDescription);
+    }
+    
+    return baseThemes[bookGenre] || baseThemes['self_help'];
+}
+
+function extractThemesFromDescription(description) {
+    // Simple theme extraction based on keywords in description
+    const keywords = description.toLowerCase();
+    const themes = [];
+    
+    if (keywords.includes('trabajo') || keywords.includes('empleo')) themes.push('Desarrollo Profesional');
+    if (keywords.includes('digital') || keywords.includes('tecnología')) themes.push('Herramientas Digitales');
+    if (keywords.includes('comunicación')) themes.push('Habilidades de Comunicación');
+    if (keywords.includes('remoto')) themes.push('Trabajo Remoto');
+    if (keywords.includes('negocio') || keywords.includes('empresa')) themes.push('Estrategias Empresariales');
+    if (keywords.includes('personal') || keywords.includes('crecimiento')) themes.push('Desarrollo Personal');
+    
+    // Add generic themes if not enough specific ones
+    if (themes.length < 3) {
+        themes.push('Estrategias Prácticas', 'Casos de Estudio', 'Implementación');
+    }
+    
+    return themes.slice(0, 5); // Limit to 5 themes
+}
+
+function generateContextualCharacters(bookGenre = 'self_help', bookDescription = '') {
+    // Generate characters based on book genre and content
+    const characterTemplates = {
+        'self_help': [
+            { name: 'María González', role: 'Protagonista Inspiradora', description: 'Profesional que transformó su carrera aplicando las estrategias del libro.' },
+            { name: 'Carlos Mendoza', role: 'Mentor Experto', description: 'Consultor especializado que guía a los lectores con consejos prácticos.' },
+            { name: 'Ana Rivera', role: 'Caso de Éxito', description: 'Empresaria que implementó las técnicas y logró resultados extraordinarios.' },
+            { name: 'Roberto Silva', role: 'Experto del Sector', description: 'Especialista de la industria que comparte insights valiosos.' }
+        ],
+        'business': [
+            { name: 'Elena Castro', role: 'CEO Innovadora', description: 'Líder empresarial que revolucionó su industria con estrategias disruptivas.' },
+            { name: 'Miguel Torres', role: 'Consultor Estratégico', description: 'Asesor de grandes corporaciones con más de 15 años de experiencia.' },
+            { name: 'Laura Vargas', role: 'Emprendedora Serial', description: 'Fundadora de múltiples startups exitosas que comparte sus aprendizajes.' },
+            { name: 'David Ruiz', role: 'Analista de Mercado', description: 'Experto en tendencias que predice el futuro de los negocios.' }
+        ]
+    };
+    
+    return characterTemplates[bookGenre] || characterTemplates['self_help'];
+}
+
+function generateSpecialSections(bookGenre = 'self_help') {
+    const sectionTemplates = {
+        'self_help': [
+            { type: 'Casos de Estudio Reales', frequency: 'En cada capítulo', purpose: 'Historias reales de personas que aplicaron las estrategias del libro con resultados verificables.' },
+            { type: 'Ejercicios Prácticos', frequency: 'Final de cada capítulo', purpose: 'Actividades prácticas con cronograma de implementación para aplicar inmediatamente lo aprendido.' },
+            { type: 'Recursos Descargables', frequency: '2-3 por capítulo', purpose: 'Plantillas, checklists y herramientas digitales listas para usar.' },
+            { type: 'Reflexiones Profundas', frequency: 'En secciones clave', purpose: 'Momentos de introspeción que ayudan al lector a personalizar las enseñanzas.' },
+            { type: 'Contenido Multimedia QR', frequency: '1-2 por capítulo', purpose: 'Códigos QR con acceso a videos explicativos y recursos adicionales.' }
+        ],
+        'business': [
+            { type: 'Análisis de Casos Empresariales', frequency: 'En cada capítulo', purpose: 'Estudios detallados de empresas que implementaron las estrategias descritas.' },
+            { type: 'Frameworks de Implementación', frequency: 'Por sección', purpose: 'Metodologías paso a paso para aplicar las estrategias en contextos empresariales.' },
+            { type: 'Métricas y KPIs', frequency: 'En capítulos clave', purpose: 'Indicadores de rendimiento para medir el éxito de la implementación.' },
+            { type: 'Herramientas de Diagnóstico', frequency: '1 por capítulo', purpose: 'Evaluaciones para identificar oportunidades de mejora en la organización.' }
+        ]
+    };
+    
+    return sectionTemplates[bookGenre] || sectionTemplates['self_help'];
+}
+
+function loadArchitectureData() {
+    if (!currentArchitecture || Object.keys(currentArchitecture).length === 0) {
+        console.error('No architecture data available');
+        return;
+    }
+    
+    // Check if this is raw_content format (markdown) and parse it
+    if (currentArchitecture.raw_content && !currentArchitecture.structure) {
+        console.log('Parsing raw markdown content');
+        currentArchitecture = parseMarkdownArchitecture(currentArchitecture);
+    }
+    
+    // IMPORTANTE: Siempre sobrescribir los valores de páginas y palabras con los de la BD
+    // para garantizar que coincidan con la configuración original del usuario
+    const dbPages = {{ book.page_count }};
+    const dbFormat = '{{ book.format_size }}';
+    
+    // Forzar los valores correctos desde la base de datos
+    currentArchitecture.target_pages = dbPages;
+    currentArchitecture.estimated_words = dbPages * (FORMAT_MULTIPLIERS[dbFormat] || FORMAT_MULTIPLIERS['pocket']);
+    currentArchitecture.format_size = dbFormat;
+    
+    // Load overview data with REAL user-configured parameters
+    const userPages = {{ book.page_count or 60 }};
+    const userChapters = {{ book.chapter_count or 10 }};
+    const userFormat = '{{ book.format_size or "pocket" }}';
+    
+    // Use global format multipliers
+    const wordsPerPage = FORMAT_MULTIPLIERS[userFormat] || FORMAT_MULTIPLIERS['pocket'];
+    const calculatedWords = userPages * wordsPerPage;
+    
+    // ALWAYS use the user-configured pages from database
+    document.getElementById('totalPages').textContent = userPages;
+    
+    // For words, prefer the calculated value based on actual user configuration
+    // Don't trust currentArchitecture values as they might be parsed incorrectly
+    document.getElementById('totalWords').textContent = calculatedWords.toLocaleString();
+    
+    // Debug log to verify correct values
+    console.log('Book Configuration from Database:', {
+        page_count: userPages,
+        format_size: userFormat,
+        calculated_words: calculatedWords,
+        words_per_page: wordsPerPage
+    });
+    document.getElementById('totalChapters').textContent = currentArchitecture.structure?.chapters?.length || userChapters;
+    document.getElementById('bookSummary').textContent = currentArchitecture.summary || {{ book.key_topics|tojson if book.key_topics else '"Descripción del libro basada en los temas seleccionados por el usuario"' }};
+    document.getElementById('writingApproach').textContent = currentArchitecture.writing_approach || `Enfoque {{ book.writing_style or "profesional" }} con tono {{ book.tone or "formal" }} para {{ book.target_audience or "lectores generales" }}`;
+    
+    // Load key themes with enhanced styling
+    const themesContainer = document.getElementById('keyThemes');
+    if (currentArchitecture.key_themes && currentArchitecture.key_themes.length > 0) {
+        themesContainer.innerHTML = currentArchitecture.key_themes.map((theme, index) => {
+            const colors = ['var(--accent-color)', 'var(--success-color)', 'var(--info-color)', 'var(--warning-color)', 'var(--secondary-color)'];
+            const color = colors[index % colors.length];
+            return `<span style="background: ${color}; color: white; padding: 4px 12px; border-radius: 16px; font-size: 0.85em; margin: 2px 4px; display: inline-block;">${theme}</span>`;
+        }).join('');
+    } else {
+        themesContainer.innerHTML = `
+            <span style="background: var(--accent-color); color: white; padding: 4px 12px; border-radius: 16px; font-size: 0.85em; margin: 2px 4px; display: inline-block;">Trabajo Remoto Internacional</span>
+            <span style="background: var(--success-color); color: white; padding: 4px 12px; border-radius: 16px; font-size: 0.85em; margin: 2px 4px; display: inline-block;">Superación de Barreras</span>
+            <span style="background: var(--info-color); color: white; padding: 4px 12px; border-radius: 16px; font-size: 0.85em; margin: 2px 4px; display: inline-block;">Herramientas Digitales</span>
+        `;
+    }
+    
+    // Load structure
+    loadStructure();
+    
+    // Load details
+    loadDetails();
+    
+    // Load raw JSON
+    document.getElementById('architectureJson').textContent = JSON.stringify(currentArchitecture, null, 2);
+}
+
+function loadStructure() {
+    const structure = currentArchitecture.structure;
+    if (!structure) return;
+    
+    // Load introduction
+    const introContainer = document.getElementById('introductionSection');
+    if (structure.introduction) {
+        introContainer.innerHTML = `
+            <div class="architecture-section">
+                <div class="section-title">
+                    🚀 ${structure.introduction.title || 'Introducción'}
+                </div>
+                <div class="chapter-summary">${structure.introduction.summary || 'Sin descripción'}</div>
+                <div class="chapter-pages">${structure.introduction.estimated_pages || 0} páginas estimadas</div>
+            </div>
+        `;
+    }
+    
+    // Load chapters
+    const chaptersContainer = document.getElementById('chaptersSection');
+    if (structure.chapters && structure.chapters.length > 0) {
+        const chaptersHtml = structure.chapters.map((chapter, index) => `
+            <div class="chapter-item" data-chapter-index="${index}">
+                <div class="chapter-item-header">
+                    <div class="chapter-title">
+                        <span class="chapter-number">Capítulo ${chapter.number}:</span>
+                        <span class="chapter-name">${chapter.title}</span>
+                    </div>
+                    <div class="chapter-pages">${chapter.estimated_pages || 0} páginas</div>
+                    <div class="item-actions">
+                        <button class="btn-delete-item" onclick="removeChapter(${index})" title="Eliminar capítulo">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+                <div class="chapter-content">
+                    <div class="chapter-summary">${chapter.summary || 'Sin descripción'}</div>
+                    ${chapter.key_points && chapter.key_points.length > 0 ? `
+                        <div class="key-points-section" style="margin-top: 15px;">
+                            <strong>Puntos clave:</strong>
+                            <ul class="key-points">
+                                ${chapter.key_points.map((point, pointIndex) => `<li class="key-point-item" data-point-index="${pointIndex}">${point}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    ${chapter.learning_objectives && chapter.learning_objectives.length > 0 ? `
+                        <div class="learning-objectives-section" style="margin-top: 15px;">
+                            <strong>Objetivos de aprendizaje:</strong>
+                            <ul class="key-points">
+                                ${chapter.learning_objectives.map((obj, objIndex) => `<li class="learning-objective-item" data-objective-index="${objIndex}">${obj}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+                <button class="btn-edit-chapter" onclick="editChapter(${index})">Editar</button>
+            </div>
+        `).join('');
+        
+        chaptersContainer.innerHTML = `
+            <div class="architecture-section">
+                <div class="section-title">
+                    📚 Capítulos (${structure.chapters.length})
+                </div>
+                ${chaptersHtml}
+                <div class="section-controls">
+                    <button class="btn-add-item" onclick="addNewChapter()">
+                        ➕ Agregar Capítulo
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Load conclusion
+    const conclusionContainer = document.getElementById('conclusionSection');
+    if (structure.conclusion) {
+        conclusionContainer.innerHTML = `
+            <div class="architecture-section">
+                <div class="section-title">
+                    🎯 ${structure.conclusion.title || 'Conclusión'}
+                </div>
+                <div class="chapter-summary">${structure.conclusion.summary || 'Sin descripción'}</div>
+                <div class="chapter-pages">${structure.conclusion.estimated_pages || 0} páginas estimadas</div>
+            </div>
+        `;
+    }
+}
+
+function loadDetails() {
+    // Ensure we have characters and special sections
+    if (!currentArchitecture.characters) {
+        currentArchitecture.characters = generateContextualCharacters();
+    }
+    if (!currentArchitecture.special_sections) {
+        currentArchitecture.special_sections = generateSpecialSections();
+    }
+    
+    // Load characters with enhanced design
+    const charactersContainer = document.getElementById('charactersSection');
+    const charactersHtml = currentArchitecture.characters.map((character, index) => `
+        <div class="chapter-item character-item" data-character-index="${index}" style="border-left: 4px solid var(--accent-color);">
+            <div class="chapter-item-header">
+                <div class="chapter-title">
+                    <span class="character-icon">👤</span>
+                    <span class="character-name">${character.name}</span>
+                </div>
+                <div class="chapter-pages character-role" style="background: var(--info-color);">${character.role}</div>
+                <div class="item-actions">
+                    <button class="btn-delete-item" onclick="removeCharacter(${index})" title="Eliminar personaje">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+            <div class="chapter-content">
+                <div class="chapter-summary">${character.description}</div>
+            </div>
+            <button class="btn-edit-chapter" onclick="editCharacter(${index})">Editar</button>
+        </div>
+    `).join('');
+    
+    charactersContainer.innerHTML = `
+        <div class="architecture-section" style="background: var(--background-secondary);">
+            <div class="section-title">
+                👥 Personajes Principales (${currentArchitecture.characters.length})
+            </div>
+            <div style="color: var(--secondary-color); margin-bottom: 15px; font-style: italic;">
+                Casos reales y mentores que guían al lector a través de su transformación profesional
+            </div>
+            ${charactersHtml}
+            <div class="section-controls">
+                <button class="btn-add-item" onclick="addNewCharacter()">
+                    ➕ Agregar Personaje
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Load special sections with enhanced design
+    const specialContainer = document.getElementById('specialSectionsArea');
+    const specialHtml = currentArchitecture.special_sections.map((section, index) => {
+        const colors = ['var(--success-color)', 'var(--warning-color)', 'var(--info-color)', 'var(--accent-color)', 'var(--secondary-color)'];
+        const borderColor = colors[index % colors.length];
+        
+        return `
+            <div class="chapter-item special-item" data-special-index="${index}" style="border-left: 4px solid ${borderColor};">
+                <div class="chapter-item-header">
+                    <div class="chapter-title">
+                        <span class="special-icon">⭐</span>
+                        <span class="special-name">${section.type}</span>
+                    </div>
+                    <div class="chapter-pages" style="background: ${borderColor};">${section.frequency}</div>
+                    <div class="item-actions">
+                        <button class="btn-delete-item" onclick="removeSpecialSection(${index})" title="Eliminar sección especial">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+                <div class="chapter-content">
+                    <div class="chapter-summary">${section.purpose}</div>
+                </div>
+                <button class="btn-edit-chapter" onclick="editSpecialSection(${index})">Editar</button>
+            </div>
+        `;
+    }).join('');
+    
+    specialContainer.innerHTML = `
+        <div class="architecture-section" style="background: var(--background-secondary);">
+            <div class="section-title">
+                ✨ Secciones Especiales (${currentArchitecture.special_sections.length})
+            </div>
+            <div style="color: var(--secondary-color); margin-bottom: 15px; font-style: italic;">
+                Elementos únicos que hacen de este libro una experiencia interactiva y práctica
+            </div>
+            ${specialHtml}
+            <div class="section-controls">
+                <button class="btn-add-item" onclick="addNewSpecialSection()">
+                    ➕ Agregar Sección Especial
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// In-place editing functionality
+let editingSection = null;
+let originalContent = null;
+
+function editSection(sectionType) {
+    // Cancel any existing edit
+    if (editingSection) {
+        cancelEdit();
+    }
+    
+    const section = document.querySelector(`[data-section="${sectionType}"]`);
+    const content = section.querySelector('.editable-content');
+    
+    // Store original content
+    originalContent = content.textContent;
+    editingSection = sectionType;
+    
+    // Create textarea
+    const textarea = document.createElement('textarea');
+    textarea.className = 'inline-edit-textarea';
+    textarea.value = originalContent;
+    
+    // Create controls
+    const controls = document.createElement('div');
+    controls.className = 'edit-controls';
+    controls.innerHTML = `
+        <button class="btn-save-edit" onclick="saveEdit('${sectionType}')">✅ Guardar</button>
+        <button class="btn-cancel-edit" onclick="cancelEdit()">❌ Cancelar</button>
+    `;
+    
+    // Replace content
+    const sectionContent = content.parentElement;
+    sectionContent.classList.add('editing');
+    sectionContent.innerHTML = '';
+    sectionContent.appendChild(textarea);
+    sectionContent.appendChild(controls);
+    
+    // Focus textarea
+    textarea.focus();
+    textarea.select();
+}
+
+function saveEdit(sectionType) {
+    const section = document.querySelector(`[data-section="${sectionType}"]`);
+    const textarea = section.querySelector('.inline-edit-textarea');
+    const newContent = textarea.value.trim();
+    
+    if (!newContent) {
+        alert('El contenido no puede estar vacío');
+        return;
+    }
+    
+    // Update architecture object
+    if (sectionType === 'summary') {
+        currentArchitecture.summary = newContent;
+    } else if (sectionType === 'approach') {
+        currentArchitecture.writing_approach = newContent;
+    }
+    
+    // Save to server
+    saveToServer(newContent, sectionType);
+    
+    // Restore display
+    cancelEdit(false);
+    
+    // Reload data to reflect changes
+    loadArchitectureData();
+}
+
+function cancelEdit(restoreOriginal = true) {
+    if (!editingSection) return;
+    
+    const section = document.querySelector(`[data-section="${editingSection}"]`);
+    const sectionContent = section.querySelector('.section-content');
+    
+    // Restore original content structure
+    sectionContent.classList.remove('editing');
+    
+    let contentId = '';
+    if (editingSection === 'summary') contentId = 'bookSummary';
+    if (editingSection === 'approach') contentId = 'writingApproach';
+    
+    sectionContent.innerHTML = `<div id="${contentId}" class="editable-content">${restoreOriginal ? originalContent : sectionContent.querySelector('textarea')?.value || originalContent}</div>`;
+    
+    // Clear editing state
+    editingSection = null;
+    originalContent = null;
+}
+
+function editChapter(chapterIndex) {
+    // Cancel any existing edit
+    if (editingSection) {
+        cancelEdit();
+    }
+    
+    const chapterItem = document.querySelector(`[data-chapter-index="${chapterIndex}"]`);
+    if (!chapterItem) return;
+    
+    const chapter = currentArchitecture.structure?.chapters?.[chapterIndex];
+    if (!chapter) return;
+    
+    // Store original content and editing state
+    originalContent = {
+        title: chapter.title,
+        summary: chapter.summary,
+        key_points: [...(chapter.key_points || [])],
+        learning_objectives: [...(chapter.learning_objectives || [])]
+    };
+    editingSection = `chapter_${chapterIndex}`;
+    
+    // Get content elements
+    const titleElement = chapterItem.querySelector('.chapter-name');
+    const summaryElement = chapterItem.querySelector('.chapter-summary');
+    const keyPointsSection = chapterItem.querySelector('.key-points-section');
+    const learningSection = chapterItem.querySelector('.learning-objectives-section');
+    const editButton = chapterItem.querySelector('.btn-edit-chapter');
+    
+    // Create title textarea
+    const titleTextarea = document.createElement('textarea');
+    titleTextarea.className = 'inline-edit-textarea';
+    titleTextarea.style.minHeight = '40px';
+    titleTextarea.value = chapter.title;
+    titleTextarea.setAttribute('data-field', 'title');
+    
+    // Create summary textarea
+    const summaryTextarea = document.createElement('textarea');
+    summaryTextarea.className = 'inline-edit-textarea';
+    summaryTextarea.style.minHeight = '80px';
+    summaryTextarea.value = chapter.summary;
+    summaryTextarea.setAttribute('data-field', 'summary');
+    
+    // Create key points editor
+    const keyPointsEditor = createListEditor('key_points', chapter.key_points || [], 'Puntos clave');
+    
+    // Create learning objectives editor
+    const objectivesEditor = createListEditor('learning_objectives', chapter.learning_objectives || [], 'Objetivos de aprendizaje');
+    
+    // Create controls
+    const controls = document.createElement('div');
+    controls.className = 'edit-controls';
+    controls.innerHTML = `
+        <button class="btn-save-edit" onclick="saveChapterEdit(${chapterIndex})">✅ Guardar Todo</button>
+        <button class="btn-cancel-edit" onclick="cancelChapterEdit(${chapterIndex})">❌ Cancelar</button>
+    `;
+    
+    // Replace content with editing interface
+    titleElement.style.display = 'none';
+    titleElement.parentNode.insertBefore(titleTextarea, titleElement.nextSibling);
+    
+    summaryElement.style.display = 'none';
+    summaryElement.parentNode.insertBefore(summaryTextarea, summaryElement.nextSibling);
+    
+    // Replace key points section
+    if (keyPointsSection) {
+        keyPointsSection.style.display = 'none';
+        keyPointsSection.parentNode.insertBefore(keyPointsEditor, keyPointsSection.nextSibling);
+    } else {
+        // Add key points section if it doesn't exist
+        summaryTextarea.parentNode.insertBefore(keyPointsEditor, summaryTextarea.nextSibling);
+    }
+    
+    // Replace learning objectives section
+    if (learningSection) {
+        learningSection.style.display = 'none';
+        learningSection.parentNode.insertBefore(objectivesEditor, learningSection.nextSibling);
+    } else {
+        // Add objectives section if it doesn't exist
+        keyPointsEditor.parentNode.insertBefore(objectivesEditor, keyPointsEditor.nextSibling);
+    }
+    
+    // Add controls at the end
+    const lastElement = objectivesEditor || keyPointsEditor || summaryTextarea;
+    lastElement.parentNode.insertBefore(controls, lastElement.nextSibling);
+    
+    // Hide edit button
+    editButton.style.display = 'none';
+    
+    // Focus first textarea
+    titleTextarea.focus();
+    titleTextarea.select();
+}
+
+function editCharacter(characterIndex) {
+    // Cancel any existing edit
+    if (editingSection) {
+        cancelEdit();
+    }
+    
+    const characterItem = document.querySelector(`[data-character-index="${characterIndex}"]`);
+    if (!characterItem) return;
+    
+    const character = currentArchitecture.characters?.[characterIndex];
+    if (!character) return;
+    
+    // Store original content and editing state
+    originalContent = {
+        name: character.name,
+        description: character.description
+    };
+    editingSection = `character_${characterIndex}`;
+    
+    // Get content elements
+    const nameElement = characterItem.querySelector('.character-name');
+    const descriptionElement = characterItem.querySelector('.chapter-summary');
+    const editButton = characterItem.querySelector('.btn-edit-chapter');
+    
+    // Create name textarea
+    const nameTextarea = document.createElement('textarea');
+    nameTextarea.className = 'inline-edit-textarea';
+    nameTextarea.style.minHeight = '40px';
+    nameTextarea.value = character.name;
+    
+    // Create description textarea
+    const descriptionTextarea = document.createElement('textarea');
+    descriptionTextarea.className = 'inline-edit-textarea';
+    descriptionTextarea.style.minHeight = '80px';
+    descriptionTextarea.value = character.description;
+    
+    // Create controls
+    const controls = document.createElement('div');
+    controls.className = 'edit-controls';
+    controls.innerHTML = `
+        <button class="btn-save-edit" onclick="saveCharacterEdit(${characterIndex})">✅ Guardar</button>
+        <button class="btn-cancel-edit" onclick="cancelCharacterEdit(${characterIndex})">❌ Cancelar</button>
+    `;
+    
+    // Replace content with editing interface
+    nameElement.style.display = 'none';
+    nameElement.parentNode.insertBefore(nameTextarea, nameElement.nextSibling);
+    
+    descriptionElement.style.display = 'none';
+    descriptionElement.parentNode.insertBefore(descriptionTextarea, descriptionElement.nextSibling);
+    descriptionElement.parentNode.appendChild(controls);
+    
+    // Hide edit button
+    editButton.style.display = 'none';
+    
+    // Focus first textarea
+    nameTextarea.focus();
+    nameTextarea.select();
+}
+
+function editSpecialSection(sectionIndex) {
+    // Cancel any existing edit
+    if (editingSection) {
+        cancelEdit();
+    }
+    
+    const sectionItem = document.querySelector(`[data-special-index="${sectionIndex}"]`);
+    if (!sectionItem) return;
+    
+    const section = currentArchitecture.special_sections?.[sectionIndex];
+    if (!section) return;
+    
+    // Store original content and editing state
+    originalContent = {
+        type: section.type,
+        purpose: section.purpose
+    };
+    editingSection = `special_${sectionIndex}`;
+    
+    // Get content elements
+    const typeElement = sectionItem.querySelector('.special-name');
+    const purposeElement = sectionItem.querySelector('.chapter-summary');
+    const editButton = sectionItem.querySelector('.btn-edit-chapter');
+    
+    // Create type textarea
+    const typeTextarea = document.createElement('textarea');
+    typeTextarea.className = 'inline-edit-textarea';
+    typeTextarea.style.minHeight = '40px';
+    typeTextarea.value = section.type;
+    
+    // Create purpose textarea
+    const purposeTextarea = document.createElement('textarea');
+    purposeTextarea.className = 'inline-edit-textarea';
+    purposeTextarea.style.minHeight = '80px';
+    purposeTextarea.value = section.purpose;
+    
+    // Create controls
+    const controls = document.createElement('div');
+    controls.className = 'edit-controls';
+    controls.innerHTML = `
+        <button class="btn-save-edit" onclick="saveSpecialSectionEdit(${sectionIndex})">✅ Guardar</button>
+        <button class="btn-cancel-edit" onclick="cancelSpecialSectionEdit(${sectionIndex})">❌ Cancelar</button>
+    `;
+    
+    // Replace content with editing interface
+    typeElement.style.display = 'none';
+    typeElement.parentNode.insertBefore(typeTextarea, typeElement.nextSibling);
+    
+    purposeElement.style.display = 'none';
+    purposeElement.parentNode.insertBefore(purposeTextarea, purposeElement.nextSibling);
+    purposeElement.parentNode.appendChild(controls);
+    
+    // Hide edit button
+    editButton.style.display = 'none';
+    
+    // Focus first textarea
+    typeTextarea.focus();
+    typeTextarea.select();
+}
+
+async function saveToServer(content, type) {
+    try {
+        showSaveIndicator('Guardando cambios...');
+        
+        // Use the existing saveArchitecture function to ensure consistency
+        await saveArchitecture(currentArchitecture);
+        showSaveIndicator('✅ Cambios guardados', 'success');
+        
+        // Log the edit for debugging
+        console.log(`Architecture ${type} saved:`, {
+            type: type,
+            content: content.length > 100 ? content.substring(0, 100) + '...' : content
+        });
+        
+    } catch (error) {
+        showSaveIndicator('❌ Error al guardar', 'error');
+        console.error('Save error:', error);
+    }
+}
+
+function showSaveIndicator(message, type = 'info') {
+    let indicator = document.querySelector('.save-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'save-indicator';
+        document.body.appendChild(indicator);
+    }
+    
+    indicator.textContent = message;
+    indicator.style.display = 'block';
+    
+    if (type === 'success') {
+        indicator.style.background = 'var(--success-color)';
+    } else if (type === 'error') {
+        indicator.style.background = 'var(--error-color)';
+    } else {
+        indicator.style.background = 'var(--info-color)';
+    }
+    
+    // Auto-hide after delay
+    setTimeout(() => {
+        indicator.style.display = 'none';
+    }, type === 'error' ? 5000 : 3000);
+}
+
+// Helper function to create list editor
+function createListEditor(fieldName, items, title) {
+    const container = document.createElement('div');
+    container.className = 'list-editor';
+    container.setAttribute('data-field', fieldName);
+    container.style.marginTop = '15px';
+    
+    const titleElement = document.createElement('strong');
+    titleElement.textContent = title + ':';
+    container.appendChild(titleElement);
+    
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'list-items';
+    itemsContainer.style.marginTop = '8px';
+    
+    // Add existing items
+    items.forEach((item, index) => {
+        const itemDiv = createListItem(item, index, fieldName);
+        itemsContainer.appendChild(itemDiv);
+    });
+    
+    container.appendChild(itemsContainer);
+    
+    // Add "Add new" button
+    const addButton = document.createElement('button');
+    addButton.className = 'btn-add-item';
+    addButton.textContent = '+ Agregar ' + (fieldName === 'key_points' ? 'punto clave' : 'objetivo');
+    addButton.style.cssText = `
+        background: var(--success-color);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        cursor: pointer;
+        margin-top: 8px;
+    `;
+    addButton.onclick = () => addNewListItem(fieldName, itemsContainer);
+    
+    container.appendChild(addButton);
+    
+    return container;
+}
+
+function createListItem(text, index, fieldName) {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'list-item-editor';
+    itemDiv.style.cssText = `
+        display: flex;
+        gap: 8px;
+        margin-bottom: 6px;
+        align-items: center;
+    `;
+    
+    const textarea = document.createElement('textarea');
+    textarea.className = 'inline-edit-textarea';
+    textarea.style.cssText = `
+        flex: 1;
+        min-height: 35px;
+        resize: vertical;
+    `;
+    textarea.value = text;
+    textarea.setAttribute('data-field', fieldName);
+    textarea.setAttribute('data-index', index);
+    
+    const removeButton = document.createElement('button');
+    removeButton.className = 'btn-remove-item';
+    removeButton.textContent = '×';
+    removeButton.style.cssText = `
+        background: var(--error-color);
+        color: white;
+        border: none;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        cursor: pointer;
+        width: 28px;
+        height: 28px;
+    `;
+    removeButton.onclick = () => {
+        itemDiv.remove();
+        reindexListItems(fieldName);
+    };
+    
+    itemDiv.appendChild(textarea);
+    itemDiv.appendChild(removeButton);
+    
+    return itemDiv;
+}
+
+function addNewListItem(fieldName, container) {
+    const index = container.children.length;
+    const newItem = createListItem('', index, fieldName);
+    container.appendChild(newItem);
+    
+    // Focus the new textarea
+    const textarea = newItem.querySelector('textarea');
+    textarea.focus();
+}
+
+function reindexListItems(fieldName) {
+    const items = document.querySelectorAll(`[data-field="${fieldName}"]`);
+    items.forEach((item, index) => {
+        if (item.tagName === 'TEXTAREA') {
+            item.setAttribute('data-index', index);
+        }
+    });
+}
+
+// Chapter edit functions
+function saveChapterEdit(chapterIndex) {
+    const chapterItem = document.querySelector(`[data-chapter-index="${chapterIndex}"]`);
+    const titleTextarea = chapterItem.querySelector('[data-field="title"]');
+    const summaryTextarea = chapterItem.querySelector('[data-field="summary"]');
+    
+    const newTitle = titleTextarea.value.trim();
+    const newSummary = summaryTextarea.value.trim();
+    
+    if (!newTitle || !newSummary) {
+        alert('El título y resumen no pueden estar vacíos');
+        return;
+    }
+    
+    // Get key points
+    const keyPointsTextareas = chapterItem.querySelectorAll('[data-field="key_points"]');
+    const newKeyPoints = Array.from(keyPointsTextareas)
+        .map(textarea => textarea.value.trim())
+        .filter(point => point.length > 0);
+    
+    // Get learning objectives
+    const objectivesTextareas = chapterItem.querySelectorAll('[data-field="learning_objectives"]');
+    const newObjectives = Array.from(objectivesTextareas)
+        .map(textarea => textarea.value.trim())
+        .filter(obj => obj.length > 0);
+    
+    // Update architecture object
+    currentArchitecture.structure.chapters[chapterIndex].title = newTitle;
+    currentArchitecture.structure.chapters[chapterIndex].summary = newSummary;
+    currentArchitecture.structure.chapters[chapterIndex].key_points = newKeyPoints;
+    currentArchitecture.structure.chapters[chapterIndex].learning_objectives = newObjectives;
+    
+    // Save to server
+    saveToServer(currentArchitecture, 'chapter');
+    
+    // Restore display
+    cancelChapterEdit(chapterIndex, false);
+    
+    // Reload data to reflect changes
+    loadArchitectureData();
+}
+
+function cancelChapterEdit(chapterIndex, restoreOriginal = true) {
+    const chapterItem = document.querySelector(`[data-chapter-index="${chapterIndex}"]`);
+    const titleElement = chapterItem.querySelector('.chapter-name');
+    const summaryElement = chapterItem.querySelector('.chapter-summary');
+    const keyPointsSection = chapterItem.querySelector('.key-points-section');
+    const learningSection = chapterItem.querySelector('.learning-objectives-section');
+    const editButton = chapterItem.querySelector('.btn-edit-chapter');
+    
+    // Remove all editing elements
+    const textareas = chapterItem.querySelectorAll('.inline-edit-textarea');
+    const controls = chapterItem.querySelector('.edit-controls');
+    const listEditors = chapterItem.querySelectorAll('.list-editor');
+    
+    textareas.forEach(textarea => textarea.remove());
+    listEditors.forEach(editor => editor.remove());
+    if (controls) controls.remove();
+    
+    // Restore original elements
+    titleElement.style.display = '';
+    summaryElement.style.display = '';
+    if (keyPointsSection) keyPointsSection.style.display = '';
+    if (learningSection) learningSection.style.display = '';
+    editButton.style.display = '';
+    
+    // Restore original content if needed
+    if (restoreOriginal && originalContent) {
+        titleElement.textContent = originalContent.title;
+        summaryElement.textContent = originalContent.summary;
+        
+        // Restore lists by reloading data
+        if (originalContent.key_points || originalContent.learning_objectives) {
+            const chapter = currentArchitecture.structure.chapters[chapterIndex];
+            chapter.key_points = [...originalContent.key_points];
+            chapter.learning_objectives = [...originalContent.learning_objectives];
+        }
+    }
+    
+    // Clear editing state
+    editingSection = null;
+    originalContent = null;
+}
+
+// Character edit functions  
+function saveCharacterEdit(characterIndex) {
+    const characterItem = document.querySelector(`[data-character-index="${characterIndex}"]`);
+    const nameTextarea = characterItem.querySelector('.inline-edit-textarea');
+    const descriptionTextarea = characterItem.querySelectorAll('.inline-edit-textarea')[1];
+    
+    const newName = nameTextarea.value.trim();
+    const newDescription = descriptionTextarea.value.trim();
+    
+    if (!newName || !newDescription) {
+        alert('El nombre y descripción no pueden estar vacíos');
+        return;
+    }
+    
+    // Update architecture object
+    currentArchitecture.characters[characterIndex].name = newName;
+    currentArchitecture.characters[characterIndex].description = newDescription;
+    
+    // Save to server
+    saveToServer(currentArchitecture, 'character');
+    
+    // Restore display
+    cancelCharacterEdit(characterIndex, false);
+    
+    // Reload data to reflect changes
+    loadArchitectureData();
+}
+
+function cancelCharacterEdit(characterIndex, restoreOriginal = true) {
+    const characterItem = document.querySelector(`[data-character-index="${characterIndex}"]`);
+    const nameElement = characterItem.querySelector('.character-name');
+    const descriptionElement = characterItem.querySelector('.chapter-summary');
+    const editButton = characterItem.querySelector('.btn-edit-chapter');
+    
+    // Remove textareas and controls
+    const textareas = characterItem.querySelectorAll('.inline-edit-textarea');
+    const controls = characterItem.querySelector('.edit-controls');
+    
+    textareas.forEach(textarea => textarea.remove());
+    if (controls) controls.remove();
+    
+    // Restore original elements
+    nameElement.style.display = '';
+    descriptionElement.style.display = '';
+    editButton.style.display = '';
+    
+    // Restore original content if needed
+    if (restoreOriginal && originalContent) {
+        nameElement.textContent = originalContent.name;
+        descriptionElement.textContent = originalContent.description;
+    }
+    
+    // Clear editing state
+    editingSection = null;
+    originalContent = null;
+}
+
+// Special section edit functions
+function saveSpecialSectionEdit(sectionIndex) {
+    const sectionItem = document.querySelector(`[data-special-index="${sectionIndex}"]`);
+    const typeTextarea = sectionItem.querySelector('.inline-edit-textarea');
+    const purposeTextarea = sectionItem.querySelectorAll('.inline-edit-textarea')[1];
+    
+    const newType = typeTextarea.value.trim();
+    const newPurpose = purposeTextarea.value.trim();
+    
+    if (!newType || !newPurpose) {
+        alert('El tipo y propósito no pueden estar vacíos');
+        return;
+    }
+    
+    // Update architecture object
+    currentArchitecture.special_sections[sectionIndex].type = newType;
+    currentArchitecture.special_sections[sectionIndex].purpose = newPurpose;
+    
+    // Save to server
+    saveToServer(currentArchitecture, 'special');
+    
+    // Restore display
+    cancelSpecialSectionEdit(sectionIndex, false);
+    
+    // Reload data to reflect changes
+    loadArchitectureData();
+}
+
+function cancelSpecialSectionEdit(sectionIndex, restoreOriginal = true) {
+    const sectionItem = document.querySelector(`[data-special-index="${sectionIndex}"]`);
+    const typeElement = sectionItem.querySelector('.special-name');
+    const purposeElement = sectionItem.querySelector('.chapter-summary');
+    const editButton = sectionItem.querySelector('.btn-edit-chapter');
+    
+    // Remove textareas and controls
+    const textareas = sectionItem.querySelectorAll('.inline-edit-textarea');
+    const controls = sectionItem.querySelector('.edit-controls');
+    
+    textareas.forEach(textarea => textarea.remove());
+    if (controls) controls.remove();
+    
+    // Restore original elements
+    typeElement.style.display = '';
+    purposeElement.style.display = '';
+    editButton.style.display = '';
+    
+    // Restore original content if needed
+    if (restoreOriginal && originalContent) {
+        typeElement.textContent = originalContent.type;
+        purposeElement.textContent = originalContent.purpose;
+    }
+    
+    // Clear editing state
+    editingSection = null;
+    originalContent = null;
+}
+
+async function saveArchitecture(architecture) {
+    try {
+        // CRITICAL: Always preserve the user-configured values from database
+        // Never allow these to be overwritten by edited architecture
+        const dbPages = {{ book.page_count }};
+        const dbFormat = '{{ book.format_size }}';
+        const dbChapters = {{ book.chapter_count }};
+        
+        // Force correct values before saving
+        architecture.target_pages = dbPages;
+        architecture.estimated_words = dbPages * (FORMAT_MULTIPLIERS[dbFormat] || FORMAT_MULTIPLIERS['pocket']);
+        architecture.format_size = dbFormat;
+        // Don't override chapter_count as user might want to add/remove chapters
+        
+        console.log('Saving architecture with enforced values:', {
+            target_pages: architecture.target_pages,
+            estimated_words: architecture.estimated_words,
+            format_size: architecture.format_size
+        });
+        
+        const response = await fetch(`/books/architecture/${bookId}/edit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                architecture: architecture
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('Architecture saved successfully');
+        } else {
+            alert('Error guardando arquitectura: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error saving architecture:', error);
+        alert('Error guardando arquitectura');
+    }
+}
+
+async function approveArchitecture() {
+    const button = document.querySelector('.btn-approve');
+    const loading = button.querySelector('.loading');
+    
+    // Show loading
+    button.disabled = true;
+    loading.style.display = 'flex';
+    
+    try {
+        // CRITICAL: Ensure correct values before approval
+        const dbPages = {{ book.page_count }};
+        const dbFormat = '{{ book.format_size }}';
+        
+        // Force correct values before approving
+        currentArchitecture.target_pages = dbPages;
+        currentArchitecture.estimated_words = dbPages * (FORMAT_MULTIPLIERS[dbFormat] || FORMAT_MULTIPLIERS['pocket']);
+        currentArchitecture.format_size = dbFormat;
+        
+        console.log('Approving architecture with values:', {
+            target_pages: currentArchitecture.target_pages,
+            estimated_words: currentArchitecture.estimated_words,
+            format_size: currentArchitecture.format_size
+        });
+        
+        const response = await fetch(`/books/architecture/${bookId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                architecture: currentArchitecture
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('¡Arquitectura aprobada! Iniciando generación completa del libro...');
+            window.location.href = result.redirect_url;
+        } else {
+            alert('Error aprobando arquitectura: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error approving architecture:', error);
+        alert('Error aprobando arquitectura');
+    } finally {
+        // Hide loading
+        button.disabled = false;
+        loading.style.display = 'none';
+    }
+}
+
+// Add/Remove functions for chapters
+function addNewChapter() {
+    if (!currentArchitecture.structure) {
+        currentArchitecture.structure = {};
+    }
+    if (!currentArchitecture.structure.chapters) {
+        currentArchitecture.structure.chapters = [];
+    }
+    
+    const newChapter = {
+        number: currentArchitecture.structure.chapters.length + 1,
+        title: 'Nuevo Capítulo',
+        summary: 'Descripción del nuevo capítulo',
+        estimated_pages: 5,
+        key_points: ['Punto clave principal'],
+        learning_objectives: ['Objetivo de aprendizaje principal']
+    };
+    
+    currentArchitecture.structure.chapters.push(newChapter);
+    
+    // Save and reload
+    saveToServer(currentArchitecture, 'chapter_added');
+    loadStructure();
+    
+    showSaveIndicator('✅ Capítulo agregado', 'success');
+}
+
+function removeChapter(chapterIndex) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este capítulo?')) {
+        return;
+    }
+    
+    currentArchitecture.structure.chapters.splice(chapterIndex, 1);
+    
+    // Renumber chapters
+    currentArchitecture.structure.chapters.forEach((chapter, index) => {
+        chapter.number = index + 1;
+    });
+    
+    // Save and reload
+    saveToServer(currentArchitecture, 'chapter_removed');
+    loadStructure();
+    
+    showSaveIndicator('✅ Capítulo eliminado', 'success');
+}
+
+// Add/Remove functions for characters
+function addNewCharacter() {
+    if (!currentArchitecture.characters) {
+        currentArchitecture.characters = [];
+    }
+    
+    const newCharacter = {
+        name: 'Nuevo Personaje',
+        role: 'Rol Principal',
+        description: 'Descripción del personaje y su importancia en el libro.'
+    };
+    
+    currentArchitecture.characters.push(newCharacter);
+    
+    // Save and reload
+    saveToServer(currentArchitecture, 'character_added');
+    loadDetails();
+    
+    showSaveIndicator('✅ Personaje agregado', 'success');
+}
+
+function removeCharacter(characterIndex) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este personaje?')) {
+        return;
+    }
+    
+    currentArchitecture.characters.splice(characterIndex, 1);
+    
+    // Save and reload
+    saveToServer(currentArchitecture, 'character_removed');
+    loadDetails();
+    
+    showSaveIndicator('✅ Personaje eliminado', 'success');
+}
+
+// Add/Remove functions for special sections
+function addNewSpecialSection() {
+    if (!currentArchitecture.special_sections) {
+        currentArchitecture.special_sections = [];
+    }
+    
+    const newSection = {
+        type: 'Nueva Sección Especial',
+        frequency: 'Por capítulo',
+        purpose: 'Propósito y beneficio de esta sección especial para el lector.'
+    };
+    
+    currentArchitecture.special_sections.push(newSection);
+    
+    // Save and reload
+    saveToServer(currentArchitecture, 'special_section_added');
+    loadDetails();
+    
+    showSaveIndicator('✅ Sección especial agregada', 'success');
+}
+
+function removeSpecialSection(sectionIndex) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta sección especial?')) {
+        return;
+    }
+    
+    currentArchitecture.special_sections.splice(sectionIndex, 1);
+    
+    // Save and reload
+    saveToServer(currentArchitecture, 'special_section_removed');
+    loadDetails();
+    
+    showSaveIndicator('✅ Sección especial eliminada', 'success');
+}
+
+// Funciones para modal de regeneración
+function showRegenerateModal() {
+    document.getElementById('regenerateModal').style.display = 'flex';
+    // Limpiar campos
+    document.getElementById('feedbackWhat').value = '';
+    document.getElementById('feedbackHow').value = '';
+    // Focus en primer campo
+    setTimeout(() => {
+        document.getElementById('feedbackWhat').focus();
+    }, 300);
+}
+
+function closeRegenerateModal() {
+    document.getElementById('regenerateModal').style.display = 'none';
+}
+
+function showRejectConfirmation() {
+    // Cerrar modal de regeneración y abrir modal de rechazo
+    closeRegenerateModal();
+    document.getElementById('rejectModal').style.display = 'flex';
+}
+
+function closeRejectModal() {
+    document.getElementById('rejectModal').style.display = 'none';
+}
+
+async function startRegeneration() {
+    const feedbackWhat = document.getElementById('feedbackWhat').value.trim();
+    const feedbackHow = document.getElementById('feedbackHow').value.trim();
+    
+    if (!feedbackWhat || !feedbackHow) {
+        alert('Por favor, completa ambos campos de feedback para regenerar la arquitectura.');
+        return;
+    }
+    
+    if (feedbackWhat.length < 20 || feedbackHow.length < 20) {
+        alert('Por favor, proporciona más detalles en tus comentarios (mínimo 20 caracteres cada uno).');
+        return;
+    }
+    
+    // Cerrar modal
+    closeRegenerateModal();
+    
+    try {
+        // Mostrar indicador de carga
+        showSaveIndicator('🔄 Regenerando arquitectura con tu feedback...', 'info');
+        
+        const response = await fetch(`/books/architecture/${bookId}/regenerate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                feedback_what: feedbackWhat,
+                feedback_how: feedbackHow,
+                current_architecture: currentArchitecture
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSaveIndicator('✅ Arquitectura regenerada exitosamente', 'success');
+            
+            // Actualizar la arquitectura actual
+            currentArchitecture = result.new_architecture;
+            
+            // Recargar la página para mostrar la nueva arquitectura
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showSaveIndicator('❌ Error: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error regenerating architecture:', error);
+        showSaveIndicator('❌ Error al regenerar arquitectura', 'error');
+    }
+}
+
+async function confirmRejectBook() {
+    try {
+        // Mostrar indicador de carga
+        showSaveIndicator('🗑️ Eliminando libro...', 'info');
+        
+        const response = await fetch(`/books/${bookId}/reject`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSaveIndicator('✅ Libro eliminado exitosamente', 'success');
+            
+            // Redirigir a la lista de libros
+            setTimeout(() => {
+                window.location.href = '/books/my-books';
+            }, 1500);
+        } else {
+            showSaveIndicator('❌ Error: ' + result.error, 'error');
+            closeRejectModal();
+        }
+    } catch (error) {
+        console.error('Error rejecting book:', error);
+        showSaveIndicator('❌ Error al eliminar libro', 'error');
+        closeRejectModal();
+    }
+}
+
+// Cerrar modales con ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeRegenerateModal();
+        closeRejectModal();
+    }
+});
+
+// Cerrar modales al hacer clic fuera
+document.getElementById('regenerateModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeRegenerateModal();
+    }
+});
+
+document.getElementById('rejectModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeRejectModal();
+    }
+});
+</script>
+{% endblock %}

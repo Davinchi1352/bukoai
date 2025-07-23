@@ -283,9 +283,9 @@ def start_generation():
     db.session.add(book)
     db.session.commit()
     
-    # Enviar a cola de procesamiento
+    # Enviar a cola de procesamiento para generar arquitectura (primera etapa)
     from app import celery
-    task = celery.send_task('app.tasks.book_generation.generate_book_task', args=[book.id], queue='celery')
+    task = celery.send_task('app.tasks.book_generation.generate_book_architecture_task', args=[book.id], queue='book_generation')
     
     # Actualizar con task_id
     book.task_id = task.id
@@ -482,7 +482,7 @@ def retry_book_generation(book_id):
         
         # Programar la tarea
         from app import celery
-        task = celery.send_task('app.tasks.book_generation.generate_book_task', args=[book_id], queue='celery')
+        task = celery.send_task('app.tasks.book_generation.generate_book_task', args=[book_id], queue='book_generation')
         
         # Actualizar con task_id
         book.task_id = task.id
@@ -498,5 +498,299 @@ def retry_book_generation(book_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error al programar reintento: {str(e)}'}), 500
+
+
+# RUTAS PARA EL NUEVO FLUJO DE DOS ETAPAS
+
+@bp.route('/architecture/<int:book_id>')
+@login_required
+def review_architecture(book_id):
+    """Vista para revisar y aprobar la arquitectura del libro."""
+    book = BookGeneration.query.filter_by(
+        id=book_id, 
+        user_id=current_user.id
+    ).first_or_404()
+    
+    # Verificar que el libro esté en estado de revisión de arquitectura
+    if book.status != BookStatus.ARCHITECTURE_REVIEW:
+        flash('Este libro no está en estado de revisión de arquitectura.', 'error')
+        return redirect(url_for('books.view_book', book_id=book_id))
+    
+    # Verificar que tenga arquitectura
+    if not book.has_architecture:
+        flash('Este libro no tiene arquitectura generada.', 'error')
+        return redirect(url_for('books.my_books'))
+    
+    return render_template('books/review_architecture.html', book=book)
+
+
+@bp.route('/architecture/<int:book_id>/approve', methods=['POST'])
+@login_required
+def approve_architecture(book_id):
+    """Aprueba la arquitectura del libro e inicia la generación completa."""
+    book = BookGeneration.query.filter_by(
+        id=book_id, 
+        user_id=current_user.id
+    ).first_or_404()
+    
+    # Verificar que el libro esté en estado correcto
+    if book.status != BookStatus.ARCHITECTURE_REVIEW:
+        return jsonify({'error': 'El libro no está en estado de revisión de arquitectura'}), 400
+    
+    try:
+        data = request.get_json() or {}
+        updated_architecture = data.get('architecture')
+        
+        # VALIDACIÓN CRÍTICA: Verificar que la arquitectura esté completa
+        if not updated_architecture:
+            return jsonify({'error': 'Arquitectura requerida para aprobación'}), 400
+            
+        # Validar estructura mínima requerida
+        validation_errors = []
+        
+        if not updated_architecture.get('structure'):
+            validation_errors.append('Estructura del libro faltante')
+        elif not updated_architecture['structure'].get('chapters'):
+            validation_errors.append('Capítulos del libro faltantes')
+        elif len(updated_architecture['structure']['chapters']) == 0:
+            validation_errors.append('Debe haber al menos un capítulo')
+            
+        if not updated_architecture.get('title'):
+            validation_errors.append('Título del libro faltante')
+            
+        if not updated_architecture.get('summary'):
+            validation_errors.append('Descripción del libro faltante')
+            
+        # Validar que cada capítulo tenga la información mínima
+        chapters = updated_architecture.get('structure', {}).get('chapters', [])
+        for i, chapter in enumerate(chapters):
+            if not chapter.get('title'):
+                validation_errors.append(f'Capítulo {i+1} no tiene título')
+            if not chapter.get('summary'):
+                validation_errors.append(f'Capítulo {i+1} no tiene resumen')
+                
+        if validation_errors:
+            return jsonify({
+                'error': 'Arquitectura incompleta',
+                'validation_errors': validation_errors
+            }), 400
+            
+        # Log para verificar arquitectura antes de aprobar
+        from app.utils.logging import log_system_event
+        log_system_event(
+            user_id=current_user.id,
+            action="architecture_approval_validation",
+            details={
+                "book_id": book_id,
+                "chapters_count": len(chapters),
+                "characters_count": len(updated_architecture.get('characters', [])),
+                "special_sections_count": len(updated_architecture.get('special_sections', [])),
+                "has_introduction": bool(updated_architecture.get('structure', {}).get('introduction')),
+                "has_conclusion": bool(updated_architecture.get('structure', {}).get('conclusion')),
+                "target_pages": updated_architecture.get('target_pages'),
+                "estimated_words": updated_architecture.get('estimated_words')
+            }
+        )
+        
+        # Aprobar la arquitectura (con modificaciones si las hay)
+        book.approve_architecture(updated_architecture)
+        
+        # Programar la tarea de generación completa
+        from app import celery
+        task = celery.send_task('app.tasks.book_generation.generate_book_task', args=[book.id], queue='book_generation')
+        
+        # Actualizar con task_id
+        book.task_id = task.id
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Arquitectura aprobada. Iniciando generación completa del libro.',
+            'book_id': book.id,
+            'redirect_url': url_for('books.generation_status', book_id=book.id)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al aprobar arquitectura: {str(e)}'}), 500
+
+
+@bp.route('/architecture/<int:book_id>/edit', methods=['POST'])
+@login_required
+def edit_architecture(book_id):
+    """Permite editar la arquitectura del libro."""
+    book = BookGeneration.query.filter_by(
+        id=book_id, 
+        user_id=current_user.id
+    ).first_or_404()
+    
+    # Verificar que el libro esté en estado correcto
+    if book.status != BookStatus.ARCHITECTURE_REVIEW:
+        return jsonify({'error': 'El libro no está en estado de revisión de arquitectura'}), 400
+    
+    try:
+        data = request.get_json()
+        updated_architecture = data.get('architecture')
+        
+        if not updated_architecture:
+            return jsonify({'error': 'Arquitectura requerida'}), 400
+        
+        # Actualizar la arquitectura sin aprobar aún
+        book.architecture = updated_architecture
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Arquitectura actualizada exitosamente.'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al actualizar arquitectura: {str(e)}'}), 500
+
+
+@bp.route('/api/<int:book_id>/architecture')
+@login_required
+def api_get_architecture(book_id):
+    """API endpoint para obtener la arquitectura de un libro."""
+    book = BookGeneration.query.filter_by(
+        id=book_id,
+        user_id=current_user.id
+    ).first()
+    
+    if not book:
+        return jsonify({'error': 'Libro no encontrado'}), 404
+    
+    return jsonify({
+        'book_id': book.id,
+        'title': book.title,
+        'status': book.status.value,
+        'has_architecture': book.has_architecture,
+        'is_architecture_approved': book.is_architecture_approved,
+        'architecture': book.architecture,
+        'architecture_approved_at': book.architecture_approved_at.isoformat() if book.architecture_approved_at else None,
+        'created_at': book.created_at.isoformat() if book.created_at else None
+    })
+
+
+@bp.route('/architecture/help')
+@bp.route('/architecture/help/<int:book_id>')
+def architecture_help(book_id=None):
+    """Página de ayuda para la revisión, edición y aprobación de arquitectura."""
+    return render_template('books/architecture_help.html', book_id=book_id)
+
+
+@bp.route('/architecture/<int:book_id>/regenerate', methods=['POST'])
+@login_required
+def regenerate_architecture(book_id):
+    """Regenera la arquitectura del libro basado en feedback del usuario."""
+    book = BookGeneration.query.filter_by(
+        id=book_id, 
+        user_id=current_user.id
+    ).first_or_404()
+    
+    # Verificar que el libro esté en estado correcto
+    if book.status != BookStatus.ARCHITECTURE_REVIEW:
+        return jsonify({'error': 'El libro no está en estado de revisión de arquitectura'}), 400
+    
+    try:
+        data = request.get_json()
+        feedback_what = data.get('feedback_what', '').strip()
+        feedback_how = data.get('feedback_how', '').strip()
+        current_architecture = data.get('current_architecture', {})
+        
+        # Validar feedback
+        if not feedback_what or not feedback_how:
+            return jsonify({'error': 'Se requiere feedback completo'}), 400
+            
+        if len(feedback_what) < 20 or len(feedback_how) < 20:
+            return jsonify({'error': 'El feedback debe ser más detallado (mínimo 20 caracteres cada campo)'}), 400
+        
+        # Guardar feedback en la base de datos para estadísticas usando el método del modelo
+        book.add_regeneration_feedback(feedback_what, feedback_how, current_architecture)
+        
+        # Log del evento
+        from app.utils.logging import log_system_event
+        log_system_event(
+            user_id=current_user.id,
+            action="architecture_regeneration_requested",
+            details={
+                "book_id": book_id,
+                "feedback_what_length": len(feedback_what),
+                "feedback_how_length": len(feedback_how),
+                "has_current_architecture": bool(current_architecture),
+                "regeneration_count": book.regeneration_count
+            }
+        )
+        
+        # Programar tarea de regeneración de arquitectura
+        from app import celery
+        task = celery.send_task(
+            'app.tasks.book_generation.regenerate_book_architecture_task', 
+            args=[book_id, feedback_what, feedback_how, current_architecture],
+            queue='book_generation'
+        )
+        
+        # Actualizar estado del libro
+        book.status = BookStatus.PROCESSING
+        book.task_id = task.id
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Regeneración de arquitectura iniciada',
+            'task_id': task.id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al iniciar regeneración: {str(e)}'}), 500
+
+
+@bp.route('/<int:book_id>/reject', methods=['DELETE'])
+@login_required
+def reject_book(book_id):
+    """Rechaza y elimina completamente un libro."""
+    book = BookGeneration.query.filter_by(
+        id=book_id, 
+        user_id=current_user.id
+    ).first_or_404()
+    
+    try:
+        # Log del evento antes de eliminar
+        from app.utils.logging import log_system_event
+        log_system_event(
+            user_id=current_user.id,
+            action="book_rejected_and_deleted",
+            details={
+                "book_id": book_id,
+                "title": book.title,
+                "status": book.status.value,
+                "had_architecture": book.has_architecture
+            }
+        )
+        
+        # Cancelar tarea si está en proceso
+        if book.task_id:
+            try:
+                from app import celery
+                celery.control.revoke(book.task_id, terminate=True)
+            except Exception as task_error:
+                # Log pero continuar con la eliminación
+                print(f"Error canceling task {book.task_id}: {task_error}")
+        
+        # Eliminar el libro de la base de datos
+        db.session.delete(book)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Libro eliminado exitosamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al eliminar libro: {str(e)}'}), 500
+
 
 

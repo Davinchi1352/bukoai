@@ -15,6 +15,7 @@ from .base import BaseModel, db
 class BookStatus(enum.Enum):
     """Estados de generación de libros"""
     QUEUED = "queued"
+    ARCHITECTURE_REVIEW = "architecture_review"
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
@@ -64,6 +65,16 @@ class BookGeneration(BaseModel):
     content = Column(Text, nullable=True)
     thinking_content = Column(Text, nullable=True)
     thinking_length = Column(Integer, default=0, nullable=False)
+    
+    # Arquitectura del libro (para flujo de dos etapas)
+    architecture = Column(JSON, nullable=True)
+    architecture_approved_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Feedback de regeneración de arquitectura (para estadísticas)
+    regeneration_feedback_what = Column(Text, nullable=True)  # Lo que no le gustó
+    regeneration_feedback_how = Column(Text, nullable=True)   # Qué quiere cambiar
+    regeneration_history = Column(JSON, nullable=True)        # Historial de regeneraciones
+    regeneration_count = Column(Integer, default=0, nullable=False)  # Número de regeneraciones
     
     # Estado del procesamiento
     status = Column(SQLEnum(BookStatus), default=BookStatus.QUEUED, nullable=False)
@@ -148,6 +159,21 @@ class BookGeneration(BaseModel):
         return self.status == BookStatus.QUEUED
     
     @property
+    def is_architecture_review(self) -> bool:
+        """Verifica si está esperando revisión de arquitectura"""
+        return self.status == BookStatus.ARCHITECTURE_REVIEW
+    
+    @property
+    def has_architecture(self) -> bool:
+        """Verifica si tiene arquitectura generada"""
+        return self.architecture is not None
+    
+    @property
+    def is_architecture_approved(self) -> bool:
+        """Verifica si la arquitectura fue aprobada"""
+        return self.architecture_approved_at is not None
+    
+    @property
     def can_retry(self) -> bool:
         """Verifica si puede reintentarse"""
         return self.retry_count < self.max_retries and self.is_failed
@@ -221,6 +247,85 @@ class BookGeneration(BaseModel):
         self.completed_at = datetime.utcnow()
         db.session.commit()
     
+    def mark_architecture_review(self, architecture: Dict[str, Any]) -> None:
+        """Marca el libro como esperando revisión de arquitectura"""
+        self.status = BookStatus.ARCHITECTURE_REVIEW
+        self.architecture = architecture
+        self.completed_at = None  # Reset completed_at
+        db.session.commit()
+    
+    def approve_architecture(self, updated_architecture: Optional[Dict[str, Any]] = None) -> None:
+        """Aprueba la arquitectura y marca para generación completa"""
+        if updated_architecture:
+            self.architecture = updated_architecture
+        self.architecture_approved_at = datetime.now(timezone.utc)
+        self.status = BookStatus.QUEUED  # Volver a cola para generación completa
+        db.session.commit()
+    
+    def add_regeneration_feedback(self, feedback_what: str, feedback_how: str, current_architecture: Dict[str, Any]) -> None:
+        """Agrega feedback de regeneración al historial"""
+        self.regeneration_feedback_what = feedback_what
+        self.regeneration_feedback_how = feedback_how
+        self.regeneration_count += 1
+        
+        # Inicializar historial si no existe
+        if not self.regeneration_history:
+            self.regeneration_history = []
+        
+        # Agregar entrada al historial
+        regeneration_entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "feedback_what": feedback_what,
+            "feedback_how": feedback_how,
+            "previous_architecture": current_architecture,
+            "regeneration_number": self.regeneration_count
+        }
+        self.regeneration_history.append(regeneration_entry)
+        
+        # Limitar historial a las últimas 10 regeneraciones para evitar que crezca demasiado
+        if len(self.regeneration_history) > 10:
+            self.regeneration_history = self.regeneration_history[-10:]
+        
+        db.session.commit()
+    
+    def get_regeneration_stats(self) -> Dict[str, Any]:
+        """Obtiene estadísticas de regeneración para análisis"""
+        return {
+            "regeneration_count": self.regeneration_count,
+            "has_regenerations": self.regeneration_count > 0,
+            "last_feedback_what": self.regeneration_feedback_what,
+            "last_feedback_how": self.regeneration_feedback_how,
+            "regeneration_history_count": len(self.regeneration_history) if self.regeneration_history else 0,
+            "most_common_feedback_themes": self._analyze_feedback_themes() if self.regeneration_history else []
+        }
+    
+    def _analyze_feedback_themes(self) -> List[str]:
+        """Analiza los temas más comunes en el feedback de regeneración"""
+        if not self.regeneration_history:
+            return []
+        
+        # Palabras clave comunes en feedback de arquitectura
+        themes_keywords = {
+            "characters": ["personaje", "character", "protagonista", "mentor"],
+            "structure": ["estructura", "structure", "capítulo", "chapter", "organización"],
+            "content": ["contenido", "content", "tema", "topic", "información"],
+            "tone": ["tono", "tone", "estilo", "style", "enfoque", "approach"],
+            "length": ["largo", "length", "páginas", "pages", "extenso", "corto"]
+        }
+        
+        feedback_texts = []
+        for entry in self.regeneration_history:
+            feedback_texts.extend([entry.get("feedback_what", ""), entry.get("feedback_how", "")])
+        
+        combined_feedback = " ".join(feedback_texts).lower()
+        
+        themes_found = []
+        for theme, keywords in themes_keywords.items():
+            if any(keyword in combined_feedback for keyword in keywords):
+                themes_found.append(theme)
+        
+        return themes_found[:3]  # Retornar máximo 3 temas principales
+    
     def update_queue_position(self, position: int) -> None:
         """Actualiza la posición en cola"""
         self.queue_position = position
@@ -282,6 +387,8 @@ class BookGeneration(BaseModel):
             return -1
         elif self.status == BookStatus.QUEUED:
             return 0
+        elif self.status == BookStatus.ARCHITECTURE_REVIEW:
+            return 25  # Arquitectura generada, esperando aprobación
         elif self.status == BookStatus.PROCESSING:
             # Progreso dinámico basado en tiempo transcurrido
             if not self.started_at:
@@ -360,6 +467,11 @@ class BookGeneration(BaseModel):
         return cls.query.filter_by(status=BookStatus.FAILED).all()
     
     @classmethod
+    def get_architecture_review_books(cls) -> List['BookGeneration']:
+        """Retorna libros esperando revisión de arquitectura"""
+        return cls.query.filter_by(status=BookStatus.ARCHITECTURE_REVIEW).all()
+    
+    @classmethod
     def get_statistics(cls) -> Dict[str, Any]:
         """Retorna estadísticas globales"""
         total = cls.query.count()
@@ -367,6 +479,7 @@ class BookGeneration(BaseModel):
         failed = cls.query.filter_by(status=BookStatus.FAILED).count()
         processing = cls.query.filter_by(status=BookStatus.PROCESSING).count()
         queued = cls.query.filter_by(status=BookStatus.QUEUED).count()
+        architecture_review = cls.query.filter_by(status=BookStatus.ARCHITECTURE_REVIEW).count()
         
         return {
             "total_books": total,
@@ -374,6 +487,7 @@ class BookGeneration(BaseModel):
             "failed_books": failed,
             "processing_books": processing,
             "queued_books": queued,
+            "architecture_review_books": architecture_review,
             "success_rate": (completed / total * 100) if total > 0 else 0,
             "average_processing_time": cls._calculate_average_processing_time(),
         }
@@ -486,9 +600,13 @@ class BookGeneration(BaseModel):
     def current_step(self) -> str:
         """Retorna el paso actual de procesamiento con detalles dinámicos"""
         if self.status == BookStatus.QUEUED:
+            if self.is_architecture_approved:
+                return "En cola para generación completa del libro"
             if self.queue_position:
                 return f"En cola de procesamiento (posición {self.queue_position})"
             return "En cola de procesamiento"
+        elif self.status == BookStatus.ARCHITECTURE_REVIEW:
+            return "Arquitectura del libro generada - Esperando tu aprobación"
         elif self.status == BookStatus.PROCESSING:
             if not self.started_at:
                 return "Iniciando generación con Claude AI..."

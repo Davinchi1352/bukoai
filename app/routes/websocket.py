@@ -468,6 +468,46 @@ def emit_book_completed(book_id):
                     error=str(e))
 
 
+def emit_architecture_ready(book_id, data):
+    """
+    Emit architecture ready notification for automatic redirection.
+    
+    Args:
+        book_id: Book ID
+        data: Architecture data including book_uuid and architecture
+    """
+    try:
+        book = BookGeneration.query.get(book_id)
+        if not book:
+            logger.warning("book_not_found_for_architecture_notification", book_id=book_id)
+            return
+        
+        architecture_data = {
+            'book_uuid': str(book.uuid),
+            'book_id': book.id,
+            'title': book.title,
+            'status': 'architecture_review',
+            'architecture': data.get('architecture')
+        }
+        
+        # Emit to book room for automatic redirection
+        room_name = f"book_{book_id}"
+        socketio.emit('architecture_ready', architecture_data, room=room_name)
+        
+        # Emit to user room for dashboard updates
+        user_room = f"user_{book.user_id}"
+        socketio.emit('architecture_ready', architecture_data, room=user_room)
+        
+        logger.info("architecture_ready_notification_sent", 
+                   book_id=book_id,
+                   user_id=book.user_id)
+        
+    except Exception as e:
+        logger.error("error_emitting_architecture_ready", 
+                    book_id=book_id,
+                    error=str(e))
+
+
 def emit_book_failed(book_id, error_message):
     """
     Emit book generation failure notification.

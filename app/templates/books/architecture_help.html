@@ -1,0 +1,682 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Guía de Revisión, Edición y Aprobación - Buko AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        /* Buko AI Design System Colors */
+        --primary-color: #1e293b;
+        --primary-dark: #0f172a;
+        --primary-light: #334155;
+        --accent-color: #3b82f6;
+        --accent-dark: #1d4ed8;
+        --accent-light: #60a5fa;
+        --secondary-color: #64748b;
+        --secondary-dark: #475569;
+        --secondary-light: #94a3b8;
+        --success-color: #059669;
+        --warning-color: #d97706;
+        --error-color: #dc2626;
+        --info-color: #0ea5e9;
+        --background-primary: #ffffff;
+        --background-secondary: #f8fafc;
+        --background-tertiary: #f1f5f9;
+        --border-color: #e2e8f0;
+        --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    }
+
+    .help-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 30px 20px;
+        line-height: 1.7;
+    }
+
+    .help-header {
+        background: var(--accent-gradient);
+        color: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        margin-bottom: 40px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+    }
+
+    .help-header h1 {
+        font-size: 2.2em;
+        font-weight: 800;
+        margin-bottom: 10px;
+        color: #ffffff;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .help-header p {
+        font-size: 1.1em;
+        opacity: 0.95;
+        font-weight: 400;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .help-section {
+        background: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(30, 41, 59, 0.08);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .help-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--accent-gradient);
+    }
+
+    .help-section h2 {
+        font-size: 1.6em;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .help-section h3 {
+        font-size: 1.3em;
+        font-weight: 600;
+        color: var(--accent-color);
+        margin: 25px 0 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .help-section p {
+        color: var(--secondary-dark);
+        margin-bottom: 15px;
+        font-size: 16px;
+    }
+
+    .help-section ul {
+        margin: 15px 0;
+        padding-left: 0;
+        list-style: none;
+    }
+
+    .help-section li {
+        background: var(--background-secondary);
+        border-left: 4px solid var(--accent-color);
+        padding: 12px 20px;
+        margin-bottom: 8px;
+        border-radius: 0 8px 8px 0;
+        position: relative;
+    }
+
+    .help-section li::before {
+        content: '✓';
+        color: var(--success-color);
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .step-number {
+        background: var(--accent-color);
+        color: white;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1em;
+        margin-right: 15px;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 25px 0;
+    }
+
+    .feature-card {
+        background: var(--background-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+    }
+
+    .feature-icon {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .feature-title {
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 10px;
+        font-size: 1.1em;
+    }
+
+    .feature-description {
+        color: var(--secondary-color);
+        font-size: 0.95em;
+        line-height: 1.5;
+    }
+
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border: 1px solid #10b981;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        position: relative;
+    }
+
+    .tip-box::before {
+        content: '💡';
+        font-size: 1.5em;
+        position: absolute;
+        top: 15px;
+        left: 20px;
+    }
+
+    .tip-box h4 {
+        color: #065f46;
+        font-weight: 600;
+        margin: 0 0 10px 40px;
+        font-size: 1.1em;
+    }
+
+    .tip-box p {
+        color: #047857;
+        margin: 0 0 0 40px;
+        font-size: 0.95em;
+    }
+
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 1px solid #d97706;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        position: relative;
+    }
+
+    .warning-box::before {
+        content: '⚠️';
+        font-size: 1.5em;
+        position: absolute;
+        top: 15px;
+        left: 20px;
+    }
+
+    .warning-box h4 {
+        color: #92400e;
+        font-weight: 600;
+        margin: 0 0 10px 40px;
+        font-size: 1.1em;
+    }
+
+    .warning-box p {
+        color: #b45309;
+        margin: 0 0 0 40px;
+        font-size: 0.95em;
+    }
+
+    .back-button {
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
+        margin-top: 30px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .back-button:hover {
+        background: var(--secondary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(100, 116, 139, 0.4);
+    }
+
+    .keyboard-shortcut {
+        background: var(--background-tertiary);
+        border: 1px solid var(--border-color);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.9em;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-container">
+    <!-- Header -->
+    <div class="help-header">
+        <h1>📚 Guía de Revisión, Edición y Aprobación</h1>
+        <p>Aprende a interactuar con la arquitectura de tu libro de manera eficiente y profesional</p>
+    </div>
+
+    <!-- Introducción -->
+    <div class="help-section">
+        <h2>🎯 ¿Qué es la Arquitectura del Libro?</h2>
+        <p>La arquitectura del libro es la estructura completa generada por BUKO AI basada en tus especificaciones. Incluye:</p>
+        <ul>
+            <li><strong>Resumen y enfoque</strong> del contenido</li>
+            <li><strong>Estructura detallada</strong> con introducción, capítulos y conclusión</li>
+            <li><strong>Personajes y casos de estudio</strong> contextualizados</li>
+            <li><strong>Secciones especiales</strong> que enriquecen la experiencia del lector</li>
+        </ul>
+        
+        <div class="tip-box">
+            <h4>¿Por qué revisar la arquitectura?</h4>
+            <p>Esta etapa te permite personalizar y perfeccionar la estructura antes de generar el contenido completo, asegurando que el libro final cumpla exactamente con tus expectativas.</p>
+        </div>
+    </div>
+
+    <!-- Navegación por pestañas -->
+    <div class="help-section">
+        <h2>🗂️ Navegación por Pestañas</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <div class="feature-title">Resumen</div>
+                <div class="feature-description">Vista general con métricas, descripción y enfoque de escritura</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏗️</div>
+                <div class="feature-title">Estructura</div>
+                <div class="feature-description">Introducción, capítulos detallados y conclusión</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <div class="feature-title">Detalles</div>
+                <div class="feature-description">Personajes, casos de estudio y secciones especiales</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <div class="feature-title">JSON</div>
+                <div class="feature-description">Vista técnica para editores avanzados</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proceso de Edición -->
+    <div class="help-section">
+        <h2>✏️ Cómo Editar el Contenido</h2>
+        
+        <h3><span class="step-number">1</span>Edición In-Situ</h3>
+        <p>Cada sección tiene un botón <strong>✏️ Editar</strong> que aparece al pasar el cursor. Al hacer clic:</p>
+        <ul>
+            <li>El contenido se convierte en campos editables</li>
+            <li>Puedes modificar texto, agregar o quitar elementos</li>
+            <li>Los cambios se guardan automáticamente</li>
+            <li>Puedes cancelar en cualquier momento</li>
+        </ul>
+
+        <h3><span class="step-number">2</span>Edición de Listas</h3>
+        <p>Para elementos como puntos clave y objetivos de aprendizaje:</p>
+        <ul>
+            <li>Usa el botón <strong>➕ Agregar</strong> para nuevos elementos</li>
+            <li>Usa el botón <strong>🗑️</strong> para eliminar elementos específicos</li>
+            <li>Cada elemento se puede editar individualmente</li>
+        </ul>
+
+        <h3><span class="step-number">3</span>Agregar/Eliminar Secciones</h3>
+        <p>En las pestañas Estructura y Detalles:</p>
+        <ul>
+            <li><strong>Capítulos:</strong> Agrega o elimina capítulos completos</li>
+            <li><strong>Personajes:</strong> Gestiona casos de estudio y mentores</li>
+            <li><strong>Secciones Especiales:</strong> Personaliza elementos únicos del libro</li>
+        </ul>
+
+        <div class="warning-box">
+            <h4>Importante sobre las Métricas</h4>
+            <p>Las páginas y palabras estimadas siempre reflejan tu configuración original. Estos valores no se pueden modificar desde la arquitectura - corresponden al formato y extensión que seleccionaste al crear el libro.</p>
+        </div>
+    </div>
+
+    <!-- Controles de Teclado -->
+    <div class="help-section">
+        <h2>⌨️ Atajos de Teclado</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⏎</div>
+                <div class="feature-title">Enter</div>
+                <div class="feature-description">Guardar cambios en modo edición</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⎋</div>
+                <div class="feature-title">Escape</div>
+                <div class="feature-description">Cancelar edición</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⇥</div>
+                <div class="feature-title">Tab</div>
+                <div class="feature-description">Navegar entre campos</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proceso de Aprobación -->
+    <div class="help-section">
+        <h2>✅ Proceso de Aprobación</h2>
+        
+        <h3><span class="step-number">1</span>Revisión Completa</h3>
+        <p>Antes de aprobar, asegúrate de haber revisado:</p>
+        <ul>
+            <li>Que la descripción y enfoque reflejen tu visión</li>
+            <li>Que la estructura de capítulos sea la deseada</li>
+            <li>Que los personajes y casos sean relevantes</li>
+            <li>Que las secciones especiales aporten valor</li>
+        </ul>
+
+        <h3><span class="step-number">2</span>Aprobación Final</h3>
+        <p>Al hacer clic en <strong>"✅ Aprobar y Generar Libro"</strong>:</p>
+        <ul>
+            <li>Se inicia la generación completa del contenido</li>
+            <li>El proceso utiliza toda la capacidad de BUKO AI para máxima calidad</li>
+            <li>Ya no podrás modificar la arquitectura</li>
+            <li>Serás redirigido a la página de progreso</li>
+        </ul>
+
+        <div class="tip-box">
+            <h4>Consejo de Experto</h4>
+            <p>Tómate el tiempo necesario para revisar cada detalle. Una arquitectura bien refinada resulta en un libro de mayor calidad y más alineado con tus objetivos.</p>
+        </div>
+    </div>
+
+    <!-- Regeneración de Arquitectura -->
+    <div class="help-section">
+        <h2>🔄 Regeneración Inteligente de Arquitectura</h2>
+        
+        <p>Si la arquitectura generada no cumple completamente con tus expectativas, puedes usar la función de <strong>Regeneración Inteligente</strong> para crear uma versión mejorada basada en tu feedback específico.</p>
+
+        <h3><span class="step-number">1</span>¿Cuándo Usar la Regeneración?</h3>
+        <p>Utiliza esta función cuando:</p>
+        <ul>
+            <li>La estructura de capítulos no refleja tu visión del libro</li>
+            <li>Los personajes o casos de estudio no son relevantes para tu tema</li>
+            <li>El enfoque o tono no es el adecuado para tu audiencia</li>
+            <li>Faltan elementos importantes que consideras esenciales</li>
+            <li>La organización del contenido no fluye como esperabas</li>
+        </ul>
+
+        <h3><span class="step-number">2</span>Cómo Funciona el Proceso</h3>
+        <p>El sistema de regeneración utiliza <strong>Inteligencia Artificial Avanzada de BUKO AI</strong> para mejorar la arquitectura:</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">Análisis Contextual</div>
+                <div class="feature-description">BUKO AI analiza tu arquitectura actual junto con tu feedback específico</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <div class="feature-title">Procesamiento Inteligente</div>
+                <div class="feature-description">Identifica exactamente qué cambios necesitas y por qué</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✨</div>
+                <div class="feature-title">Mejora Dirigida</div>
+                <div class="feature-description">Genera una nueva arquitectura que aborda específicamente tus preocupaciones</div>
+            </div>
+        </div>
+
+        <h3><span class="step-number">3</span>Proporcionando Feedback Efectivo</h3>
+        <p>Para obtener los mejores resultados, tu feedback debe ser <strong>específico y constructivo</strong>:</p>
+
+        <div class="warning-box">
+            <h4>Campo 1: "¿Qué no te gustó de la arquitectura actual?"</h4>
+            <p><strong>Ejemplos de feedback específico:</strong></p>
+            <ul style="margin-left: 40px; list-style: disc;">
+                <li>"Los capítulos están demasiado enfocados en teoría y no incluyen suficientes ejemplos prácticos"</li>
+                <li>"Los personajes mencionados no son relevantes para mi industria específica"</li>
+                <li>"La estructura salta entre temas sin una progresión lógica clara"</li>
+                <li>"Falta información sobre implementación práctica y casos reales"</li>
+            </ul>
+        </div>
+
+        <div class="tip-box">
+            <h4>Campo 2: "¿Qué te gustaría cambiar o mejorar específicamente?"</h4>
+            <p><strong>Ejemplos de mejoras específicas:</strong></p>
+            <ul style="margin-left: 40px; list-style: disc;">
+                <li>"Incluir más casos de estudio de empresas tech latinoamericanas"</li>
+                <li>"Reorganizar para que cada capítulo incluya teoría + práctica + ejercicios"</li>
+                <li>"Agregar secciones sobre herramientas digitales actuales"</li>
+                <li>"Crear una progresión más gradual de conceptos básicos a avanzados"</li>
+            </ul>
+        </div>
+
+        <h3><span class="step-number">4</span>Proceso Paso a Paso</h3>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">1️⃣</div>
+                <div class="feature-title">Hacer Clic en "🔄 Regenerar"</div>
+                <div class="feature-description">Accede al modal de regeneración desde los botones de acción</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">2️⃣</div>
+                <div class="feature-title">Completar Feedback</div>
+                <div class="feature-description">Llena ambos campos con mínimo 20 caracteres cada uno</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">3️⃣</div>
+                <div class="feature-title">Procesamiento IA</div>
+                <div class="feature-description">BUKO AI analiza y regenera con máxima capacidad de procesamiento</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">4️⃣</div>
+                <div class="feature-title">Revisar Resultado</div>
+                <div class="feature-description">Evalúa la nueva arquitectura y decide si aprobar o regenerar nuevamente</div>
+            </div>
+        </div>
+
+        <h3><span class="step-number">5</span>Consejos para Feedback Efectivo</h3>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <div class="feature-title">Sé Específico</div>
+                <div class="feature-description">Menciona elementos concretos, no impresiones generales</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">Prioriza Cambios</div>
+                <div class="feature-description">Enfócate en los 2-3 aspectos más importantes</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💡</div>
+                <div class="feature-title">Proporciona Contexto</div>
+                <div class="feature-description">Explica por qué un cambio es importante para tu libro</div>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ Importante: Limitaciones de la Regeneración</h4>
+            <p>La regeneración NO puede cambiar:</p>
+            <ul style="margin-left: 40px; list-style: disc;">
+                <li><strong>Configuración básica:</strong> Número de páginas, formato, idioma (configurados al crear el libro)</li>
+                <li><strong>Tema principal:</strong> El tema central del libro definido en el título y descripción original</li>
+                <li><strong>Audiencia objetivo:</strong> El público definido inicialmente</li>
+            </ul>
+            <p><strong>Si necesitas cambios fundamentales,</strong> considera usar la opción "❌ Rechazar Libro" y crear uno nuevo.</p>
+        </div>
+
+        <h3><span class="step-number">6</span>Múltiples Regeneraciones</h3>
+        <p>Puedes regenerar la arquitectura <strong>las veces que necesites</strong>:</p>
+        <ul>
+            <li>Cada regeneración utiliza tu feedback anterior como contexto</li>
+            <li>El sistema aprende de tus preferencias progresivamente</li>
+            <li>Tu historial de feedback se guarda para mejorar futuras generaciones</li>
+            <li>No hay límite en el número de regeneraciones</li>
+        </ul>
+
+        <div class="tip-box">
+            <h4>💡 Estrategia Recomendada</h4>
+            <p>Para obtener la arquitectura perfecta:</p>
+            <ol style="margin-left: 40px;">
+                <li><strong>Primera regeneración:</strong> Corrige los problemas más evidentes</li>
+                <li><strong>Segunda regeneración:</strong> Refina detalles y ajusta el enfoque</li>
+                <li><strong>Terceira regeneración:</strong> Pulir elementos específicos como personajes o secciones especiales</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Solución de Problemas -->
+    <div class="help-section">
+        <h2>🔧 Solución de Problemas Comunes</h2>
+        
+        <h3>❓ El botón "Editar" no aparece</h3>
+        <ul>
+            <li>Pasa el cursor sobre la sección - el botón aparece al hacer hover</li>
+            <li>Asegúrate de que no haya otra edición en progreso</li>
+        </ul>
+
+        <h3>❓ Los cambios no se guardan</h3>
+        <ul>
+            <li>Verifica tu conexión a internet</li>
+            <li>Asegúrate de hacer clic en "✅ Guardar" antes de salir del modo edición</li>
+            <li>Los cambios se indican con notificaciones verdes cuando se guardan correctamente</li>
+        </ul>
+
+        <h3>❓ Las métricas no coinciden</h3>
+        <ul>
+            <li>Las páginas y palabras reflejan tu configuración original al crear el libro</li>
+            <li>Si necesitas cambiar estos valores, deberás crear un nuevo libro</li>
+        </ul>
+
+        <h3>❓ La regeneración no funcionó como esperaba</h3>
+        <ul>
+            <li>Revisa que tu feedback sea específico (mínimo 20 caracteres por campo)</li>
+            <li>Describe problemas concretos en lugar de impresiones generales</li>
+            <li>Usa múltiples regeneraciones para refinar progresivamente</li>
+            <li>Considera si necesitas cambios fundamentales que requieren un libro nuevo</li>
+        </ul>
+
+        <h3>❓ El modal de regeneración no aparece</h3>
+        <ul>
+            <li>Asegúrate de estar en la página de arquitectura correcta</li>
+            <li>Verifica que el libro esté en estado "Architecture Review"</li>
+            <li>Actualiza la página si el botón no responde</li>
+        </ul>
+
+        <h3>❓ Mi feedback se perdió durante la regeneración</h3>
+        <ul>
+            <li>Todo tu feedback se guarda automáticamente en la base de datos</li>
+            <li>Puedes ver el historial de regeneraciones en los logs del sistema</li>
+            <li>Cada regeneración mantiene el contexto de las anteriores</li>
+        </ul>
+    </div>
+
+    <!-- Mejores Prácticas -->
+    <div class="help-section">
+        <h2>🌟 Mejores Prácticas</h2>
+        
+        <h3>Para Edición Manual:</h3>
+        <ul>
+            <li><strong>Sé específico:</strong> Proporciona descripciones claras y detalladas</li>
+            <li><strong>Mantén coherencia:</strong> Asegúrate de que todos los elementos se alineen con tu visión</li>
+            <li><strong>Piensa en el lector:</strong> Considera qué elementos aportarán más valor</li>
+            <li><strong>No tengas prisa:</strong> Una buena arquitectura es la base de un excelente libro</li>
+            <li><strong>Usa los personajes:</strong> Los casos de estudio hacen el contenido más memorable</li>
+            <li><strong>Aprovecha las secciones especiales:</strong> Son oportunidades para diferenciarte</li>
+        </ul>
+
+        <h3>Para Regeneración Inteligente:</h3>
+        <ul>
+            <li><strong>Feedback específico:</strong> Menciona elementos concretos que necesitan cambios</li>
+            <li><strong>Contexto claro:</strong> Explica por qué algo no funciona para tu audiencia específica</li>
+            <li><strong>Ejemplos concretos:</strong> Proporciona ejemplos de lo que sí quieres ver</li>
+            <li><strong>Priorización:</strong> Enfócate en los 2-3 cambios más importantes por regeneración</li>
+            <li><strong>Iteración progresiva:</strong> Usa múltiples regeneraciones para refinar gradualmente</li>
+            <li><strong>Paciencia estratégica:</strong> Cada regeneración debe mejorar aspectos específicos</li>
+        </ul>
+
+        <div class="tip-box">
+            <h4>🎯 Estrategia Híbrida Recomendada</h4>
+            <p>Combina ambos enfoques para obtener los mejores resultados:</p>
+            <ol style="margin-left: 40px;">
+                <li><strong>Regeneración inicial:</strong> Corrige problemas estructurales grandes</li>
+                <li><strong>Edición manual:</strong> Ajusta detalles específicos de capítulos</li>
+                <li><strong>Regeneración de refinamiento:</strong> Mejora elementos específicos si es necesario</li>
+                <li><strong>Revisión final:</strong> Edición manual de detalles finales</li>
+            </ol>
+        </div>
+    </div>
+
+    <button onclick="goBackToArchitecture()" class="back-button">
+        ← Volver a la Arquitectura
+    </button>
+</div>
+
+<script>
+// Book ID from the server (if available)
+const bookId = {{ book_id or 'null' }};
+
+function goBackToArchitecture() {
+    // Intentar cerrar si se abrió en nueva pestaña
+    if (window.opener && !window.opener.closed) {
+        window.close();
+        return;
+    }
+    
+    // Si tenemos book_id, ir directamente a esa arquitectura
+    if (bookId) {
+        window.location.href = `/books/architecture/${bookId}`;
+        return;
+    }
+    
+    // Extraer book_id del referrer si viene de arquitectura
+    const referrer = document.referrer;
+    if (referrer) {
+        const archMatch = referrer.match(/\/books\/architecture\/(\d+)/);
+        if (archMatch) {
+            const extractedBookId = archMatch[1];
+            window.location.href = `/books/architecture/${extractedBookId}`;
+            return;
+        }
+    }
+    
+    // Si hay historial, intentar volver
+    if (window.history.length > 1) {
+        window.history.back();
+        return;
+    }
+    
+    // Último recurso: lista de libros
+    window.location.href = '/books/my-books';
+}
+</script>
+{% endblock %}

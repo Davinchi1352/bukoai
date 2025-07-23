@@ -846,6 +846,18 @@ function startStatusPolling() {
                 const data = await response.json();
                 console.log('🔄 Polling status:', data.status, 'Progress:', data.progress);
                 
+                // If status changed to architecture_review, redirect
+                if (data.status === 'architecture_review' && state.currentStatus !== 'architecture_review') {
+                    console.log('🔄 Detected architecture review via polling');
+                    state.currentStatus = 'architecture_review';
+                    addLog('success', '¡Arquitectura generada! Redirigiendo a página de revisión...');
+                    setTimeout(() => {
+                        window.location.href = `/books/architecture/${state.bookId}`;
+                    }, 2000);
+                    clearInterval(state.statusPollingInterval);
+                    return;
+                }
+                
                 // If status changed to completed or failed, update UI
                 if (data.status === 'completed' && state.currentStatus !== 'completed') {
                     console.log('🔄 Detected completion via polling');
@@ -926,6 +938,7 @@ function initializeWebSocket() {
     state.socket.on('generation_log', handleGenerationLog);
     state.socket.on('book_completed', handleBookCompleted);
     state.socket.on('book_failed', handleBookFailed);
+    state.socket.on('architecture_ready', handleArchitectureReady);
 }
 
 function subscribeToBook() {
@@ -1193,6 +1206,34 @@ function toggleTechnicalDetails(id) {
     }
 }
 
+// Architecture ready handling
+function handleArchitectureReady(data) {
+    if (data.book_uuid !== state.bookUuid) return;
+    
+    console.log('🏗️ Architecture ready via WebSocket, redirecting...');
+    clearInterval(state.elapsedInterval);
+    clearInterval(state.statusPollingInterval);
+    
+    state.currentStatus = 'architecture_review';
+    updateProgressCircle(100);
+    
+    // Update status badge for architecture review
+    const badge = document.getElementById('statusBadge');
+    badge.className = 'status-badge badge-completed';
+    badge.innerHTML = '<i class="fas fa-check-circle"></i><span>Arquitectura Lista</span>';
+    
+    document.getElementById('currentStep').textContent = '¡Arquitectura generada! Redirigiendo a revisión...';
+    
+    addLog('success', '¡Arquitectura generada exitosamente!');
+    addLog('info', 'Redirigiendo a página de revisión y aprobación...');
+    updateAIStatus('Arquitectura Lista');
+    
+    // Redirect with small delay
+    setTimeout(() => {
+        window.location.href = `/books/architecture/${state.bookId}`;
+    }, 2000);
+}
+
 // Completion handling
 function handleBookCompleted(data) {
     if (data.book_uuid !== state.bookUuid) return;
@@ -1297,6 +1338,19 @@ async function checkInitialStatus() {
             // Actualizar step actual si está disponible
             if (data.message) {
                 document.getElementById('currentStep').textContent = data.message;
+            }
+            
+            // Manejar estado de arquitectura lista para revisión
+            if (data.status === 'architecture_review') {
+                console.log('🏗️ Architecture review ready, redirecting to review page');
+                addLog('success', '¡Arquitectura generada! Redirigiendo a página de revisión...');
+                
+                // Pequeño delay para que el usuario vea el mensaje
+                setTimeout(() => {
+                    window.location.href = `/books/architecture/${state.bookId}`;
+                }, 2000);
+                
+                return; // No continuar con otros estados
             }
             
             // Manejar estado completado
