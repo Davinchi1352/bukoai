@@ -558,8 +558,14 @@
                             ¡Generación completada exitosamente!
                         {% elif book.status.value == 'failed' %}
                             Error en la generación
+                        {% elif book.status.value == 'architecture_review' %}
+                            Arquitectura lista para revisión
+                        {% elif book.status.value == 'generating' %}
+                            Generando contenido del libro...
+                        {% elif book.status.value == 'queued' %}
+                            En cola de procesamiento...
                         {% else %}
-                            Iniciando generación...
+                            Preparando generación...
                         {% endif %}
                     </h6>
                 </div>
@@ -593,7 +599,7 @@
                             <i class="fas fa-file-alt"></i>
                         </div>
                         <div id="pageCount" class="metric-value">{{ book.final_pages or 0 }}</div>
-                        <div class="metric-label">Páginas</div>
+                        <div class="metric-label">Páginas {% if book_info.target_pages > 0 %}(meta: {{ book_info.target_pages }}){% endif %}</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
@@ -602,7 +608,7 @@
                             <i class="fas fa-font"></i>
                         </div>
                         <div id="wordCount" class="metric-value">{{ book.final_words or 0 }}</div>
-                        <div class="metric-label">Palabras</div>
+                        <div class="metric-label">Palabras {% if book_info.target_words > 0 %}(meta: {{ "{:,}".format(book_info.target_words) }}){% endif %}</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
@@ -801,16 +807,29 @@ document.addEventListener('DOMContentLoaded', () => {
         words: {{ book.final_words or 0 }},
         chapters: {{ book.chapter_count or 0 }}
     };
+    
+    // Valores objetivo del libro
+    const targetStats = {
+        pages: {{ book_info.target_pages }},
+        words: {{ book_info.target_words }},
+        chapters: {{ book_info.architecture_chapters or book.chapter_count or 0 }}
+    };
     console.log('Initial stats:', initialStats);
     updateStats(initialStats);
     
-    // Añadir log inicial
-    addLog('info', 'Página de generación inicializada');
+    // Añadir logs iniciales con información detallada
+    addLog('info', 'Página de generación inicializada', 'Libro: {{ book.title }}');
+    addLog('info', `Configuración objetivo: ${targetStats.pages} páginas, ${formatNumber(targetStats.words)} palabras`);
+    {% if book_info.has_architecture %}
+    addLog('info', 'Arquitectura disponible', '{{ book_info.architecture_chapters }} capítulos definidos');
+    {% else %}
+    addLog('warning', 'Sin arquitectura - usando configuración inicial');
+    {% endif %}
     
     {% if book.status.value == 'completed' %}
     // Logs para libro completado
     addLog('success', '¡Libro generado exitosamente!');
-    addLog('info', 'Estado: Completado - {{ book.completed_at.strftime('%d/%m/%Y %H:%M') if book.completed_at else 'N/A' }}');
+    addLog('info', 'Estado: Completado', '{{ book.completed_at.strftime('%d/%m/%Y %H:%M') if book.completed_at else 'N/A' }}');
     {% elif book.status.value == 'failed' %}
     // Logs para libro fallido
     addLog('error', 'Error en la generación del libro');
@@ -819,6 +838,13 @@ document.addEventListener('DOMContentLoaded', () => {
     {% endif %}
     // Show failed actions on page load
     document.getElementById('failedActions').style.display = 'block';
+    {% elif book.status.value == 'architecture_review' %}
+    addLog('success', 'Arquitectura generada exitosamente');
+    addLog('info', 'Estado: Esperando revisión del usuario');
+    {% elif book.status.value == 'generating' %}
+    addLog('info', 'Generación en progreso...');
+    {% elif book.status.value == 'queued' %}
+    addLog('info', 'Libro en cola de procesamiento');
     {% endif %}
     
     // Solo inicializar timer si está en proceso
@@ -975,15 +1001,95 @@ function handleProgressUpdate(data) {
         updateStats(data.stats);
     }
     
-    // Update current step
-    if (data.message) {
-        document.getElementById('currentStep').textContent = data.message;
+    // Mejorar mensajes de estado basados en progreso
+    let statusMessage = data.message || '';
+    if (data.status) {
+        statusMessage = getImprovedStatusMessage(data.status, progress, data);
     }
     
-    // Add log entry
-    if (data.message && data.message !== 'Procesando...') {
-        addLog('info', data.message);
+    // Update current step con mensaje mejorado
+    if (statusMessage) {
+        document.getElementById('currentStep').textContent = statusMessage;
+        
+        // Add log entry con contexto mejorado
+        if (statusMessage !== 'Procesando...') {
+            const logType = getLogTypeFromStatus(data.status);
+            const logDetail = getLogDetail(data, progress);
+            addLog(logType, statusMessage, logDetail);
+        }
     }
+}
+
+function getImprovedStatusMessage(status, progress, data) {
+    switch (status) {
+        case 'queued':
+            return 'En cola de procesamiento...';
+        case 'connecting':
+            return 'Conectando con Claude AI...';
+        case 'thinking':
+        case 'deep_thinking':
+            return `Analizando arquitectura y planificando contenido... (${progress}%)`;
+        case 'preparing_parallel_generation':
+            return 'Preparando generación paralela de chunks...';
+        case 'generating_parallel_chunks':
+            return `Generando chunks en paralelo... (${progress}%)`;
+        case 'parallel_chunks_completed':
+            return 'Consolidando contenido de chunks...';
+        case 'writing':
+            const pages = data.stats?.pages || 0;
+            const target = targetStats.pages || 0;
+            return `Escribiendo contenido del libro... ${pages}/${target} páginas (${progress}%)`;
+        case 'expansion':
+            return 'Expandiendo contenido para cumplir objetivos...';
+        case 'finalizing':
+            return 'Finalizando y validando contenido...';
+        case 'completed':
+            return '¡Generación completada exitosamente!';
+        case 'failed':
+            return 'Error en la generación';
+        case 'architecture_review':
+            return 'Arquitectura lista para revisión';
+        default:
+            return data.message || `Progreso: ${progress}%`;
+    }
+}
+
+function getLogTypeFromStatus(status) {
+    switch (status) {
+        case 'failed':
+            return 'error';
+        case 'completed':
+        case 'parallel_chunks_completed':
+            return 'success';
+        case 'thinking':
+        case 'deep_thinking':
+            return 'thinking';
+        case 'connecting':
+        case 'preparing_parallel_generation':
+            return 'warning';
+        default:
+            return 'info';
+    }
+}
+
+function getLogDetail(data, progress) {
+    if (data.stats) {
+        const pages = data.stats.pages || 0;
+        const words = data.stats.words || 0;
+        const chunks = data.stats.chunks_processed || 0;
+        
+        if (chunks > 0) {
+            return `${pages} páginas, ${formatNumber(words)} palabras, ${chunks} chunks procesados`;
+        } else if (pages > 0 || words > 0) {
+            return `${pages} páginas, ${formatNumber(words)} palabras`;
+        }
+    }
+    
+    if (data.chunk_info) {
+        return `Chunk ${data.chunk_info.index}: ${data.chunk_info.chapters?.length || 0} capítulos`;
+    }
+    
+    return `${progress}%`;
 }
 
 function updateProgressCircle(progress) {

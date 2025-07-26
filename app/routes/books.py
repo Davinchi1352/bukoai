@@ -334,7 +334,41 @@ def generation_status(book_id):
         user_id=current_user.id
     ).first_or_404()
     
-    return render_template('books/generation_status.html', book=book)
+    # Calcular páginas y palabras objetivo
+    target_pages = 0
+    target_words = 0
+    
+    # 1. Si tiene arquitectura aprobada, usar esos valores
+    if book.architecture:
+        target_pages = book.architecture.get('target_pages', 0)
+        target_words = book.architecture.get('estimated_words', 0)
+    
+    # 2. Si no hay arquitectura, calcular desde configuración original del usuario
+    if target_pages == 0:
+        target_pages = book.page_count or 0
+        
+    if target_words == 0 and target_pages > 0:
+        # Calcular palabras basado en formato
+        format_multipliers = {
+            'pocket': 220,
+            'A5': 250, 
+            'B5': 280,
+            'letter': 350
+        }
+        # Usar formato del libro (compatibilidad con nombres de atributo)
+        book_format = getattr(book, 'format_size', None) or getattr(book, 'page_size', None) or 'pocket'
+        multiplier = format_multipliers.get(book_format, 220)
+        target_words = target_pages * multiplier
+    
+    # Información adicional para el template
+    book_info = {
+        'target_pages': target_pages,
+        'target_words': target_words,
+        'has_architecture': bool(book.architecture),
+        'architecture_chapters': len(book.architecture.get('structure', {}).get('chapters', [])) if book.architecture else 0
+    }
+    
+    return render_template('books/generation_status.html', book=book, book_info=book_info)
 
 
 @bp.route('/my-books')
@@ -357,8 +391,33 @@ def view_book(book_id):
         user_id=current_user.id
     ).first_or_404()
     
-    # Usar plantilla limpia y compacta
-    return render_template('books/view_book_compact.html', book=book)
+    # Calcular estadísticas si no existen (para libros completados sin estadísticas)
+    if book.status == BookStatus.COMPLETED and book.content:
+        if not book.final_pages or not book.final_words:
+            # Calcular desde el contenido actual
+            content_words = len(book.content.split()) if book.content else 0
+            content_pages = max(1, content_words // 350) if content_words > 0 else 0
+            
+            # Actualizar si no existen valores
+            if not book.final_words:
+                book.final_words = content_words
+            if not book.final_pages:
+                book.final_pages = content_pages
+                
+            # Guardar en base de datos
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+    
+    # Asegurar valores mínimos para mostrar
+    display_pages = book.final_pages or (len(book.content.split()) // 350 if book.content else 0) or 0
+    display_words = book.final_words or (len(book.content.split()) if book.content else 0) or 0
+    
+    return render_template('books/view_book_compact.html', 
+                         book=book,
+                         display_pages=display_pages,
+                         display_words=display_words)
 
 
 

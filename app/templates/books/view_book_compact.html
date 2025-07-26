@@ -1365,11 +1365,11 @@
             
             <div class="book-stats">
                 <div class="stat">
-                    <span class="stat-value">{{ book.final_pages or '--' }}</span>
+                    <span class="stat-value">{{ display_pages or book.final_pages or 0 }}</span>
                     <span class="stat-label">Páginas</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-value">{{ book.final_words or '--' }}</span>
+                    <span class="stat-value">{{ "{:,}".format(display_words) if display_words else (book.final_words or 0) }}</span>
                     <span class="stat-label">Palabras</span>
                 </div>
                 <div class="stat">
@@ -1425,8 +1425,8 @@
                     <p><strong>Título:</strong> {{ book.title }}</p>
                     <p><strong>Autor:</strong> {{ book.author or 'BukoAI' }}</p>
                     {% if book.genre %}<p><strong>Género:</strong> {{ book.genre|title }}</p>{% endif %}
-                    <p><strong>Páginas:</strong> {{ book.final_pages or '--' }}</p>
-                    <p><strong>Palabras:</strong> {{ book.final_words or '--' }}</p>
+                    <p><strong>Páginas:</strong> {{ display_pages or book.final_pages or 0 }}</p>
+                    <p><strong>Palabras:</strong> {{ "{:,}".format(display_words) if display_words else (book.final_words or 0) }}</p>
                     <p><strong>Formato:</strong> {{ book.format_size or 'A4' }}</p>
                     <p><strong>Estado:</strong> {% if book.status.value == 'completed' %}✅ Completado{% else %}⏳ En proceso{% endif %}</p>
                     
@@ -1579,6 +1579,11 @@
         // Estado global
         let bookContent = {{ book.content|tojson if book.content else '""' }};
         let bookData = {{ book.to_dict()|tojson }};
+        
+        // Agregar estadísticas calculadas
+        bookData.display_pages = {{ display_pages or 0 }};
+        bookData.display_words = {{ display_words or 0 }};
+        
         let currentFontSize = 18;
         let parsedContent = null;
         let currentEditingChapter = null;
@@ -1930,7 +1935,7 @@
             
             tocItems.forEach((item, index) => {
                 // Calcular número de página real basado en las páginas finales del libro
-                const totalPages = bookData.final_pages || bookData.page_count || 50;
+                const totalPages = bookData.display_pages || bookData.final_pages || bookData.page_count || 50;
                 const pageNum = Math.floor((index / Math.max(1, tocItems.length - 1)) * (totalPages - 1)) + 1;
                 
                 // Estilos diferenciados para capítulos (nivel 1) y secciones (nivel 2)
@@ -2839,11 +2844,11 @@
                     <div class="config-grid">
                         <div class="config-item">
                             <div class="config-item-label">Páginas Finales</div>
-                            ${formatValue(book.final_pages, 'number')}
+                            ${formatValue(book.display_pages || book.final_pages || 0, 'number')}
                         </div>
                         <div class="config-item">
                             <div class="config-item-label">Palabras Totales</div>
-                            ${formatValue(book.final_words ? book.final_words.toLocaleString('es-ES') : null, 'text')}
+                            ${formatValue((book.display_words || book.final_words || 0) ? (book.display_words || book.final_words).toLocaleString('es-ES') : '0', 'text')}
                         </div>
                         <div class="config-item">
                             <div class="config-item-label">Tiempo de Lectura</div>
