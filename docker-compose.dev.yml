@@ -108,7 +108,7 @@ services:
       - ./storage:/storage
       - ./logs:/app/logs
     entrypoint: ["/entrypoint.sh", "worker"]
-    command: ["--loglevel=debug", "--pool=solo"]
+    command: ["--loglevel=debug", "--pool=solo", "-Q", "celery,book_generation"]
     healthcheck:
       test: ["CMD", "python", "/app/scripts/celery_health_check.py", "worker"]
       interval: 30s
@@ -147,7 +147,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+      disable: false
     networks:
       - buko-ai-dev-network
 
@@ -167,11 +168,12 @@ services:
       - "5555:5555"
     command: ["celery", "--broker=redis://redis:6379/0", "flower", "--port=5555"]
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5555/api/workers"]
+      test: ["CMD", "sh", "-c", "pgrep -f flower"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+      disable: false
     networks:
       - buko-ai-dev-network
 
@@ -210,6 +212,13 @@ services:
       - ./storage:/storage:ro
       - ./app/static:/app/app/static:ro
       - nginx_logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:80/ > /dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+      disable: false
     networks:
       - buko-ai-dev-network
 

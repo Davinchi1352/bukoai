@@ -27,10 +27,21 @@ class BaseModel(db.Model):
     
     def to_dict(self) -> Dict[str, Any]:
         """Convierte el modelo a diccionario"""
-        return {
-            column.name: getattr(self, column.name)
-            for column in self.__table__.columns
-        }
+        result = {}
+        for column in self.__table__.columns:
+            value = getattr(self, column.name)
+            # Manejar tipos especiales para serialización JSON
+            if value is None:
+                result[column.name] = None
+            elif hasattr(value, 'value'):  # Enum
+                result[column.name] = value.value
+            elif isinstance(value, datetime):
+                result[column.name] = value.isoformat()
+            elif isinstance(value, uuid.UUID):
+                result[column.name] = str(value)
+            else:
+                result[column.name] = value
+        return result
     
     def update(self, **kwargs) -> None:
         """Actualiza el modelo con los valores dados"""

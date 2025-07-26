@@ -141,12 +141,12 @@ case "$1" in
     "web")
         print_info "Iniciando servidor web..."
         shift
-        exec gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class sync --timeout 30 --keep-alive 2 --max-requests 1000 --max-requests-jitter 50 --preload --log-level info --access-logfile - --error-logfile - app:app "$@"
+        exec gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class sync --timeout 30 --keep-alive 2 --max-requests 1000 --max-requests-jitter 50 --preload --log-level info --access-logfile - --error-logfile - wsgi:app "$@"
         ;;
     "worker")
         print_info "Iniciando Celery worker..."
         shift
-        exec celery -A app worker --loglevel=info --concurrency=4 "$@"
+        exec celery -A app worker "$@"
         ;;
     "beat")
         print_info "Iniciando Celery beat..."

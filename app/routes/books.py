@@ -214,38 +214,65 @@ def start_generation():
         if not data.get(field):
             return jsonify({'error': f'Campo requerido: {field}'}), 400
     
-    # Calcular páginas efectivas basado en tamaño y espaciado
-    base_pages = {
-        'short': 75,
-        'medium': 150,
-        'long': 250
+    # CÁLCULO SÚPER GENEROSO: Usar máximo del rango + 20% holgura arriba/abajo
+    # Rangos prometidos al usuario (pero entregamos MÁS)
+    promised_ranges = {
+        'short': {
+            'promised_min': 50, 'promised_max': 100,
+            'generous_target': 100,  # Usar el MÁXIMO como base
+            'generous_min': 80,      # 100 * 0.8 = 80 (aún supera promesa de 50)
+            'generous_max': 120      # 100 * 1.2 = 120 (20% más que prometido)
+        },
+        'medium': {
+            'promised_min': 100, 'promised_max': 200,
+            'generous_target': 200,  # Usar el MÁXIMO como base
+            'generous_min': 160,     # 200 * 0.8 = 160 (supera promesa de 100)
+            'generous_max': 240      # 200 * 1.2 = 240 (20% más que prometido)
+        },
+        'long': {
+            'promised_min': 200, 'promised_max': 300,
+            'generous_target': 300,  # Usar el MÁXIMO como base
+            'generous_min': 240,     # 300 * 0.8 = 240 (supera promesa de 200)
+            'generous_max': 360      # 300 * 1.2 = 360 (20% más que prometido)
+        }
     }
     
-    # Factores de ajuste por tamaño de página (relativo a Letter)
+    # Factores de ajuste por tamaño de página (SÚPER GENEROSOS - algunos dan más del máximo)
     page_size_factors = {
-        'pocket': 0.5,   # Pocket (como Kindle) - mucho menos contenido
-        'A5': 0.65,      # A5 libro de bolsillo
-        'B5': 0.8,       # B5 tamaño intermedio
-        'letter': 1.0    # Letter es la referencia máxima
+        'pocket': 0.9,   # Más generoso para pocket
+        'A5': 1.0,       # A5 da el máximo completo
+        'B5': 1.05,      # B5 da 5% más que el máximo prometido
+        'letter': 1.1    # Letter da 10% más que el máximo prometido
     }
     
-    # Factores de ajuste por interlineado
+    # Factores de ajuste por interlineado (SÚPER GENEROSOS)
     line_spacing_factors = {
-        'single': 1.0,   # Más contenido por página
-        'medium': 0.8,   # 20% menos contenido
-        'double': 0.6    # 40% menos contenido
+        'single': 1.1,   # Single da 10% MÁS contenido
+        'medium': 1.0,   # Medium da exactamente el target
+        'double': 0.95   # Double da solo 5% menos
     }
     
     # Calcular páginas ajustadas
     length = data.get('length', 'medium')
-    page_size = data.get('pageSize', 'A4')
+    page_size = data.get('pageSize', 'letter')
     line_spacing = data.get('lineSpacing', 'medium')
     
-    effective_pages = int(
-        base_pages.get(length, 150) * 
+    # Obtener configuración generosa
+    length_config = promised_ranges.get(length, promised_ranges['medium'])
+    
+    # Calcular páginas usando el MÁXIMO GENEROSO como base
+    calculated_pages = int(
+        length_config['generous_target'] * 
         page_size_factors.get(page_size, 1.0) * 
-        line_spacing_factors.get(line_spacing, 0.8)
+        line_spacing_factors.get(line_spacing, 0.95)
     )
+    
+    # APLICAR RANGO GENEROSO: 20% arriba y abajo del máximo prometido
+    effective_pages = max(calculated_pages, length_config['generous_min'])
+    effective_pages = min(effective_pages, length_config['generous_max'])
+    
+    # GARANTÍA FINAL: Nunca menos del mínimo prometido original
+    effective_pages = max(effective_pages, length_config['promised_min'])
     
     # Crear registro de generación
     book = BookGeneration(

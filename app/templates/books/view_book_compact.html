@@ -61,10 +61,10 @@
         }
         
         .book-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             font-size: 1.7em;
-            font-weight: 700;
-            color: #1f2937;
+            font-weight: 600;
+            color: #4b5563;
             margin-bottom: 4px;
         }
         
@@ -301,7 +301,7 @@
         /* Reading Content - COMPACTO */
         .reading-content {
             padding: 28px;
-            max-height: 342px;
+            max-height: 408px;
             overflow-y: auto;
             display: none;
         }
@@ -416,53 +416,113 @@
         
         .markdown-content ul,
         .markdown-content ol {
-            margin: 14px 0;
-            padding-left: 28px;
+            margin: 18px 0;
+            padding-left: 0;
+        }
+        
+        .markdown-content ul {
+            list-style: none;
+        }
+        
+        .markdown-content ol {
+            counter-reset: item;
+            list-style: none;
         }
         
         .markdown-content li {
-            margin-bottom: 6px;
-            line-height: 1.6;
+            margin-bottom: 12px;
+            line-height: 1.7;
+            padding-left: 32px;
+            position: relative;
+            text-align: justify;
+        }
+        
+        .markdown-content ul li::before {
+            content: "•";
+            color: #3b82f6;
+            font-weight: bold;
+            font-size: 1.2em;
+            position: absolute;
+            left: 12px;
+            top: 0;
+        }
+        
+        .markdown-content ol li {
+            counter-increment: item;
+        }
+        
+        .markdown-content ol li::before {
+            content: counter(item) ".";
+            color: #3b82f6;
+            font-weight: 600;
+            position: absolute;
+            left: 8px;
+            top: 0;
+            min-width: 20px;
         }
         
         /* TOC */
         .toc-section {
             background: #f8fafc;
-            padding: 22px;
+            padding: 24px;
             border-radius: 12px;
             margin: 20px 0;
             border: 1px solid #e5e7eb;
         }
         
         .toc-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.5em;
-            font-weight: 700;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 1.4em;
+            font-weight: 600;
             color: #1f2937;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
         }
         
         .toc-item {
-            display: flex;
+            display: flex !important;
             justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px dotted #cbd5e1;
-            margin-bottom: 4px;
+            align-items: center;
+            padding: 12px 8px;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            width: 100%;
+            clear: both;
         }
         
         .toc-item:last-child {
             border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .toc-item:hover {
+            background-color: rgba(59, 130, 246, 0.08);
+            border-radius: 8px;
+            transform: translateX(2px);
         }
         
         .toc-chapter {
-            font-weight: 600;
+            font-weight: 500;
             color: #374151;
+            flex: 1;
+            line-height: 1.5;
+            margin-right: 12px;
+            display: block;
         }
         
         .toc-page {
             color: #6b7280;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.85em;
+            background: #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 6px;
+            min-width: 40px;
+            text-align: center;
+            flex-shrink: 0;
         }
         
         /* Full Reading Mode */
@@ -561,6 +621,643 @@
             font-size: 18px;
             line-height: 1.7;
             color: #1f2937;
+            position: relative;
+        }
+        
+        /* Chapter Controls */
+        .chapter-section {
+            position: relative;
+            margin: 40px 0;
+            padding: 20px 0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .chapter-section:hover {
+            background: rgba(59, 130, 246, 0.02);
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1);
+        }
+        
+        .chapter-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .chapter-section:hover .chapter-controls {
+            opacity: 1;
+        }
+        
+        .chapter-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .chapter-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .chapter-btn.edit {
+            color: #059669;
+            border-color: #a7f3d0;
+        }
+        
+        .chapter-btn.edit:hover {
+            background: #ecfdf5;
+            border-color: #059669;
+        }
+        
+        .chapter-btn.regenerate {
+            color: #3b82f6;
+            border-color: #bfdbfe;
+        }
+        
+        .chapter-btn.regenerate:hover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+        
+        /* Edit Mode */
+        .chapter-edit-mode {
+            background: #f8fafc;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .chapter-editor {
+            width: 100%;
+            min-height: 300px;
+            padding: 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            margin-bottom: 12px;
+        }
+        
+        .editor-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .editor-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .editor-btn.save {
+            background: #059669;
+            color: white;
+        }
+        
+        .editor-btn.cancel {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .editor-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Regeneration Modal */
+        .regeneration-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .regeneration-modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .modal-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        
+        .modal-close:hover {
+            color: #374151;
+        }
+        
+        .feedback-section {
+            margin-bottom: 24px;
+        }
+        
+        .feedback-label {
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .feedback-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.2s ease;
+        }
+        
+        .feedback-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .modal-btn.primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .modal-btn.secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .modal-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-btn.primary:hover {
+            background: #2563eb;
+        }
+        
+        .modal-btn.secondary:hover {
+            background: #d1d5db;
+        }
+        
+        /* Loading State */
+        .regenerating-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            z-index: 20;
+        }
+        
+        .regenerating-overlay.active {
+            display: flex;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Navigation Panel */
+        .navigation-panel {
+            position: fixed;
+            left: -320px;
+            top: 0;
+            width: 320px;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            z-index: 1500;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navigation-panel.active {
+            left: 0;
+        }
+        
+        .nav-header {
+            padding: 24px 20px 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .nav-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+        
+        .nav-subtitle {
+            font-size: 0.85em;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        
+        .nav-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-close:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+        
+        .nav-section {
+            margin-bottom: 8px;
+        }
+        
+        .nav-chapter {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+            color: #e2e8f0;
+        }
+        
+        .nav-chapter:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border-left-color: #3b82f6;
+        }
+        
+        .nav-chapter.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-left-color: #3b82f6;
+            color: white;
+        }
+        
+        .nav-chapter-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #60a5fa;
+        }
+        
+        .nav-chapter.active .nav-chapter-icon {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .nav-chapter-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .nav-chapter-title {
+            font-weight: 600;
+            font-size: 0.9em;
+            line-height: 1.3;
+            margin-bottom: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .nav-chapter-progress {
+            font-size: 0.75em;
+            color: #94a3b8;
+        }
+        
+        /* Navigation Toggle Button */
+        .nav-toggle {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            z-index: 1400;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .nav-toggle:hover {
+            background: rgba(59, 130, 246, 0.9);
+            transform: translateY(-50%) scale(1.05);
+        }
+        
+        .nav-toggle.active {
+            left: 340px;
+        }
+        
+        /* Reading Progress Bar */
+        .reading-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .reading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        /* Overlay for mobile */
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1400;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .nav-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+        
+        /* Show toggle only in reading mode */
+        .reading-mode.active .nav-toggle {
+            display: flex;
+        }
+        
+        /* Book Configuration Modal */
+        .configuration-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .configuration-modal.active {
+            display: flex;
+        }
+        
+        .config-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .config-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .config-modal-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .config-section {
+            margin-bottom: 28px;
+        }
+        
+        .config-section-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .config-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .config-item-label {
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 0.9em;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .config-item-value {
+            color: #1f2937;
+            font-size: 1em;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        
+        .config-item-value.empty {
+            color: #9ca3af;
+            font-style: italic;
+        }
+        
+        .config-badge {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        .config-badge.success {
+            background: #10b981;
+        }
+        
+        .config-badge.warning {
+            background: #f59e0b;
+        }
+        
+        .config-text-area {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 0.95em;
+            line-height: 1.6;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        
+        .config-json {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+            color: #374151;
+            max-height: 400px;
+            overflow-y: auto;
         }
         
         /* Responsive */
@@ -613,6 +1310,43 @@
                 flex-direction: column;
                 gap: 8px;
             }
+            
+            /* Navigation Panel Mobile */
+            .navigation-panel {
+                width: 280px;
+                left: -280px;
+            }
+            
+            .nav-toggle.active {
+                left: 300px;
+            }
+            
+            .chapter-controls {
+                position: relative;
+                opacity: 1;
+                margin-top: 12px;
+                margin-bottom: 8px;
+            }
+            
+            .chapter-btn {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+            
+            /* Configuration Modal Mobile */
+            .config-modal-content {
+                width: 95%;
+                padding: 24px;
+                max-height: 90vh;
+            }
+            
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .config-section-title {
+                font-size: 1.1em;
+            }
         }
     </style>
 </head>
@@ -664,15 +1398,15 @@
         <!-- Reading Panel -->
         <div class="reading-panel">
             <div class="reading-header">
-                <div class="reading-title">{{ book.title }}</div>
-                <div class="reading-subtitle">{{ book.author or 'BukoAI' }} • {{ book.format_size or 'A4' }} • {{ book.final_pages or '--' }} páginas</div>
-                
                 <div class="action-buttons">
                     <button class="action-btn" onclick="openFullReading()">
                         📖 Leer Completo
                     </button>
                     <button class="action-btn secondary" onclick="downloadBook()">
                         ⬇️ Descargar
+                    </button>
+                    <button class="action-btn secondary" onclick="showBookConfiguration()">
+                        ⚙️ Configuración
                     </button>
                 </div>
             </div>
@@ -729,6 +1463,12 @@
                 </div>
                 
                 <div class="toolbar-controls">
+                    <button class="font-btn" onclick="toggleNavigationPanel()" title="Navegación (N)">
+                        📑
+                    </button>
+                    <button class="font-btn" onclick="showBookConfiguration()" title="Configuración (C)">
+                        ⚙️
+                    </button>
                     <div class="font-controls">
                         <button class="font-btn" onclick="changeFontSize(-1)">A-</button>
                         <span id="fontSize">18</span>px
@@ -743,11 +1483,110 @@
         </div>
     </div>
     
+    <!-- Regeneration Modal -->
+    <div class="regeneration-modal" id="regenerationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Regenerar Capítulo con Claude AI</h3>
+                <button class="modal-close" onclick="closeRegenerationModal()">&times;</button>
+            </div>
+            
+            <div class="feedback-section">
+                <label class="feedback-label" for="whatDislike">¿Qué no te gusta del capítulo actual?</label>
+                <textarea 
+                    id="whatDislike" 
+                    class="feedback-textarea" 
+                    placeholder="Describe qué aspectos del capítulo no te gustan o consideras que deben mejorar..."
+                ></textarea>
+            </div>
+            
+            <div class="feedback-section">
+                <label class="feedback-label" for="whatChange">¿Qué específicamente quieres cambiar?</label>
+                <textarea 
+                    id="whatChange" 
+                    class="feedback-textarea" 
+                    placeholder="Especifica qué elementos, enfoque, ejemplos o contenido quieres que cambie..."
+                ></textarea>
+            </div>
+            
+            <div class="feedback-section">
+                <label class="feedback-label" for="howWant">¿Cómo te gustaría que quedara?</label>
+                <textarea 
+                    id="howWant" 
+                    class="feedback-textarea" 
+                    placeholder="Describe tu visión ideal del capítulo: tono, estructura, ejemplos, longitud..."
+                ></textarea>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeRegenerationModal()">Cancelar</button>
+                <button class="modal-btn primary" onclick="startChapterRegeneration()">
+                    🤖 Regenerar con Claude AI
+                </button>
+            </div>
+            
+            <div class="regenerating-overlay" id="regeneratingOverlay">
+                <div class="loading-spinner"></div>
+                <span>Claude AI está regenerando el capítulo...</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Panel -->
+    <div class="navigation-panel" id="navigationPanel">
+        <div class="nav-header">
+            <div class="nav-title">Navegación</div>
+            <div class="nav-subtitle">{{ book.title }}</div>
+            <button class="nav-close" onclick="toggleNavigationPanel()">&times;</button>
+        </div>
+        
+        <div class="nav-content" id="navContent">
+            <!-- Navigation items will be populated by JavaScript -->
+        </div>
+        
+        <div class="reading-progress">
+            <div class="reading-progress-bar" id="readingProgressBar"></div>
+        </div>
+    </div>
+    
+    <!-- Navigation Toggle Button -->
+    <button class="nav-toggle" id="navToggle" onclick="toggleNavigationPanel()">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Navigation Overlay for Mobile -->
+    <div class="nav-overlay" id="navOverlay" onclick="closeNavigationPanel()"></div>
+    
+    <!-- Book Configuration Modal -->
+    <div class="configuration-modal" id="configurationModal">
+        <div class="config-modal-content">
+            <div class="config-modal-header">
+                <h3 class="config-modal-title">⚙️ Configuración del Libro</h3>
+                <button class="modal-close" onclick="closeConfigurationModal()">&times;</button>
+            </div>
+            
+            <div id="configurationContent">
+                <!-- Configuration content will be populated by JavaScript -->
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn primary" onclick="closeConfigurationModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // Estado global
         let bookContent = {{ book.content|tojson if book.content else '""' }};
+        let bookData = {{ book.to_dict()|tojson }};
         let currentFontSize = 18;
         let parsedContent = null;
+        let currentEditingChapter = null;
+        let currentRegeneratingChapter = null;
+        let originalChapterContent = null;
+        let navigationPanelOpen = false;
+        let currentActiveChapter = null;
+        let readingProgress = 0;
         
         // Inicialización
         document.addEventListener('DOMContentLoaded', () => {
@@ -774,11 +1613,45 @@
             let inCodeBlock = false;
             let codeBlockContent = '';
             let codeLanguage = '';
+            let inList = false;
+            let listItems = [];
+            let listType = '';
+            let skipTOCSection = false;
+            let insideTOCSection = false;
             
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
                 
+                // Detect start of written TOC section
+                if (line.trim() === '## TABLA DE CONTENIDOS' || line.trim() === '## TABLE OF CONTENTS') {
+                    insideTOCSection = true;
+                    continue; // Skip the TOC header
+                }
+                
+                // Detect end of written TOC section (next ## header that's not the TOC)
+                if (insideTOCSection && line.startsWith('##') && 
+                    !line.includes('TABLA DE CONTENIDOS') && 
+                    !line.includes('TABLE OF CONTENTS')) {
+                    insideTOCSection = false;
+                    // Continue processing this line as it's a real header
+                }
+                
+                // Skip everything inside the written TOC section
+                if (insideTOCSection) {
+                    continue;
+                }
+                
                 if (line.startsWith('```')) {
+                    if (currentSection.trim()) {
+                        sections.push({ type: 'paragraph', content: currentSection.trim() });
+                        currentSection = '';
+                    }
+                    if (inList && listItems.length > 0) {
+                        sections.push({ type: listType, items: [...listItems] });
+                        listItems = [];
+                        inList = false;
+                    }
+                    
                     if (inCodeBlock) {
                         sections.push({
                             type: 'code',
@@ -805,13 +1678,22 @@
                         sections.push({ type: 'paragraph', content: currentSection.trim() });
                         currentSection = '';
                     }
+                    if (inList && listItems.length > 0) {
+                        sections.push({ type: listType, items: [...listItems] });
+                        listItems = [];
+                        inList = false;
+                    }
                     
                     const level = line.match(/^#+/)[0].length;
-                    const title = line.replace(/^#+\s*/, '');
+                    let title = line.replace(/^#+\s*/, '').trim();
+                    
+                    // Clean up title - remove trailing colon and extra spaces
+                    title = title.replace(/:\s*$/, '').trim();
                     
                     sections.push({ type: `h${level}`, content: title });
                     
-                    if (level <= 2) {
+                    // Add to TOC if it's level 1 (chapters) or level 2 (sections)
+                    if ((level === 1 || level === 2) && title.length > 0) {
                         toc.push({
                             level: level,
                             title: title,
@@ -821,10 +1703,48 @@
                     continue;
                 }
                 
+                // Handle lists
+                if (line.match(/^\s*[-*+]\s+/) || line.match(/^\s*\d+\.\s+/)) {
+                    if (currentSection.trim()) {
+                        sections.push({ type: 'paragraph', content: currentSection.trim() });
+                        currentSection = '';
+                    }
+                    
+                    const isOrdered = line.match(/^\s*\d+\.\s+/);
+                    const newListType = isOrdered ? 'ol' : 'ul';
+                    
+                    if (!inList || listType !== newListType) {
+                        if (inList && listItems.length > 0) {
+                            sections.push({ type: listType, items: [...listItems] });
+                            listItems = [];
+                        }
+                        inList = true;
+                        listType = newListType;
+                    }
+                    
+                    // Properly extract item text based on list type
+                    let itemText = '';
+                    if (isOrdered) {
+                        // For ordered lists: remove "1. ", "2. ", etc.
+                        itemText = line.replace(/^\s*\d+\.\s+/, '').trim();
+                    } else {
+                        // For unordered lists: remove "- ", "* ", "+ "
+                        itemText = line.replace(/^\s*[-*+]\s+/, '').trim();
+                    }
+                    
+                    listItems.push(itemText);
+                    continue;
+                }
+                
                 if (line.trim() === '---') {
                     if (currentSection.trim()) {
                         sections.push({ type: 'paragraph', content: currentSection.trim() });
                         currentSection = '';
+                    }
+                    if (inList && listItems.length > 0) {
+                        sections.push({ type: listType, items: [...listItems] });
+                        listItems = [];
+                        inList = false;
                     }
                     sections.push({ type: 'hr' });
                     continue;
@@ -835,7 +1755,25 @@
                         sections.push({ type: 'paragraph', content: currentSection.trim() });
                         currentSection = '';
                     }
+                    if (inList && listItems.length > 0) {
+                        sections.push({ type: listType, items: [...listItems] });
+                        listItems = [];
+                        inList = false;
+                    }
                     continue;
+                }
+                
+                if (inList) {
+                    // Continue previous list item if indented
+                    if (line.startsWith('  ') && listItems.length > 0) {
+                        listItems[listItems.length - 1] += ' ' + line.trim();
+                        continue;
+                    } else {
+                        // End list and start new paragraph
+                        sections.push({ type: listType, items: [...listItems] });
+                        listItems = [];
+                        inList = false;
+                    }
                 }
                 
                 currentSection += (currentSection ? ' ' : '') + line.trim();
@@ -843,6 +1781,10 @@
             
             if (currentSection.trim()) {
                 sections.push({ type: 'paragraph', content: currentSection.trim() });
+            }
+            
+            if (inList && listItems.length > 0) {
+                sections.push({ type: listType, items: [...listItems] });
             }
             
             return { sections: sections, toc: toc };
@@ -855,15 +1797,37 @@
                 .replace(/`(.+?)`/g, '<code>$1</code>');
         }
         
-        function renderMarkdownToHTML(sections) {
+        function renderMarkdownToHTML(sections, includeChapterControls = false) {
             let html = '';
+            let currentChapterId = null;
+            let chapterContent = '';
+            let inChapter = false;
             
-            sections.forEach(section => {
+            sections.forEach((section, index) => {
                 switch (section.type) {
                     case 'h1':
-                        html += `<h1>${formatMarkdownText(section.content)}</h1>`;
+                        // Close previous chapter if exists
+                        if (inChapter && includeChapterControls) {
+                            html += `</div>`;
+                        }
+                        
+                        // Start new chapter for h1 (main chapters)
+                        const chapterId = section.content.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-');
+                        currentChapterId = chapterId;
+                        inChapter = true;
+                        
+                        if (includeChapterControls) {
+                            html += `<div class="chapter-section" data-chapter-id="${chapterId}">`;
+                            html += `<div class="chapter-controls">`;
+                            html += `<button class="chapter-btn edit" onclick="editChapter('${chapterId}')">✏️ Editar</button>`;
+                            html += `<button class="chapter-btn regenerate" onclick="openRegenerationModal('${chapterId}')">🤖 Regenerar</button>`;
+                            html += `</div>`;
+                        }
+                        
+                        html += `<h1 id="${chapterId}">${formatMarkdownText(section.content)}</h1>`;
                         break;
                     case 'h2':
+                        // h2 are sections within chapters, just render them normally
                         html += `<h2>${formatMarkdownText(section.content)}</h2>`;
                         break;
                     case 'h3':
@@ -878,8 +1842,27 @@
                     case 'hr':
                         html += `<hr>`;
                         break;
+                    case 'ul':
+                        html += '<ul>';
+                        section.items.forEach(item => {
+                            html += `<li>${formatMarkdownText(item)}</li>`;
+                        });
+                        html += '</ul>';
+                        break;
+                    case 'ol':
+                        html += '<ol>';
+                        section.items.forEach(item => {
+                            html += `<li>${formatMarkdownText(item)}</li>`;
+                        });
+                        html += '</ol>';
+                        break;
                 }
             });
+            
+            // Close last chapter if exists
+            if (inChapter && includeChapterControls) {
+                html += `</div>`;
+            }
             
             return html;
         }
@@ -917,33 +1900,67 @@
                 return;
             }
             
-            const previewSections = parsedContent.sections.slice(0, 8);
+            const previewSections = parsedContent.sections.slice(0, 35);
             const html = renderMarkdownToHTML(previewSections);
             
             previewDiv.innerHTML = html + 
-                '<div style="text-align: center; margin-top: 25px; padding: 18px; background: #f8fafc; border-radius: 8px; color: #6b7280; font-style: italic;">' +
-                '📖 Haz clic en "Leer Completo" para ver todo el contenido' +
+                '<div style="text-align: center; margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; color: #4b5563; font-style: italic; border: 1px solid #e5e7eb;">' +
+                '📖 <strong>Vista previa del libro</strong><br>' +
+                '<span style="font-size: 0.9em; color: #6b7280;">Haz clic en "Leer Completo" para acceder a todo el contenido</span>' +
                 '</div>';
         }
         
         function loadTableOfContents() {
             const tocDiv = document.getElementById('tableOfContents');
             
-            if (!parsedContent || !parsedContent.toc || parsedContent.toc.length === 0) {
-                tocDiv.innerHTML = '<p>No se encontró tabla de contenido.</p>';
+            if (!parsedContent) {
+                tocDiv.innerHTML = '<p>No hay contenido disponible.</p>';
                 return;
             }
             
-            let html = '<div class="toc-section"><div class="toc-title">Tabla de Contenido</div>';
+            const tocItems = parsedContent.toc || [];
             
-            parsedContent.toc.forEach((item, index) => {
-                const pageNum = Math.floor(index * 3) + 3;
-                html += `
-                    <div class="toc-item">
-                        <span class="toc-chapter">${item.title}</span>
-                        <span class="toc-page">${pageNum}</span>
-                    </div>
-                `;
+            if (tocItems.length === 0) {
+                tocDiv.innerHTML = '<div class="toc-section"><div class="toc-title">Estructura del Libro</div><p style="color: #6b7280; font-style: italic; text-align: center; padding: 20px;">Este libro tiene una estructura fluida sin capítulos definidos. Utiliza la vista previa o lectura completa para explorar el contenido.</p></div>';
+                return;
+            }
+            
+            let html = '<div class="toc-section">';
+            html += '<div class="toc-title">Tabla de Contenido</div>';
+            
+            tocItems.forEach((item, index) => {
+                // Calcular número de página real basado en las páginas finales del libro
+                const totalPages = bookData.final_pages || bookData.page_count || 50;
+                const pageNum = Math.floor((index / Math.max(1, tocItems.length - 1)) * (totalPages - 1)) + 1;
+                
+                // Estilos diferenciados para capítulos (nivel 1) y secciones (nivel 2)
+                let indent = '';
+                let weight = '500';
+                let color = '#4b5563';
+                let fontSize = '0.9em';
+                
+                if (item.level === 1) {
+                    // Capítulos principales
+                    weight = '700';
+                    color = '#1f2937';
+                    fontSize = '1em';
+                    html += '<div style="margin-top: 12px; margin-bottom: 8px;">'; // Espaciado extra para capítulos
+                } else if (item.level === 2) {
+                    // Secciones
+                    indent = 'margin-left: 20px;';
+                    weight = '500';
+                    color = '#374151';
+                    fontSize = '0.9em';
+                }
+                
+                html += '<div class="toc-item" style="' + indent + '">';
+                html += '<span class="toc-chapter" style="font-weight: ' + weight + '; color: ' + color + '; font-size: ' + fontSize + ';">' + item.title + '</span>';
+                html += '<span class="toc-page">' + pageNum + '</span>';
+                html += '</div>';
+                
+                if (item.level === 1) {
+                    html += '</div>'; // Cerrar div de espaciado extra
+                }
             });
             
             html += '</div>';
@@ -957,17 +1974,29 @@
             if (!parsedContent) {
                 readingPage.innerHTML = '<h1>Sin contenido</h1><p>No hay contenido disponible.</p>';
             } else {
-                const html = renderMarkdownToHTML(parsedContent.sections);
+                const html = renderMarkdownToHTML(parsedContent.sections, true); // Include chapter controls
                 readingPage.innerHTML = html;
             }
             
             readingMode.classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            // Setup scroll listener for navigation
+            setupScrollListener();
+            
+            // Initialize navigation panel
+            setTimeout(() => {
+                generateNavigation();
+                detectCurrentChapter();
+            }, 100);
         }
         
         function closeFullReading() {
             document.getElementById('readingMode').classList.remove('active');
             document.body.style.overflow = 'auto';
+            
+            // Close navigation panel if open
+            closeNavigationPanel();
         }
         
         function changeFontSize(delta) {
@@ -981,12 +2010,520 @@
             alert('Función de descarga próximamente:\n\n• PDF (Profesional)\n• EPUB (E-readers)\n• DOCX (Editable)');
         }
         
+        // === CHAPTER EDITING FUNCTIONS ===
+        
+        function editChapter(chapterId) {
+            if (currentEditingChapter) {
+                cancelChapterEdit(currentEditingChapter);
+            }
+            
+            const chapterSection = document.querySelector(`[data-chapter-id="${chapterId}"]`);
+            if (!chapterSection) return;
+            
+            currentEditingChapter = chapterId;
+            
+            // Get current chapter content (everything inside the chapter section except controls)
+            const chapterContent = getChapterContent(chapterId);
+            originalChapterContent = chapterContent;
+            
+            // Create edit interface
+            const editInterface = document.createElement('div');
+            editInterface.className = 'chapter-edit-mode';
+            editInterface.innerHTML = `
+                <h4 style="margin-bottom: 16px; color: #374151; font-family: 'Inter', sans-serif;">
+                    📝 Editando: ${getChapterTitle(chapterId)}
+                </h4>
+                <textarea class="chapter-editor" id="editor-${chapterId}">${chapterContent}</textarea>
+                <div class="editor-controls">
+                    <button class="editor-btn cancel" onclick="cancelChapterEdit('${chapterId}')">Cancelar</button>
+                    <button class="editor-btn save" onclick="saveChapterEdit('${chapterId}')">Guardar Cambios</button>
+                </div>
+            `;
+            
+            // Hide current chapter content and show editor
+            const chapterElements = chapterSection.querySelectorAll('h2, h3, p, ul, ol, pre, hr');
+            chapterElements.forEach(el => {
+                if (!el.closest('.chapter-controls')) {
+                    el.style.display = 'none';
+                }
+            });
+            
+            chapterSection.appendChild(editInterface);
+        }
+        
+        function cancelChapterEdit(chapterId) {
+            const chapterSection = document.querySelector(`[data-chapter-id="${chapterId}"]`);
+            if (!chapterSection) return;
+            
+            // Remove edit interface
+            const editInterface = chapterSection.querySelector('.chapter-edit-mode');
+            if (editInterface) {
+                editInterface.remove();
+            }
+            
+            // Show original content
+            const chapterElements = chapterSection.querySelectorAll('h2, h3, p, ul, ol, pre, hr');
+            chapterElements.forEach(el => {
+                el.style.display = '';
+            });
+            
+            currentEditingChapter = null;
+            originalChapterContent = null;
+        }
+        
+        function saveChapterEdit(chapterId) {
+            const editor = document.getElementById(`editor-${chapterId}`);
+            if (!editor) return;
+            
+            const newContent = editor.value.trim();
+            if (!newContent) {
+                alert('El contenido no puede estar vacío');
+                return;
+            }
+            
+            // Update the chapter content in parsedContent
+            updateChapterInParsedContent(chapterId, newContent);
+            
+            // Re-render the reading page
+            const readingPage = document.getElementById('readingPage');
+            const html = renderMarkdownToHTML(parsedContent.sections, true);
+            readingPage.innerHTML = html;
+            
+            // Reset editing state
+            currentEditingChapter = null;
+            originalChapterContent = null;
+            
+            // Show success message
+            showNotification('✅ Capítulo actualizado exitosamente', 'success');
+        }
+        
+        // === CHAPTER REGENERATION FUNCTIONS ===
+        
+        function openRegenerationModal(chapterId) {
+            currentRegeneratingChapter = chapterId;
+            
+            // Update modal title with chapter name
+            const modalTitle = document.querySelector('.modal-title');
+            modalTitle.textContent = `Regenerar: ${getChapterTitle(chapterId)}`;
+            
+            // Clear previous feedback
+            document.getElementById('whatDislike').value = '';
+            document.getElementById('whatChange').value = '';
+            document.getElementById('howWant').value = '';
+            
+            // Show modal
+            document.getElementById('regenerationModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeRegenerationModal() {
+            document.getElementById('regenerationModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            currentRegeneratingChapter = null;
+        }
+        
+        async function startChapterRegeneration() {
+            if (!currentRegeneratingChapter) return;
+            
+            const whatDislike = document.getElementById('whatDislike').value.trim();
+            const whatChange = document.getElementById('whatChange').value.trim();
+            const howWant = document.getElementById('howWant').value.trim();
+            
+            if (!whatDislike || !whatChange || !howWant) {
+                alert('Por favor completa todos los campos para obtener mejores resultados');
+                return;
+            }
+            
+            // Show loading state
+            document.getElementById('regeneratingOverlay').classList.add('active');
+            
+            try {
+                const currentChapterContent = getChapterContent(currentRegeneratingChapter);
+                const chapterTitle = getChapterTitle(currentRegeneratingChapter);
+                
+                const response = await fetch('/api/regenerate-chapter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        bookId: {{ book.id }},
+                        chapterId: currentRegeneratingChapter,
+                        chapterTitle: chapterTitle,
+                        currentContent: currentChapterContent,
+                        feedback: {
+                            whatDislike: whatDislike,
+                            whatChange: whatChange,
+                            howWant: howWant
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al regenerar el capítulo');
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update the chapter content
+                    updateChapterInParsedContent(currentRegeneratingChapter, result.newContent);
+                    
+                    // Re-render the reading page
+                    const readingPage = document.getElementById('readingPage');
+                    const html = renderMarkdownToHTML(parsedContent.sections, true);
+                    readingPage.innerHTML = html;
+                    
+                    // Close modal and show success
+                    closeRegenerationModal();
+                    showNotification('🤖 Capítulo regenerado exitosamente con Claude AI', 'success');
+                } else {
+                    throw new Error(result.error || 'Error desconocido');
+                }
+            } catch (error) {
+                console.error('Error regenerating chapter:', error);
+                showNotification('❌ Error al regenerar el capítulo: ' + error.message, 'error');
+            } finally {
+                document.getElementById('regeneratingOverlay').classList.remove('active');
+            }
+        }
+        
+        // === UTILITY FUNCTIONS ===
+        
+        function getChapterContent(chapterId) {
+            // Find the chapter in parsedContent and extract its content
+            let chapterContent = '';
+            let inTargetChapter = false;
+            let chapterTitle = '';
+            
+            for (let i = 0; i < parsedContent.sections.length; i++) {
+                const section = parsedContent.sections[i];
+                
+                if (section.type === 'h1' || section.type === 'h2') {
+                    const sectionId = section.content.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-');
+                    
+                    if (sectionId === chapterId) {
+                        inTargetChapter = true;
+                        chapterTitle = section.content;
+                        // Preserve the original heading level
+                        const hashes = section.type === 'h1' ? '#' : '##';
+                        chapterContent += `${hashes} ${section.content}\n\n`;
+                        continue;
+                    } else if (inTargetChapter) {
+                        // We've reached the next chapter, stop
+                        break;
+                    }
+                }
+                
+                if (inTargetChapter) {
+                    switch (section.type) {
+                        case 'h3':
+                            chapterContent += `### ${section.content}\n\n`;
+                            break;
+                        case 'paragraph':
+                            chapterContent += `${section.content}\n\n`;
+                            break;
+                        case 'ul':
+                            section.items.forEach(item => {
+                                chapterContent += `- ${item}\n`;
+                            });
+                            chapterContent += '\n';
+                            break;
+                        case 'ol':
+                            section.items.forEach((item, index) => {
+                                chapterContent += `${index + 1}. ${item}\n`;
+                            });
+                            chapterContent += '\n';
+                            break;
+                        case 'hr':
+                            chapterContent += '---\n\n';
+                            break;
+                        case 'code':
+                            chapterContent += `\`\`\`\n${section.content}\n\`\`\`\n\n`;
+                            break;
+                    }
+                }
+            }
+            
+            return chapterContent.trim();
+        }
+        
+        function getChapterTitle(chapterId) {
+            for (let section of parsedContent.sections) {
+                if (section.type === 'h1' || section.type === 'h2') {
+                    const sectionId = section.content.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-');
+                    if (sectionId === chapterId) {
+                        return section.content;
+                    }
+                }
+            }
+            return chapterId;
+        }
+        
+        function updateChapterInParsedContent(chapterId, newContent) {
+            // Parse the new content
+            const newParsedContent = parseMarkdown(newContent);
+            
+            // Find the chapter in parsedContent and replace its sections
+            let chapterStartIndex = -1;
+            let chapterEndIndex = -1;
+            
+            for (let i = 0; i < parsedContent.sections.length; i++) {
+                const section = parsedContent.sections[i];
+                
+                if (section.type === 'h1' || section.type === 'h2') {
+                    const sectionId = section.content.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-');
+                    
+                    if (sectionId === chapterId) {
+                        chapterStartIndex = i;
+                    } else if (chapterStartIndex !== -1 && sectionId !== chapterId) {
+                        chapterEndIndex = i;
+                        break;
+                    }
+                }
+            }
+            
+            if (chapterStartIndex === -1) return;
+            if (chapterEndIndex === -1) chapterEndIndex = parsedContent.sections.length;
+            
+            // Replace the chapter sections
+            parsedContent.sections.splice(chapterStartIndex, chapterEndIndex - chapterStartIndex, ...newParsedContent.sections);
+            
+            // Update TOC if needed
+            parsedContent.toc = parsedContent.toc.filter(item => {
+                const itemId = item.title.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-');
+                return itemId !== chapterId;
+            });
+            
+            // Add new TOC items from the updated chapter
+            newParsedContent.toc.forEach(item => {
+                parsedContent.toc.push(item);
+            });
+        }
+        
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                font-weight: 600;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+                z-index: 3000;
+                font-family: 'Inter', sans-serif;
+                max-width: 400px;
+                word-wrap: break-word;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+        
+        // === NAVIGATION PANEL FUNCTIONS ===
+        
+        function toggleNavigationPanel() {
+            const panel = document.getElementById('navigationPanel');
+            const overlay = document.getElementById('navOverlay');
+            const toggle = document.getElementById('navToggle');
+            
+            navigationPanelOpen = !navigationPanelOpen;
+            
+            if (navigationPanelOpen) {
+                panel.classList.add('active');
+                overlay.classList.add('active');
+                toggle.classList.add('active');
+                
+                // Generate navigation if not already done
+                if (!panel.querySelector('.nav-chapter')) {
+                    generateNavigation();
+                }
+                
+                // Update active chapter
+                updateActiveChapter();
+            } else {
+                closeNavigationPanel();
+            }
+        }
+        
+        function closeNavigationPanel() {
+            const panel = document.getElementById('navigationPanel');
+            const overlay = document.getElementById('navOverlay');
+            const toggle = document.getElementById('navToggle');
+            
+            navigationPanelOpen = false;
+            panel.classList.remove('active');
+            overlay.classList.remove('active');
+            toggle.classList.remove('active');
+        }
+        
+        function generateNavigation() {
+            const navContent = document.getElementById('navContent');
+            if (!parsedContent || !parsedContent.toc) return;
+            
+            let html = '';
+            
+            let chapterCount = 0;
+            let sectionCount = 0;
+            
+            parsedContent.toc.forEach((item, index) => {
+                const chapterId = item.id;
+                let itemNumber = '';
+                let itemLabel = '';
+                let navStyle = '';
+                
+                if (item.level === 1) {
+                    // Capítulos principales
+                    chapterCount++;
+                    itemNumber = chapterCount;
+                    itemLabel = `Capítulo ${chapterCount}`;
+                    navStyle = '';
+                    sectionCount = 0; // Reset section count for each chapter
+                } else if (item.level === 2) {
+                    // Secciones
+                    sectionCount++;
+                    itemNumber = `${chapterCount}.${sectionCount}`;
+                    itemLabel = `Sección ${sectionCount}`;
+                    navStyle = 'style="margin-left: 15px; opacity: 0.9;"';
+                }
+                
+                html += `
+                    <div class="nav-section" ${navStyle}>
+                        <div class="nav-chapter ${item.level === 1 ? 'nav-chapter-main' : 'nav-chapter-section'}" onclick="navigateToChapter('${chapterId}')" data-chapter-id="${chapterId}">
+                            <div class="nav-chapter-icon" style="${item.level === 2 ? 'font-size: 12px; width: 28px; height: 28px;' : ''}">${itemNumber}</div>
+                            <div class="nav-chapter-content">
+                                <div class="nav-chapter-title" style="${item.level === 2 ? 'font-size: 0.85em;' : ''}">${item.title}</div>
+                                <div class="nav-chapter-progress">${itemLabel}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            navContent.innerHTML = html;
+        }
+        
+        function navigateToChapter(chapterId) {
+            // Find the chapter element in the reading page
+            const chapterElement = document.getElementById(chapterId);
+            if (chapterElement) {
+                // Smooth scroll to the chapter
+                chapterElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+                
+                // Update active chapter
+                currentActiveChapter = chapterId;
+                updateActiveChapter();
+                
+                // Close navigation panel on mobile
+                if (window.innerWidth <= 768) {
+                    closeNavigationPanel();
+                }
+                
+                // Show feedback
+                const title = getChapterTitle(chapterId);
+                showNotification(`📖 Navegando a: ${title}`, 'info');
+            }
+        }
+        
+        function updateActiveChapter() {
+            // Remove active class from all chapters
+            document.querySelectorAll('.nav-chapter').forEach(chapter => {
+                chapter.classList.remove('active');
+            });
+            
+            // Add active class to current chapter
+            if (currentActiveChapter) {
+                const activeNavChapter = document.querySelector(`[data-chapter-id="${currentActiveChapter}"]`);
+                if (activeNavChapter) {
+                    activeNavChapter.classList.add('active');
+                }
+            }
+        }
+        
+        function detectCurrentChapter() {
+            if (!parsedContent || !parsedContent.toc) return;
+            
+            const readingPage = document.getElementById('readingPage');
+            if (!readingPage) return;
+            
+            const scrollTop = readingPage.scrollTop;
+            const readingPageHeight = readingPage.scrollHeight - readingPage.clientHeight;
+            
+            // Update reading progress
+            readingProgress = Math.min(100, (scrollTop / readingPageHeight) * 100);
+            const progressBar = document.getElementById('readingProgressBar');
+            if (progressBar) {
+                progressBar.style.width = readingProgress + '%';
+            }
+            
+            // Find current chapter based on scroll position
+            let currentChapter = null;
+            const chapterElements = document.querySelectorAll('#readingPage h2[id]');
+            
+            for (let i = chapterElements.length - 1; i >= 0; i--) {
+                const chapter = chapterElements[i];
+                const chapterTop = chapter.offsetTop - readingPage.offsetTop;
+                
+                if (scrollTop + 100 >= chapterTop) { // 100px offset for better UX
+                    currentChapter = chapter.id;
+                    break;
+                }
+            }
+            
+            if (currentChapter && currentChapter !== currentActiveChapter) {
+                currentActiveChapter = currentChapter;
+                updateActiveChapter();
+            }
+        }
+        
+        // Add scroll listener for auto-updating active chapter
+        function setupScrollListener() {
+            const readingPage = document.getElementById('readingPage');
+            if (readingPage) {
+                readingPage.addEventListener('scroll', () => {
+                    detectCurrentChapter();
+                });
+            }
+        }
+        
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
+            // Global shortcuts
+            if (e.key === 'Escape') {
+                if (document.getElementById('configurationModal').classList.contains('active')) {
+                    closeConfigurationModal();
+                    return;
+                }
+                if (document.getElementById('regenerationModal').classList.contains('active')) {
+                    closeRegenerationModal();
+                    return;
+                }
+            }
+            
+            // Reading mode shortcuts
             if (document.getElementById('readingMode').classList.contains('active')) {
                 switch(e.key) {
                     case 'Escape':
-                        closeFullReading();
+                        if (navigationPanelOpen) {
+                            closeNavigationPanel();
+                        } else {
+                            closeFullReading();
+                        }
                         break;
                     case '+':
                     case '=':
@@ -995,9 +2532,433 @@
                     case '-':
                         changeFontSize(-1);
                         break;
+                    case 'n':
+                    case 'N':
+                        toggleNavigationPanel();
+                        break;
+                    case 'c':
+                    case 'C':
+                        showBookConfiguration();
+                        break;
+                    case 'ArrowUp':
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                            navigateToPreviousChapter();
+                        }
+                        break;
+                    case 'ArrowDown':
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                            navigateToNextChapter();
+                        }
+                        break;
                 }
             }
         });
+        
+        // Navigation helper functions
+        function navigateToPreviousChapter() {
+            if (!parsedContent || !parsedContent.toc || !currentActiveChapter) return;
+            
+            const currentIndex = parsedContent.toc.findIndex(item => item.id === currentActiveChapter);
+            if (currentIndex > 0) {
+                const previousChapter = parsedContent.toc[currentIndex - 1];
+                navigateToChapter(previousChapter.id);
+            }
+        }
+        
+        function navigateToNextChapter() {
+            if (!parsedContent || !parsedContent.toc || !currentActiveChapter) return;
+            
+            const currentIndex = parsedContent.toc.findIndex(item => item.id === currentActiveChapter);
+            if (currentIndex < parsedContent.toc.length - 1) {
+                const nextChapter = parsedContent.toc[currentIndex + 1];
+                navigateToChapter(nextChapter.id);
+            }
+        }
+        
+        // === BOOK CONFIGURATION FUNCTIONS ===
+        
+        function showBookConfiguration() {
+            const modal = document.getElementById('configurationModal');
+            const content = document.getElementById('configurationContent');
+            
+            // Generate configuration content
+            content.innerHTML = generateConfigurationHTML();
+            
+            // Show modal
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeConfigurationModal() {
+            const modal = document.getElementById('configurationModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        function generateConfigurationHTML() {
+            const book = bookData;
+            const params = book.parameters || {};
+            
+            // Helper function to format values
+            function formatValue(value, type = 'text') {
+                if (value === null || value === undefined || value === '') {
+                    return '<span class="config-item-value empty">No especificado</span>';
+                }
+                
+                switch (type) {
+                    case 'boolean':
+                        return `<span class="config-badge ${value ? 'success' : 'warning'}">${value ? 'Sí' : 'No'}</span>`;
+                    case 'number':
+                        return `<span class="config-item-value">${value}</span>`;
+                    case 'textarea':
+                        return `<div class="config-text-area">${value}</div>`;
+                    default:
+                        return `<span class="config-item-value">${value}</span>`;
+                }
+            }
+            
+            // Helper function to get readable labels
+            function getGenreLabel(genre) {
+                const genres = {
+                    'ficcion': 'Ficción',
+                    'no_ficcion': 'No Ficción',
+                    'biografia': 'Biografía',
+                    'historia': 'Historia',
+                    'ciencia': 'Ciencia',
+                    'tecnologia': 'Tecnología',
+                    'negocios': 'Negocios',
+                    'autoayuda': 'Autoayuda',
+                    'educativo': 'Educativo',
+                    'infantil': 'Infantil'
+                };
+                return genres[genre] || genre;
+            }
+            
+            function getAudienceLabel(audience) {
+                const audiences = {
+                    'general': 'Público General',
+                    'adultos': 'Adultos',
+                    'jovenes': 'Jóvenes',
+                    'ninos': 'Niños',
+                    'profesional': 'Profesional',
+                    'academico': 'Académico'
+                };
+                return audiences[audience] || audience;
+            }
+            
+            function getToneLabel(tone) {
+                const tones = {
+                    'formal': 'Formal',
+                    'informal': 'Informal',
+                    'conversacional': 'Conversacional',
+                    'academico': 'Académico',
+                    'profesional': 'Profesional',
+                    'amigable': 'Amigable'
+                };
+                return tones[tone] || tone;
+            }
+            
+            function getLanguageLabel(language) {
+                const languages = {
+                    'es': 'Español',
+                    'en': 'Inglés',
+                    'fr': 'Francés',
+                    'de': 'Alemán',
+                    'it': 'Italiano',
+                    'pt': 'Portugués'
+                };
+                return languages[language] || language;
+            }
+            
+            // Helper to format page size
+            function getPageSizeLabel(size) {
+                const sizes = {
+                    'pocket': 'Bolsillo (4.25" x 6.87")',
+                    'digest': 'Digest (5.5" x 8.5")',
+                    'trade': 'Trade (6" x 9")',
+                    'letter': 'Carta (8.5" x 11")',
+                    'a4': 'A4 (8.27" x 11.69")',
+                    'a5': 'A5 (5.83" x 8.27")'
+                };
+                return sizes[size] || size;
+            }
+            
+            // Helper to format line spacing
+            function getLineSpacingLabel(spacing) {
+                const spacings = {
+                    'single': 'Sencillo (1.0)',
+                    'medium': 'Medio (1.5)',
+                    'double': 'Doble (2.0)'
+                };
+                return spacings[spacing] || spacing;
+            }
+            
+            // Helper to format writing style
+            function getWritingStyleLabel(style) {
+                if (!style) return null;
+                const styles = {
+                    'descriptivo': 'Descriptivo y detallado',
+                    'narrativo': 'Narrativo y fluido',
+                    'expositivo': 'Expositivo y claro',
+                    'persuasivo': 'Persuasivo y convincente',
+                    'tecnico': 'Técnico y preciso',
+                    'creativo': 'Creativo e imaginativo'
+                };
+                return styles[style] || style;
+            }
+            
+            // Helper to format book length
+            function getBookLengthLabel(length) {
+                const lengths = {
+                    'short': 'Corto (50-100 páginas)',
+                    'medium': 'Medio (100-200 páginas)',
+                    'long': 'Largo (200+ páginas)'
+                };
+                return lengths[length] || length;
+            }
+            
+            // Helper to format page size with dimensions
+            function getFullPageSizeLabel(size) {
+                const sizes = {
+                    'pocket': 'Pocket (110 × 180 mm) - Como un Kindle',
+                    'A5': 'A5 (148 × 210 mm) - Libro de bolsillo',
+                    'B5': 'B5 (176 × 250 mm) - Libro estándar',
+                    'letter': 'Letter (216 × 279 mm) - Más contenido'
+                };
+                return sizes[size] || size;
+            }
+            
+            // Helper to format audience with age ranges
+            function getFullAudienceLabel(audience) {
+                const audiences = {
+                    'children': 'Niños (6-12 años)',
+                    'young_adult': 'Adolescentes (13-17 años)',
+                    'adult': 'Adultos (18+ años)',
+                    'all': 'Todas las edades',
+                    'general': 'Público General',
+                    'adultos': 'Adultos',
+                    'jovenes': 'Jóvenes',
+                    'ninos': 'Niños',
+                    'profesional': 'Profesional',
+                    'academico': 'Académico'
+                };
+                return audiences[audience] || audience;
+            }
+            
+            return `
+                <!-- Información Básica -->
+                <div class="config-section">
+                    <div class="config-section-title">📚 Información Básica</div>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <div class="config-item-label">Título</div>
+                            ${formatValue(book.title)}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Género</div>
+                            ${formatValue(getGenreLabel(book.genre))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Audiencia Objetivo</div>
+                            ${formatValue(getFullAudienceLabel(params.audience || book.target_audience))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tono de Escritura</div>
+                            ${formatValue(getToneLabel(book.tone))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Idioma</div>
+                            ${formatValue(getLanguageLabel(book.language))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Estilo de Escritura</div>
+                            ${formatValue(getWritingStyleLabel(book.writing_style))}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estructura del Libro -->
+                <div class="config-section">
+                    <div class="config-section-title">📖 Estructura del Libro</div>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <div class="config-item-label">Número de Capítulos</div>
+                            ${formatValue(book.chapter_count, 'number')}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Longitud del Libro</div>
+                            ${formatValue(getBookLengthLabel(params.length))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tamaño de Página</div>
+                            ${formatValue(getFullPageSizeLabel(params.page_size || book.format_size))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Espaciado de Línea</div>
+                            ${formatValue(getLineSpacingLabel(book.line_spacing))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Incluir Tabla de Contenidos</div>
+                            ${formatValue(book.include_toc, 'boolean')}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Incluir Introducción</div>
+                            ${formatValue(book.include_introduction, 'boolean')}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Incluir Conclusión</div>
+                            ${formatValue(book.include_conclusion, 'boolean')}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contenido y Temas -->
+                <div class="config-section">
+                    <div class="config-section-title">💡 Contenido y Temas</div>
+                    <div class="config-grid">
+                        <div class="config-item" style="grid-column: 1 / -1;">
+                            <div class="config-item-label">Descripción Original del Libro</div>
+                            ${formatValue(params.description || book.key_topics, 'textarea')}
+                        </div>
+                        <div class="config-item" style="grid-column: 1 / -1;">
+                            <div class="config-item-label">Temas Clave Extraídos</div>
+                            ${formatValue(book.key_topics !== params.description ? book.key_topics : null, 'textarea')}
+                        </div>
+                        <div class="config-item" style="grid-column: 1 / -1;">
+                            <div class="config-item-label">Instrucciones Adicionales</div>
+                            ${formatValue(params.additional_instructions || book.additional_instructions, 'textarea')}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estadísticas de Generación -->
+                <div class="config-section">
+                    <div class="config-section-title">📊 Estadísticas de Generación</div>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <div class="config-item-label">Páginas Finales</div>
+                            ${formatValue(book.final_pages, 'number')}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Palabras Totales</div>
+                            ${formatValue(book.final_words ? book.final_words.toLocaleString('es-ES') : null, 'text')}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tiempo de Lectura</div>
+                            ${formatValue(book.estimated_reading_time ? `${book.estimated_reading_time} minutos` : null)}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Estado</div>
+                            <span class="config-badge ${book.status === 'completed' ? 'success' : book.status === 'failed' ? 'warning' : ''}">${book.status === 'completed' ? 'Completado' : book.status === 'failed' ? 'Fallido' : book.status}</span>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Fecha de Creación</div>
+                            ${formatValue(new Date(book.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Última Actualización</div>
+                            ${formatValue(new Date(book.updated_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Métricas de Tokens y Costos -->
+                <div class="config-section">
+                    <div class="config-section-title">💰 Métricas de Generación</div>
+                    <div class="alert alert-info" style="margin-bottom: 16px; padding: 12px; background: #e0f2fe; border: 1px solid #b3e5fc; border-radius: 6px; font-size: 0.9em;">
+                        <strong>💡 Tokens de Pensamiento Extendido:</strong> Esta tecnología permite que Claude "piense" más profundamente antes de escribir, analizando la estructura, coherencia y calidad del contenido. Esto resulta en libros más coherentes y de mayor calidad.
+                    </div>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <div class="config-item-label">Tokens de Entrada</div>
+                            ${formatValue(book.prompt_tokens ? book.prompt_tokens.toLocaleString('es-ES') : null)}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tokens de Salida</div>
+                            ${formatValue(book.completion_tokens ? book.completion_tokens.toLocaleString('es-ES') : null)}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tokens de Pensamiento Extendido</div>
+                            ${formatValue(book.thinking_tokens ? book.thinking_tokens.toLocaleString('es-ES') : null)}
+                            ${book.thinking_tokens > 0 ? '<div class="config-badge success" style="margin-top: 4px; font-size: 0.7em;">✓ Activado</div>' : '<div class="config-badge warning" style="margin-top: 4px; font-size: 0.7em;">No usado</div>'}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tokens Totales</div>
+                            ${formatValue(book.total_tokens ? book.total_tokens.toLocaleString('es-ES') : null)}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Costo Estimado</div>
+                            ${formatValue(book.estimated_cost ? `$${parseFloat(book.estimated_cost).toFixed(4)} USD` : null)}
+                            <div style="font-size: 0.75em; color: #6b7280; margin-top: 2px;">Incluye tokens de pensamiento</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tiempo de Procesamiento</div>
+                            ${formatValue(book.processing_time ? `${Math.round(book.processing_time / 60)} minutos` : null)}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Configuración Original Completa -->
+                ${params && Object.keys(params).length > 0 ? `
+                <div class="config-section">
+                    <div class="config-section-title">⚙️ Configuración Original Completa</div>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <div class="config-item-label">Audiencia</div>
+                            ${formatValue(getFullAudienceLabel(params.audience))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tono Original</div>
+                            ${formatValue(getToneLabel(params.tone))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Capítulos Solicitados</div>
+                            ${formatValue(params.chapters, 'number')}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Longitud</div>
+                            ${formatValue(getBookLengthLabel(params.length))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Tamaño de Página</div>
+                            ${formatValue(getFullPageSizeLabel(params.page_size))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Interlineado</div>
+                            ${formatValue(getLineSpacingLabel(params.line_spacing))}
+                        </div>
+                        <div class="config-item">
+                            <div class="config-item-label">Estilo de Escritura</div>
+                            ${formatValue(getWritingStyleLabel(params.writing_style))}
+                        </div>
+                    </div>
+                    
+                    <div class="config-grid" style="margin-top: 16px;">
+                        <div class="config-item" style="grid-column: 1 / -1;">
+                            <div class="config-item-label">Descripción Completa Original</div>
+                            ${formatValue(params.description, 'textarea')}
+                        </div>
+                        <div class="config-item" style="grid-column: 1 / -1;">
+                            <div class="config-item-label">Instrucciones Adicionales Originales</div>
+                            ${formatValue(params.additional_instructions, 'textarea')}
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Parámetros JSON (Para depuración) -->
+                ${book.parameters ? `
+                <div class="config-section">
+                    <div class="config-section-title">🔧 Datos Técnicos (Parámetros JSON)</div>
+                    <div class="config-item" style="grid-column: 1 / -1;">
+                        <pre class="config-json">${JSON.stringify(book.parameters, null, 2)}</pre>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+        }
     </script>
 </body>
 </html>

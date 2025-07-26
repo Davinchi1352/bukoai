@@ -1845,7 +1845,7 @@ function loadStructure() {
                     🚀 ${structure.introduction.title || 'Introducción'}
                 </div>
                 <div class="chapter-summary">${structure.introduction.summary || 'Sin descripción'}</div>
-                <div class="chapter-pages">${structure.introduction.estimated_pages || 0} páginas estimadas</div>
+                <div class="chapter-pages">${structure.introduction.estimated_pages || structure.introduction.pages || 0} páginas estimadas</div>
             </div>
         `;
     }
@@ -1857,10 +1857,10 @@ function loadStructure() {
             <div class="chapter-item" data-chapter-index="${index}">
                 <div class="chapter-item-header">
                     <div class="chapter-title">
-                        <span class="chapter-number">Capítulo ${chapter.number}:</span>
+                        <span class="chapter-number">Capítulo ${chapter.number || chapter.chapter_number || 'N/A'}:</span>
                         <span class="chapter-name">${chapter.title}</span>
                     </div>
-                    <div class="chapter-pages">${chapter.estimated_pages || 0} páginas</div>
+                    <div class="chapter-pages">${chapter.estimated_pages || chapter.pages || 0} páginas</div>
                     <div class="item-actions">
                         <button class="btn-delete-item" onclick="removeChapter(${index})" title="Eliminar capítulo">
                             🗑️
@@ -1914,7 +1914,7 @@ function loadStructure() {
                     🎯 ${structure.conclusion.title || 'Conclusión'}
                 </div>
                 <div class="chapter-summary">${structure.conclusion.summary || 'Sin descripción'}</div>
-                <div class="chapter-pages">${structure.conclusion.estimated_pages || 0} páginas estimadas</div>
+                <div class="chapter-pages">${structure.conclusion.estimated_pages || structure.conclusion.pages || 0} páginas estimadas</div>
             </div>
         `;
     }
@@ -2729,6 +2729,11 @@ async function approveArchitecture() {
         currentArchitecture.target_pages = dbPages;
         currentArchitecture.estimated_words = dbPages * (FORMAT_MULTIPLIERS[dbFormat] || FORMAT_MULTIPLIERS['pocket']);
         currentArchitecture.format_size = dbFormat;
+        
+        // CRITICAL: Ensure title field is present for validation
+        if (!currentArchitecture.title) {
+            currentArchitecture.title = '{{ book.title|e }}';
+        }
         
         console.log('Approving architecture with values:', {
             target_pages: currentArchitecture.target_pages,

@@ -64,8 +64,8 @@ def create_celery_app(app=None):
         # Configuraci�n de resultados
         result_expires=3600,
         # Configuraci�n de retry
-        task_soft_time_limit=300,  # 5 minutos
-        task_time_limit=600,       # 10 minutos
+        task_soft_time_limit=3600,  # 60 minutos - suficiente para libros complejos con 64K tokens
+        task_time_limit=4200,       # 70 minutos - límite duro con margen de seguridad
         task_max_retries=3,
         task_default_retry_delay=60,
         # Configuraci�n de beat para tareas programadas

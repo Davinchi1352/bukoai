@@ -122,13 +122,14 @@ def _generate_book_architecture_task_impl(self, book_id):
         # Actualizar libro con la arquitectura generada
         book.thinking_content = result.get('thinking', '')
         
-        # Actualizar estadísticas de tokens
+        # Actualizar estadísticas de tokens usando el método que calcula costos
         if 'usage' in result:
             usage = result['usage']
-            book.prompt_tokens = usage.get('prompt_tokens', 0)
-            book.completion_tokens = usage.get('completion_tokens', 0)
-            book.thinking_tokens = usage.get('thinking_tokens', 0)
-            book.total_tokens = usage.get('total_tokens', 0)
+            book.update_tokens(
+                prompt_tokens=usage.get('prompt_tokens', 0),
+                completion_tokens=usage.get('completion_tokens', 0),
+                thinking_tokens=usage.get('thinking_tokens', 0)
+            )
         
         # Marcar como esperando revisión de arquitectura
         book.mark_architecture_review(result['architecture'])
@@ -198,9 +199,67 @@ def _generate_book_architecture_task_impl(self, book_id):
                     error=str(exc),
                     traceback=traceback.format_exc())
         
-        # Actualizar el libro con error
+        # Enhanced error handling for architecture generation
+        error_str = str(exc).lower()
+        error_type = type(exc).__name__.lower()
+        
+        # Same error classification as book generation
+        claude_temporary_errors = [
+            'overloaded', 'rate_limit', 'rate limited', 'quota', 'busy',
+            'timeout', 'temporary', 'service_unavailable', 'internal_server_error',
+            'connection', 'network', 'unavailable', 'throttled'
+        ]
+        
+        infra_temporary_errors = [
+            'connectionerror', 'timeouterror', 'httperror', 'asynciotimeouterror',
+            'redis', 'database', 'db', 'postgresql'
+        ]
+        
+        permanent_errors = [
+            'invalid_request', 'authentication', 'permission', 'forbidden',
+            'not_found', 'malformed', 'syntax', 'json', 'parse'
+        ]
+        
+        is_temporary_error = (
+            any(keyword in error_str for keyword in claude_temporary_errors) or
+            any(keyword in error_type for keyword in infra_temporary_errors)
+        ) and not any(keyword in error_str for keyword in permanent_errors)
+        
+        # Actualizar el libro con error o retry
         book = BookGeneration.query.get(book_id)
         if book:
+            current_retry_count = getattr(book, 'retry_count', 0)
+            max_retries = 2  # Less retries for architecture (faster iteration)
+            
+            # Retry logic for temporary errors
+            if is_temporary_error and current_retry_count < max_retries:
+                book.retry_count = current_retry_count + 1
+                book.status = BookStatus.QUEUED
+                book.error_message = f"Error temporal en arquitectura (intento {book.retry_count}/{max_retries}): {str(exc)}"
+                get_db().session.commit()
+                
+                # Shorter retry delays for architecture
+                import random
+                base_delay = min(120, (1.5 ** current_retry_count) * 60)  # 1-3 minutes
+                jitter = random.uniform(0.1, 0.2) * base_delay
+                retry_delay = int(base_delay + jitter)
+                
+                logger.info("architecture_generation_retry_scheduled",
+                           book_id=book_id,
+                           retry_count=book.retry_count,
+                           retry_delay_seconds=retry_delay,
+                           error_type=type(exc).__name__,
+                           error_classification="temporary",
+                           error=str(exc)[:200])
+                
+                # Schedule architecture retry
+                get_celery_app().send_task('app.tasks.book_generation.generate_book_architecture_task',
+                                         args=[book_id],
+                                         countdown=retry_delay)
+                
+                return {'status': 'retrying', 'retry_count': book.retry_count, 'retry_delay': retry_delay}
+            
+            # Mark as failed if not temporary or max retries exceeded
             book.status = BookStatus.FAILED
             book.error_message = f"Error generando arquitectura: {str(exc)}"
             get_db().session.commit()
@@ -211,7 +270,10 @@ def _generate_book_architecture_task_impl(self, book_id):
                 action="book_architecture_generation_failed",
                 details={
                     "book_id": book_id,
-                    "error": str(exc)
+                    "error": str(exc),
+                    "retry_count": current_retry_count,
+                    "is_temporary": is_temporary_error,
+                    "max_retries_exceeded": is_temporary_error and current_retry_count >= max_retries
                 },
                 level="ERROR"
             )
@@ -281,21 +343,27 @@ def _generate_book_task_impl(self, book_id):
         if emit_book_progress_update:
             emit_book_progress_update(book_id, progress_data)
         
-        # Verificar si el libro tiene arquitectura aprobada
-        if book.has_architecture and book.is_architecture_approved:
-            # Generar libro basado en arquitectura aprobada
-            logger.info("generating_book_from_approved_architecture", 
-                       book_id=book_id,
-                       architecture_approved_at=book.architecture_approved_at)
-            
-            result = asyncio.run(claude_service.generate_book_from_architecture(
-                book_id, validated_params, book.architecture
-            ))
-        else:
-            # Generar libro completo usando streaming (flujo original)
-            # Nota: El streaming se maneja internamente en el servicio Claude
-            # con WebSocket events para progreso en tiempo real
-            result = asyncio.run(claude_service.generate_book_content_stream(book_id, validated_params))
+        # TODOS los libros ahora deben tener arquitectura aprobada
+        if not (book.has_architecture and book.is_architecture_approved):
+            raise Exception("El libro debe tener una arquitectura aprobada antes de generar contenido")
+        
+        # Generar libro basado en arquitectura aprobada
+        logger.info("generating_book_from_approved_architecture", 
+                   book_id=book_id,
+                   architecture_approved_at=book.architecture_approved_at)
+        
+        # Parse architecture from JSON string if needed
+        import json
+        architecture = book.architecture
+        if isinstance(architecture, str):
+            try:
+                architecture = json.loads(architecture)
+            except json.JSONDecodeError as e:
+                raise Exception(f"Error parsing architecture JSON: {e}")
+        
+        result = asyncio.run(claude_service.generate_book_from_architecture_multichunk(
+            book_id, validated_params, architecture
+        ))
         
         # Actualizar progreso - generación completada
         progress_data = {
@@ -316,18 +384,27 @@ def _generate_book_task_impl(self, book_id):
         book.content = result['content']
         book.thinking_content = result.get('thinking', '')
         
-        # Actualizar estadísticas
+        # Actualizar estadísticas de tokens usando el método que calcula costos
         if 'usage' in result:
             usage = result['usage']
-            book.prompt_tokens = usage.get('prompt_tokens', 0)
-            book.completion_tokens = usage.get('completion_tokens', 0)
-            book.thinking_tokens = usage.get('thinking_tokens', 0)
-            book.total_tokens = usage.get('total_tokens', 0)
+            book.update_tokens(
+                prompt_tokens=usage.get('prompt_tokens', 0),
+                completion_tokens=usage.get('completion_tokens', 0),
+                thinking_tokens=usage.get('thinking_tokens', 0)
+            )
         
-        if 'streaming_stats' in result:
+        # Actualizar estadísticas finales del libro
+        if 'final_stats' in result:
+            stats = result['final_stats']
+            book.final_words = stats.get('words', 0)
+            book.final_pages = stats.get('pages', 0)
+            book.streaming_stats = stats  # Guardar todas las estadísticas
+        elif 'streaming_stats' in result:
+            # Fallback para compatibilidad con versiones anteriores
             stats = result['streaming_stats']
             book.final_words = stats.get('estimated_words', 0)
             book.final_pages = stats.get('estimated_pages', 0)
+            book.streaming_stats = stats
         
         # Generar archivos en diferentes formatos
         progress_data = {
@@ -451,11 +528,33 @@ def _generate_book_task_impl(self, book_id):
                     error=str(exc),
                     traceback=traceback.format_exc())
         
-        # Check if it's a temporary error that should be retried
-        error_str = str(exc)
-        is_temporary_error = any(keyword in error_str.lower() for keyword in [
-            'overloaded', 'rate_limit', 'timeout', 'temporary', 'service_unavailable'
-        ])
+        # Enhanced error classification for 10K users
+        error_str = str(exc).lower()
+        error_type = type(exc).__name__.lower()
+        
+        # Claude API specific errors
+        claude_temporary_errors = [
+            'overloaded', 'rate_limit', 'rate limited', 'quota', 'busy',
+            'timeout', 'temporary', 'service_unavailable', 'internal_server_error',
+            'connection', 'network', 'unavailable', 'throttled'
+        ]
+        
+        # Infrastructure errors
+        infra_temporary_errors = [
+            'connectionerror', 'timeouterror', 'httperror', 'asynciotimeouterror',
+            'redis', 'database', 'db', 'postgresql'
+        ]
+        
+        # Permanent errors that shouldn't be retried
+        permanent_errors = [
+            'invalid_request', 'authentication', 'permission', 'forbidden',
+            'not_found', 'malformed', 'syntax', 'json', 'parse'
+        ]
+        
+        is_temporary_error = (
+            any(keyword in error_str for keyword in claude_temporary_errors) or
+            any(keyword in error_type for keyword in infra_temporary_errors)
+        ) and not any(keyword in error_str for keyword in permanent_errors)
         
         # Actualizar el libro con error
         book = BookGeneration.query.get(book_id)
@@ -470,17 +569,29 @@ def _generate_book_task_impl(self, book_id):
                 book.error_message = f"Error temporal (intento {book.retry_count}/{max_retries}): {str(exc)}"
                 get_db().session.commit()
                 
-                # Schedule retry with exponential backoff (2^retry_count minutes)
-                retry_delay = (2 ** current_retry_count) * 60  # seconds
+                # Enhanced retry strategy for 10K users with jitter
+                import random
+                base_delay = min(300, (2 ** current_retry_count) * 60)  # Cap at 5 minutes
+                jitter = random.uniform(0.1, 0.3) * base_delay  # 10-30% jitter
+                retry_delay = int(base_delay + jitter)  # Add jitter to prevent thundering herd
+                
+                # Different delays based on error type
+                if 'rate_limit' in error_str:
+                    retry_delay = min(retry_delay * 2, 900)  # Longer for rate limits, cap at 15 min
+                elif 'overloaded' in error_str:
+                    retry_delay = min(retry_delay * 1.5, 600)  # Medium delay for overload, cap at 10 min
                 
                 logger.info("book_generation_retry_scheduled",
                            book_id=book_id,
                            retry_count=book.retry_count,
-                           retry_delay_minutes=retry_delay/60,
-                           error=str(exc))
+                           retry_delay_seconds=retry_delay,
+                           retry_delay_minutes=round(retry_delay/60, 1),
+                           error_type=type(exc).__name__,
+                           error_classification="temporary",
+                           jitter_applied=True,
+                           error=str(exc)[:200])  # Truncate long errors
                 
                 # Schedule the retry task
-                from app import get_celery_app
                 get_celery_app().send_task('app.tasks.book_generation.generate_book_task', 
                                          args=[book_id], 
                                          countdown=retry_delay)
@@ -742,13 +853,14 @@ def _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedba
         # Actualizar libro con la arquitectura regenerada
         book.thinking_content = result.get('thinking', '')
         
-        # Actualizar estadísticas de tokens
+        # Actualizar estadísticas de tokens usando el método que calcula costos
         if 'usage' in result:
             usage = result['usage']
-            book.prompt_tokens = usage.get('prompt_tokens', 0)
-            book.completion_tokens = usage.get('completion_tokens', 0)
-            book.thinking_tokens = usage.get('thinking_tokens', 0)
-            book.total_tokens = usage.get('total_tokens', 0)
+            book.update_tokens(
+                prompt_tokens=usage.get('prompt_tokens', 0),
+                completion_tokens=usage.get('completion_tokens', 0),
+                thinking_tokens=usage.get('thinking_tokens', 0)
+            )
         
         # Marcar como esperando revisión de arquitectura
         book.mark_architecture_review(result['architecture'])

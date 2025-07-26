@@ -1,0 +1,265 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL optimizada para 10K usuarios
+  db_test:
+    image: postgres:15-alpine
+    container_name: buko_ai_db_test
+    environment:
+      POSTGRES_DB: buko_ai_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      # Optimizaciones para 10K usuarios
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    command: >
+      postgres 
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+      -c max_worker_processes=8
+      -c max_parallel_workers_per_gather=4
+      -c max_parallel_workers=8
+      -c max_parallel_maintenance_workers=4
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - buko_test_network
+
+  # Redis optimizado para alta concurrencia
+  redis_test:
+    image: redis:7-alpine
+    container_name: buko_ai_redis_test
+    command: >
+      redis-server 
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --maxclients 1000
+      --tcp-keepalive 300
+      --timeout 0
+      --tcp-backlog 511
+      --databases 16
+      --save 900 1 300 10 60 10000
+      --rdbcompression yes
+      --rdbchecksum yes
+      --dir /data
+    volumes:
+      - redis_test_data:/data
+    ports:
+      - "6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - buko_test_network
+
+  # Aplicación principal con optimizaciones
+  web_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buko_ai_web_test
+    environment:
+      # Base
+      FLASK_ENV: testing
+      FLASK_APP: app
+      
+      # Database optimizado
+      DATABASE_URL: postgresql://postgres:postgres@db_test:5432/buko_ai_test
+      DB_POOL_SIZE: 15
+      DB_MAX_OVERFLOW: 25
+      SQLALCHEMY_RECORD_QUERIES: "False"
+      
+      # Redis optimizado
+      REDIS_URL: redis://redis_test:6379/0
+      CACHE_REDIS_URL: redis://redis_test:6379/1
+      CACHE_REDIS_MAX_CONNECTIONS: 30
+      
+      # Celery optimizado para test
+      CELERY_BROKER_URL: redis://redis_test:6379/0
+      CELERY_RESULT_BACKEND: redis://redis_test:6379/0
+      CELERY_WORKER_CONCURRENCY: 4
+      CELERY_TASK_SOFT_TIME_LIMIT: 1800  # 30 min para tests
+      CELERY_TASK_TIME_LIMIT: 2400       # 40 min para tests
+      CELERY_WORKER_PREFETCH_MULTIPLIER: 2
+      
+      # Claude AI (usar variables reales)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_MODEL: claude-sonnet-4-20250514
+      CLAUDE_MAX_TOKENS: 64000
+      CLAUDE_THINKING_BUDGET: 63999
+      CLAUDE_MAX_RETRIES: 3
+      
+      # WebSocket optimizado
+      SOCKETIO_PING_TIMEOUT: 120
+      SOCKETIO_PING_INTERVAL: 60
+      SOCKETIO_MAX_HTTP_BUFFER_SIZE: 100000
+      SOCKETIO_LOGGER: "False"
+      SOCKETIO_ENGINEIO_LOGGER: "False"
+      
+      # Monitoring
+      LOG_LEVEL: INFO
+      
+      # Security
+      SECRET_KEY: test-secret-key-for-10k-users
+      
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+    depends_on:
+      db_test:
+        condition: service_healthy
+      redis_test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - buko_test_network
+
+  # Celery worker optimizado para alta carga
+  celery_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buko_ai_celery_test
+    command: >
+      celery -A app.celery worker 
+      --loglevel=info 
+      --concurrency=4
+      --prefetch-multiplier=2
+      --max-tasks-per-child=20
+      --max-memory-per-child=1000000
+      --queues=architecture_high,book_generation_normal,emails_low
+      --hostname=worker-test@%h
+    environment:
+      # Mismas variables que web_test
+      FLASK_ENV: testing
+      DATABASE_URL: postgresql://postgres:postgres@db_test:5432/buko_ai_test
+      DB_POOL_SIZE: 10  # Menos conexiones para worker
+      DB_MAX_OVERFLOW: 15
+      REDIS_URL: redis://redis_test:6379/0
+      CELERY_BROKER_URL: redis://redis_test:6379/0
+      CELERY_RESULT_BACKEND: redis://redis_test:6379/0
+      CELERY_WORKER_CONCURRENCY: 4
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_MODEL: claude-sonnet-4-20250514
+      CLAUDE_MAX_TOKENS: 64000
+      CLAUDE_THINKING_BUDGET: 63999
+      SECRET_KEY: test-secret-key-for-10k-users
+    volumes:
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+    depends_on:
+      db_test:
+        condition: service_healthy
+      redis_test:
+        condition: service_healthy
+    networks:
+      - buko_test_network
+
+  # Celery beat para tareas programadas
+  celery_beat_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buko_ai_celery_beat_test
+    command: >
+      celery -A app.celery beat 
+      --loglevel=info
+      --schedule=/tmp/celerybeat-schedule
+    environment:
+      FLASK_ENV: testing
+      DATABASE_URL: postgresql://postgres:postgres@db_test:5432/buko_ai_test
+      REDIS_URL: redis://redis_test:6379/0
+      CELERY_BROKER_URL: redis://redis_test:6379/0
+      CELERY_RESULT_BACKEND: redis://redis_test:6379/0
+      SECRET_KEY: test-secret-key-for-10k-users
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      db_test:
+        condition: service_healthy
+      redis_test:
+        condition: service_healthy
+    networks:
+      - buko_test_network
+
+  # Flower para monitoreo de Celery
+  flower_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buko_ai_flower_test
+    command: >
+      celery -A app.celery flower 
+      --port=5555
+      --basic_auth=admin:flower123
+    environment:
+      CELERY_BROKER_URL: redis://redis_test:6379/0
+      CELERY_RESULT_BACKEND: redis://redis_test:6379/0
+    ports:
+      - "5556:5555"
+    depends_on:
+      redis_test:
+        condition: service_healthy
+    networks:
+      - buko_test_network
+
+  # Sistema de verificación
+  verification_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buko_ai_verification_test
+    command: python scripts/verify_10k_users_setup.py
+    environment:
+      FLASK_ENV: testing
+      DATABASE_URL: postgresql://postgres:postgres@db_test:5432/buko_ai_test
+      REDIS_URL: redis://redis_test:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-test-key}
+      SECRET_KEY: test-secret-key-for-10k-users
+    volumes:
+      - ./logs:/app/logs
+      - ./verification_results.json:/app/verification_results.json
+    depends_on:
+      web_test:
+        condition: service_healthy
+    networks:
+      - buko_test_network
+    profiles:
+      - verification
+
+volumes:
+  postgres_test_data:
+    driver: local
+  redis_test_data:
+    driver: local
+
+networks:
+  buko_test_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
