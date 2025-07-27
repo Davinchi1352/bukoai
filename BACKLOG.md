@@ -146,7 +146,7 @@
 
 ### ✅ Tarea 1: Servicio de Claude AI
 **Entregable:** Integración con Claude funcionando  
-**Estado:** ✅ COMPLETADO + REVISADO + FUNCIONANDO
+**Estado:** ✅ COMPLETADO + REVISADO + OPTIMIZADO + FUNCIONANDO
 - [x] ClaudeService con AsyncAnthropic client
 - [x] Modelo claude-sonnet-4-20250514 (más actual)
 - [x] Streaming SSE completo para progreso en tiempo real
@@ -168,6 +168,12 @@
   - [x] Validación de parámetros: usar `_build_parameters()` completos
   - [x] System prompt mejorado para seguir especificaciones estrictas
   - [x] **VERIFICADO:** Generación exitosa de libros con contenido correcto
+- [x] **OPTIMIZACIONES CRÍTICAS (2025-07-26):**
+  - [x] **Sistema de prompts limpio:** Eliminado código legacy de FASE 2 (método obsoleto)
+  - [x] **Arquitectura completa en chunks:** Cada chunk recibe estructura completa para evitar duplicación
+  - [x] **Reglas de no duplicación inteligentes:** Referencias permitidas entre capítulos
+  - [x] **Cálculo automático de estadísticas:** Fix para libros sin final_pages/final_words
+  - [x] **Manejo robusto de atributos:** page_size/format_size con fallbacks seguros
 
 ### ✅ Tarea 2: Formulario de Generación
 **Entregable:** Interfaz de creación de libros  
