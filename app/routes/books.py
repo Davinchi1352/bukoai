@@ -59,8 +59,7 @@ def generate():
     languages = [
         {'id': 'es', 'name': 'Español', 'flag': '🇪🇸'},
         {'id': 'en', 'name': 'Inglés', 'flag': '🇺🇸'},
-        {'id': 'pt', 'name': 'Portugués', 'flag': '🇵🇹'},
-        {'id': 'fr', 'name': 'Francés', 'flag': '🇫🇷'}
+        {'id': 'de', 'name': 'Alemán', 'flag': '🇩🇪'}
     ]
     
     return render_template('books/generate.html',
@@ -469,6 +468,40 @@ def api_book_status(book_id):
     if book.status.value == 'completed':
         progress = 100
     
+    # Calcular páginas y palabras objetivo (mismo cálculo que generation_status)
+    target_pages = 0
+    target_words = 0
+    
+    # 1. Si tiene arquitectura aprobada, usar esos valores
+    if book.architecture:
+        target_pages = book.architecture.get('target_pages', 0)
+        target_words = book.architecture.get('estimated_words', 0)
+    
+    # 2. Si no hay arquitectura, calcular desde configuración original del usuario
+    if target_pages == 0:
+        target_pages = book.page_count or 0
+        
+    if target_words == 0 and target_pages > 0:
+        # Calcular palabras basado en formato
+        format_multipliers = {
+            'pocket': 220,
+            'A5': 250, 
+            'B5': 280,
+            'letter': 350
+        }
+        # Usar formato del libro (compatibilidad con nombres de atributo)
+        book_format = getattr(book, 'format_size', None) or getattr(book, 'page_size', None) or 'pocket'
+        multiplier = format_multipliers.get(book_format, 220)
+        target_words = target_pages * multiplier
+    
+    # Determinar qué valores mostrar según el estado del libro
+    if book.status.value == 'completed':
+        display_pages = book.final_pages or 0
+        display_words = book.final_words or 0
+    else:
+        display_pages = target_pages
+        display_words = target_words
+    
     return jsonify({
         'book_id': book.id,
         'status': book.status.value,
@@ -487,9 +520,9 @@ def api_book_status(book_id):
         'format_size': book.format_size,
         'line_spacing': book.line_spacing,
         'stats': {
-            'pages': book.final_pages or book.get_estimated_pages(),
-            'words': book.final_words or book.get_word_count(),
-            'chapters': book.chapter_count or book.get_chapter_count()
+            'pages': display_pages,
+            'words': display_words,
+            'chapters': book.chapter_count or 0
         }
     })
 

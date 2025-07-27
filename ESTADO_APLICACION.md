@@ -2,9 +2,9 @@
 
 ## ✅ ¡APLICACIÓN FUNCIONANDO CORRECTAMENTE!
 
-**Fecha:** 2025-07-26  
-**Estado:** OPERACIONAL + OPTIMIZADO  
-**Porcentaje completado:** 47% (24/51 tareas del backlog)
+**Fecha:** 2025-07-27  
+**Estado:** OPERACIONAL + OPTIMIZADO + THINKING TOKENS  
+**Porcentaje completado:** 49% (25/51 tareas del backlog)
 
 ---
 
@@ -81,11 +81,14 @@
 - [x] Servicio Claude AI con modelo claude-sonnet-4-20250514
 - [x] Streaming SSE completo para generación en tiempo real
 - [x] Thinking transparente con budget de 63,999 tokens
+- [x] **Thinking tokens completamente funcionales:** Captura, cálculo y visualización
 - [x] WebSocket events para progreso en tiempo real
 - [x] Generación completa de libros (arquitectura limpia)
 - [x] Retry logic con exponential backoff
 - [x] Configuración optimizada (64K tokens, temperature=1)
 - [x] Métricas detalladas y validación de parámetros
+- [x] **Parser en español:** Personajes y secciones especiales correctas
+- [x] **Acumulación de tokens:** Suma de todas las fases de generación
 
 ### ✅ Fixes Críticos 2025-07-18
 - [x] **Error `get_celery` → `get_celery_app()`:** Corregido función inexistente
@@ -104,6 +107,16 @@
 - [x] **Vista de libro corregida:** Eliminado "Páginas: --" y "Palabras: --" con cálculo automático
 - [x] **Arquitectura completa en chunks:** Verificado que cada chunk recibe estructura completa para evitar duplicación
 - [x] **Reglas de no duplicación inteligentes:** Permite referencias complementarias entre capítulos
+
+### ✅ Fixes de Thinking Tokens 2025-07-27
+- [x] **Parser corregido:** Uso correcto de claves en español (`personajes`, `secciones_especiales`)
+- [x] **Captura de thinking_delta:** Implementación correcta de eventos thinking_delta en streaming
+- [x] **Cálculo manual de thinking tokens:** Algoritmo híbrido cuando la API no reporta tokens
+- [x] **Acumulación correcta:** Tokens se suman en todas las fases (arquitectura + regeneración + generación)
+- [x] **Separación de tokens:** Prompt vs completion tokens correctamente diferenciados
+- [x] **Actualización libro 65:** Thinking tokens calculados manualmente (1,291 tokens de 6,949 caracteres)
+- [x] **Visualización completa:** Métricas de tokens visibles en la interfaz web
+- [x] **Función estimate_thinking_tokens():** Estimación basada en caracteres, palabras y híbrido
 
 ### ✅ Calidad y Revisión del Código
 - [x] Revisión profunda completa del sistema realizada
@@ -265,4 +278,10 @@ curl http://localhost:8081
 **Tiempo invertido:** Aproximadamente 20 horas  
 **Complejidad:** Media-Alta  
 **Calidad del código:** Excelente (optimizado + limpio + sin deuda técnica)  
-**Estado actual:** **SISTEMA COMPLETAMENTE OPTIMIZADO Y FUNCIONANDO** 🚀
+**Estado actual:** **SISTEMA COMPLETAMENTE OPTIMIZADO Y FUNCIONANDO + THINKING TOKENS** 🚀
+
+**✅ Cambios recientes (2025-07-27):**
+- **Thinking tokens implementados:** Captura, cálculo manual y visualización completa
+- **Parser corregido:** Claves en español para mejor generación de contenido
+- **Métricas de tokens:** Acumulación correcta en todas las fases
+- **Libro 65 actualizado:** 1,291 thinking tokens calculados de 6,949 caracteres

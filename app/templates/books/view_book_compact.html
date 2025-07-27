@@ -1832,8 +1832,9 @@
                         html += `<h1 id="${chapterId}">${formatMarkdownText(section.content)}</h1>`;
                         break;
                     case 'h2':
-                        // h2 are sections within chapters, just render them normally
-                        html += `<h2>${formatMarkdownText(section.content)}</h2>`;
+                        // h2 are sections within chapters, generate ID for navigation
+                        const sectionId = section.content.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-');
+                        html += `<h2 id="${sectionId}">${formatMarkdownText(section.content)}</h2>`;
                         break;
                     case 'h3':
                         html += `<h3>${formatMarkdownText(section.content)}</h3>`;
@@ -2383,21 +2384,22 @@
             let sectionCount = 0;
             
             parsedContent.toc.forEach((item, index) => {
-                const chapterId = item.id;
+                let elementId = item.id;
                 let itemNumber = '';
                 let itemLabel = '';
                 let navStyle = '';
                 
                 if (item.level === 1) {
-                    // Capítulos principales
+                    // Capítulos principales - usar ID original
                     chapterCount++;
                     itemNumber = chapterCount;
                     itemLabel = `Capítulo ${chapterCount}`;
                     navStyle = '';
                     sectionCount = 0; // Reset section count for each chapter
                 } else if (item.level === 2) {
-                    // Secciones
+                    // Secciones - generar ID como en el renderizado
                     sectionCount++;
+                    elementId = item.title.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-');
                     itemNumber = `${chapterCount}.${sectionCount}`;
                     itemLabel = `Sección ${sectionCount}`;
                     navStyle = 'style="margin-left: 15px; opacity: 0.9;"';
@@ -2405,7 +2407,7 @@
                 
                 html += `
                     <div class="nav-section" ${navStyle}>
-                        <div class="nav-chapter ${item.level === 1 ? 'nav-chapter-main' : 'nav-chapter-section'}" onclick="navigateToChapter('${chapterId}')" data-chapter-id="${chapterId}">
+                        <div class="nav-chapter ${item.level === 1 ? 'nav-chapter-main' : 'nav-chapter-section'}" onclick="navigateToChapter('${elementId}')" data-chapter-id="${elementId}">
                             <div class="nav-chapter-icon" style="${item.level === 2 ? 'font-size: 12px; width: 28px; height: 28px;' : ''}">${itemNumber}</div>
                             <div class="nav-chapter-content">
                                 <div class="nav-chapter-title" style="${item.level === 2 ? 'font-size: 0.85em;' : ''}">${item.title}</div>

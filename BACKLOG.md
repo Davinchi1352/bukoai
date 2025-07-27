@@ -216,6 +216,18 @@
 - [ ] Progreso granular por capítulo
 - [ ] Notificaciones del browser
 
+### ✅ Tarea 6: Thinking Tokens y Métricas Detalladas
+**Entregable:** Sistema completo de tracking de tokens  
+**Estado:** ✅ COMPLETADO (2025-07-27)
+- [x] Captura de thinking_delta events en streaming
+- [x] Parser corregido para claves en español (personajes, secciones_especiales)
+- [x] Función estimate_thinking_tokens() para cálculo manual
+- [x] Acumulación correcta de tokens en todas las fases
+- [x] Separación de prompt vs completion tokens
+- [x] Visualización de métricas completas en interfaz web
+- [x] Actualización de libro existente con thinking tokens calculados
+- [x] Cálculo de costos basado en precios Claude Sonnet 4
+
 ---
 
 ## ÉPICA 5: SISTEMA DE SUSCRIPCIONES
@@ -562,7 +574,7 @@
 
 ## 📊 RESUMEN DEL PROGRESO
 
-### Completado: 23/51 tareas (45%)
+### Completado: 25/51 tareas (49%)
 - ✅ ÉPICA 1 - Tarea 1: Inicialización del Proyecto
 - ✅ ÉPICA 1 - Tarea 2: Configuración de Entorno  
 - ✅ ÉPICA 1 - Tarea 3: Docker Configuration
@@ -579,6 +591,7 @@
 - ✅ ÉPICA 4 - Tarea 2: Formulario de Generación
 - ✅ ÉPICA 4 - Tarea 3: Sistema de Colas
 - ✅ ÉPICA 4 - Tarea 5: Sistema de Progreso
+- ✅ ÉPICA 4 - Tarea 6: Thinking Tokens y Métricas Detalladas
 - ✅ ÉPICA 10 - Tarea 1: Optimización de Base de Datos
 - ✅ ÉPICA 10 - Tarea 2: Sistema de Colas Escalable
 - ✅ ÉPICA 10 - Tarea 3: Circuit Breakers y Resilencia
@@ -620,10 +633,10 @@
 - **Rate limiting**: Protección anti-abuse por usuario
 - **Logging estructurado**: JSON con métricas de performance detalladas
 
-### En Progreso: 0/51 tareas (0%)
+### En Progreso: 0/52 tareas (0%)
 - (Todas las tareas críticas de optimización completadas)
 
-### Pendiente: 28/51 tareas (55%)
+### Pendiente: 27/52 tareas (52%)
 
 ### ⏳ **PRÓXIMOS PASOS:**
 #### Prioridad Alta
@@ -643,9 +656,9 @@
 
 ---
 
-**Última actualización:** 2025-07-26  
+**Última actualización:** 2025-07-27  
 **Próximo milestone:** Testing en producción con 10K usuarios reales  
-**Recientes:** ✅ **SISTEMA COMPLETAMENTE OPTIMIZADO PARA 10,000 USUARIOS** - Implementadas todas las optimizaciones críticas: timeouts HTTP inteligentes, circuit breakers, Celery escalable, PostgreSQL optimizado, WebSocket para alta concurrencia, monitoring completo, sistema de verificación automatizado. Ready for production scale!
+**Recientes:** ✅ **THINKING TOKENS COMPLETAMENTE IMPLEMENTADOS** - Captura de thinking_delta events, cálculo manual cuando API no reporta, parser corregido en español, acumulación correcta de tokens, visualización de métricas completas. Sistema optimizado + thinking tokens funcionales.
 
 ## 🎯 **ESTADO ACTUAL: PRODUCTION-READY PARA 10K USUARIOS**
 ### Performance Esperado:

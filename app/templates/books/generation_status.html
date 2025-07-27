@@ -598,8 +598,20 @@
                         <div class="metric-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success-color);">
                             <i class="fas fa-file-alt"></i>
                         </div>
-                        <div id="pageCount" class="metric-value">{{ book.final_pages or 0 }}</div>
-                        <div class="metric-label">Páginas {% if book_info.target_pages > 0 %}(meta: {{ book_info.target_pages }}){% endif %}</div>
+                        <div id="pageCount" class="metric-value">
+                            {% if book.status.value == 'completed' %}
+                                {{ book.final_pages or 0 }}
+                            {% else %}
+                                {{ book_info.target_pages or 0 }}
+                            {% endif %}
+                        </div>
+                        <div class="metric-label">
+                            {% if book.status.value == 'completed' %}
+                                Páginas
+                            {% else %}
+                                Páginas objetivo
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
@@ -607,8 +619,20 @@
                         <div class="metric-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
                             <i class="fas fa-font"></i>
                         </div>
-                        <div id="wordCount" class="metric-value">{{ book.final_words or 0 }}</div>
-                        <div class="metric-label">Palabras {% if book_info.target_words > 0 %}(meta: {{ "{:,}".format(book_info.target_words) }}){% endif %}</div>
+                        <div id="wordCount" class="metric-value">
+                            {% if book.status.value == 'completed' %}
+                                {{ book.final_words or 0 }}
+                            {% else %}
+                                {{ "{:,}".format(book_info.target_words) if book_info.target_words > 0 else 0 }}
+                            {% endif %}
+                        </div>
+                        <div class="metric-label">
+                            {% if book.status.value == 'completed' %}
+                                Palabras
+                            {% else %}
+                                Palabras objetivo
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
@@ -784,8 +808,8 @@ const state = {
     currentProgress: {% if book.status.value == 'completed' %}100{% else %}{{ book.progress or 0 }}{% endif %},
     thinkingStartTime: null,
     stats: {
-        pages: {{ book.final_pages or 0 }},
-        words: {{ book.final_words or 0 }},
+        pages: {% if book.status.value == 'completed' %}{{ book.final_pages or 0 }}{% else %}{{ book_info.target_pages or 0 }}{% endif %},
+        words: {% if book.status.value == 'completed' %}{{ book.final_words or 0 }}{% else %}{{ book_info.target_words or 0 }}{% endif %},
         chapters: {{ book.chapter_count or 0 }},
         thinkingChars: 0,
         thinkingWords: 0
@@ -803,8 +827,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Inicializar estadísticas con valores por defecto si están vacías
     const initialStats = {
-        pages: {{ book.final_pages or 0 }},
-        words: {{ book.final_words or 0 }},
+        pages: {% if book.status.value == 'completed' %}{{ book.final_pages or 0 }}{% else %}{{ book_info.target_pages or 0 }}{% endif %},
+        words: {% if book.status.value == 'completed' %}{{ book.final_words or 0 }}{% else %}{{ book_info.target_words or 0 }}{% endif %},
         chapters: {{ book.chapter_count or 0 }}
     };
     

@@ -486,6 +486,27 @@ def api_session():
         return jsonify({'authenticated': False, 'error': 'Error interno'}), 500
 
 
+@bp.route('/verify-password', methods=['POST'])
+@login_required
+def verify_password():
+    """API para verificar la contraseña del usuario actual"""
+    try:
+        data = request.get_json()
+        password = data.get('password', '')
+        
+        if not password:
+            return jsonify({'error': 'Contraseña requerida'}), 400
+        
+        if not current_user.check_password(password):
+            return jsonify({'error': 'Contraseña incorrecta'}), 401
+        
+        return jsonify({'success': True, 'message': 'Contraseña verificada'})
+        
+    except Exception as e:
+        logger.error('verify_password_error', error=str(e), user_id=current_user.id)
+        return jsonify({'error': 'Error interno'}), 500
+
+
 @bp.route('/status')
 def auth_status():
     """Status de autenticación."""
@@ -497,5 +518,5 @@ def auth_status():
             'password-reset', 'verify-email', 'resend-verification',
             'profile', 'change-password', 'delete-account'
         ],
-        'api_routes': ['api/check-email', 'api/session']
+        'api_routes': ['api/check-email', 'api/session', 'verify-password']
     })

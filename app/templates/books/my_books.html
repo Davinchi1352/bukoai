@@ -112,9 +112,9 @@
         </button>
     </div>
     
-    <!-- Search -->
+    <!-- Search and Filters -->
     <div class="row mb-4">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="input-group">
                 <span class="input-group-text">
                     <i class="fas fa-search"></i>
@@ -123,17 +123,121 @@
                     type="text" 
                     class="form-control" 
                     placeholder="Buscar libros..."
+                    id="searchInput"
                 >
             </div>
         </div>
-        <div class="col-md-6">
-            <select class="form-select">
+        <div class="col-md-4">
+            <select class="form-select" id="sortSelect">
                 <option value="created_desc">Más recientes primero</option>
                 <option value="created_asc">Más antiguos primero</option>
                 <option value="title_asc">Título A-Z</option>
                 <option value="title_desc">Título Z-A</option>
                 <option value="status">Por estado</option>
             </select>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters">
+                <i class="fas fa-filter me-2"></i>
+                Filtros Avanzados
+                <i class="fas fa-chevron-down ms-2"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Advanced Filters -->
+    <div class="collapse mb-4" id="advancedFilters">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-sliders-h me-2"></i>
+                    Filtros Avanzados
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small">Género:</label>
+                        <select class="form-select form-select-sm" id="genreFilter">
+                            <option value="">Todos los géneros</option>
+                            <option value="fiction">Ficción</option>
+                            <option value="non_fiction">No Ficción</option>
+                            <option value="children">Infantil</option>
+                            <option value="poetry">Poesía</option>
+                            <option value="technical">Técnico</option>
+                            <option value="self_help">Autoayuda</option>
+                            <option value="biography">Biografía</option>
+                            <option value="history">Historia</option>
+                            <option value="science_fiction">Ciencia Ficción</option>
+                            <option value="romance">Romance</option>
+                            <option value="mystery">Misterio</option>
+                            <option value="fantasy">Fantasía</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Idioma:</label>
+                        <select class="form-select form-select-sm" id="languageFilter">
+                            <option value="">Todos los idiomas</option>
+                            <option value="es">🇪🇸 Español</option>
+                            <option value="en">🇺🇸 Inglés</option>
+                            <option value="de">🇩🇪 Alemán</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Audiencia:</label>
+                        <select class="form-select form-select-sm" id="audienceFilter">
+                            <option value="">Todas las audiencias</option>
+                            <option value="children">Niños (6-12 años)</option>
+                            <option value="young_adult">Adolescentes (13-17 años)</option>
+                            <option value="adult">Adultos (18+ años)</option>
+                            <option value="all">Todas las edades</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Tono:</label>
+                        <select class="form-select form-select-sm" id="toneFilter">
+                            <option value="">Todos los tonos</option>
+                            <option value="formal">Formal</option>
+                            <option value="casual">Casual</option>
+                            <option value="humorous">Humorístico</option>
+                            <option value="serious">Serio</option>
+                            <option value="inspirational">Inspiracional</option>
+                            <option value="educational">Educativo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Longitud:</label>
+                        <select class="form-select form-select-sm" id="lengthFilter">
+                            <option value="">Todas las longitudes</option>
+                            <option value="short">Corto (50-100 páginas)</option>
+                            <option value="medium">Medio (100-200 páginas)</option>
+                            <option value="long">Largo (200+ páginas)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Tamaño de Página:</label>
+                        <select class="form-select form-select-sm" id="pageSizeFilter">
+                            <option value="">Todos los tamaños</option>
+                            <option value="pocket">Pocket (110×180mm)</option>
+                            <option value="A5">A5 (148×210mm)</option>
+                            <option value="B5">B5 (176×250mm)</option>
+                            <option value="letter">Letter (216×279mm)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button class="btn btn-outline-secondary btn-sm me-2" onclick="clearAdvancedFilters()">
+                            <i class="fas fa-eraser me-1"></i>
+                            Limpiar Filtros
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="applyAdvancedFilters()">
+                            <i class="fas fa-search me-1"></i>
+                            Aplicar Filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -147,6 +251,11 @@
             data-title="{{ book.title|lower }}"
             data-created="{{ book.created_at.isoformat() }}"
             data-genre="{{ book.genre|lower }}"
+            data-language="{{ book.language|default('') }}"
+            data-audience="{{ book.target_audience|default('') }}"
+            data-tone="{{ book.tone|default('') }}"
+            data-length="{{ book.parameters.length|default('') if book.parameters else '' }}"
+            data-page-size="{{ book.format_size|default('') }}"
         >
             <div class="card book-card shadow-sm">
                 <div class="card-body p-0">
@@ -213,7 +322,7 @@
                                         type="button" 
                                         data-bs-toggle="dropdown"
                                     >
-                                        <i class="fas fa-download"></i>
+                                        <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li>
@@ -221,7 +330,7 @@
                                                 class="dropdown-item" 
                                                 href="{{ url_for('books.download_book', book_id=book.id, format='pdf') }}"
                                             >
-                                                <i class="fas fa-file-pdf me-2"></i>PDF
+                                                <i class="fas fa-file-pdf me-2"></i>Descargar PDF
                                             </a>
                                         </li>
                                         <li>
@@ -229,7 +338,7 @@
                                                 class="dropdown-item" 
                                                 href="{{ url_for('books.download_book', book_id=book.id, format='epub') }}"
                                             >
-                                                <i class="fas fa-book me-2"></i>EPUB
+                                                <i class="fas fa-book me-2"></i>Descargar EPUB
                                             </a>
                                         </li>
                                         <li>
@@ -237,8 +346,17 @@
                                                 class="dropdown-item" 
                                                 href="{{ url_for('books.download_book', book_id=book.id, format='docx') }}"
                                             >
-                                                <i class="fas fa-file-word me-2"></i>DOCX
+                                                <i class="fas fa-file-word me-2"></i>Descargar DOCX
                                             </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button 
+                                                class="dropdown-item text-danger" 
+                                                onclick="confirmDeleteBook({{ book.id }}, '{{ book.title|e }}')"
+                                            >
+                                                <i class="fas fa-trash me-2"></i>Eliminar Libro
+                                            </button>
                                         </li>
                                     </ul>
                                 </div>
@@ -250,6 +368,13 @@
                                     <i class="fas fa-eye me-1"></i>
                                     Ver Progreso
                                 </a>
+                                <button 
+                                    class="btn btn-outline-danger btn-sm" 
+                                    onclick="confirmDeleteBook({{ book.id }}, '{{ book.title|e }}')"
+                                    title="Eliminar libro"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             {% elif book.status.value == 'failed' %}
                                 <a 
                                     href="{{ url_for('books.generation_status', book_id=book.id) }}" 
@@ -258,6 +383,13 @@
                                     <i class="fas fa-exclamation-triangle me-1"></i>
                                     Ver Error
                                 </a>
+                                <button 
+                                    class="btn btn-outline-danger btn-sm" 
+                                    onclick="confirmDeleteBook({{ book.id }}, '{{ book.title|e }}')"
+                                    title="Eliminar libro"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             {% else %}
                                 <a 
                                     href="{{ url_for('books.generation_status', book_id=book.id) }}" 
@@ -266,6 +398,13 @@
                                     <i class="fas fa-clock me-1"></i>
                                     Ver Estado
                                 </a>
+                                <button 
+                                    class="btn btn-outline-danger btn-sm" 
+                                    onclick="confirmDeleteBook({{ book.id }}, '{{ book.title|e }}')"
+                                    title="Eliminar libro"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             {% endif %}
                         </div>
                     </div>
@@ -300,11 +439,68 @@
     {% endif %}
 </div>
 
+<!-- Modal de Confirmación para Eliminar Libro -->
+<div class="modal fade" id="deleteBookModal" tabindex="-1" aria-labelledby="deleteBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteBookModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>⚠️ Advertencia:</strong> Esta acción no se puede deshacer. El libro será eliminado permanentemente.
+                </div>
+                
+                <p>¿Estás seguro de que deseas eliminar el libro:</p>
+                <p class="fw-bold text-primary" id="bookToDeleteTitle"></p>
+                
+                <div class="mb-3">
+                    <label for="deleteConfirmPassword" class="form-label">
+                        <strong>Por seguridad, ingresa tu contraseña:</strong>
+                    </label>
+                    <input 
+                        type="password" 
+                        class="form-control" 
+                        id="deleteConfirmPassword" 
+                        placeholder="Tu contraseña"
+                        required
+                    >
+                    <div id="passwordError" class="text-danger small mt-1" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                    <i class="fas fa-trash me-1"></i>
+                    <span class="btn-text">Eliminar Libro</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Simplified Vanilla JavaScript for Book Filtering
 let currentFilter = 'all';
 let searchQuery = '';
 let sortBy = 'created_desc';
+
+// Advanced filters
+let advancedFilters = {
+    genre: '',
+    language: '',
+    audience: '',
+    tone: '',
+    length: '',
+    pageSize: ''
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize event listeners
@@ -331,7 +527,7 @@ function initializeFilters() {
 }
 
 function initializeSearch() {
-    const searchInput = document.querySelector('input[placeholder="Buscar libros..."]');
+    const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             searchQuery = this.value;
@@ -341,7 +537,7 @@ function initializeSearch() {
 }
 
 function initializeSort() {
-    const sortSelect = document.querySelector('select.form-select');
+    const sortSelect = document.getElementById('sortSelect');
     if (sortSelect) {
         sortSelect.addEventListener('change', function() {
             sortBy = this.value;
@@ -381,9 +577,24 @@ function clearFilters() {
     searchQuery = '';
     sortBy = 'created_desc';
     
+    // Reset advanced filters
+    advancedFilters = {
+        genre: '',
+        language: '',
+        audience: '',
+        tone: '',
+        length: '',
+        pageSize: ''
+    };
+    
     // Reset UI
-    document.querySelector('input[placeholder="Buscar libros..."]').value = '';
-    document.querySelector('select.form-select').value = 'created_desc';
+    const searchInput = document.getElementById('searchInput');
+    const sortSelect = document.getElementById('sortSelect');
+    if (searchInput) searchInput.value = '';
+    if (sortSelect) sortSelect.value = 'created_desc';
+    
+    // Reset advanced filter UI
+    clearAdvancedFilters();
     
     // Update active tab
     document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
@@ -400,6 +611,12 @@ function applyFilters() {
     bookItems.forEach(book => {
         const status = book.dataset.status;
         const title = book.dataset.title;
+        const genre = book.dataset.genre;
+        const language = book.dataset.language;
+        const audience = book.dataset.audience;
+        const tone = book.dataset.tone;
+        const length = book.dataset.length;
+        const pageSize = book.dataset.pageSize;
         
         let shouldShow = true;
         
@@ -410,6 +627,26 @@ function applyFilters() {
         
         // Filter by search query
         if (searchQuery && !title.includes(searchQuery.toLowerCase())) {
+            shouldShow = false;
+        }
+        
+        // Apply advanced filters
+        if (advancedFilters.genre && genre !== advancedFilters.genre) {
+            shouldShow = false;
+        }
+        if (advancedFilters.language && language !== advancedFilters.language) {
+            shouldShow = false;
+        }
+        if (advancedFilters.audience && audience !== advancedFilters.audience) {
+            shouldShow = false;
+        }
+        if (advancedFilters.tone && tone !== advancedFilters.tone) {
+            shouldShow = false;
+        }
+        if (advancedFilters.length && length !== advancedFilters.length) {
+            shouldShow = false;
+        }
+        if (advancedFilters.pageSize && pageSize !== advancedFilters.pageSize) {
             shouldShow = false;
         }
         
@@ -489,6 +726,197 @@ async function refreshProcessingBooks() {
             }
         }
     }
+}
+
+// Variables globales para eliminación de libro
+let bookToDeleteId = null;
+
+function confirmDeleteBook(bookId, bookTitle) {
+    bookToDeleteId = bookId;
+    
+    // Actualizar el título del libro en el modal
+    document.getElementById('bookToDeleteTitle').textContent = bookTitle;
+    
+    // Limpiar el campo de contraseña
+    const passwordInput = document.getElementById('deleteConfirmPassword');
+    passwordInput.value = '';
+    
+    // Deshabilitar el botón de confirmar
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    confirmBtn.disabled = true;
+    
+    // Ocultar error de contraseña
+    document.getElementById('passwordError').style.display = 'none';
+    
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('deleteBookModal'));
+    modal.show();
+}
+
+// Habilitar/deshabilitar botón de eliminar según la contraseña
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.getElementById('deleteConfirmPassword');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    
+    passwordInput.addEventListener('input', function() {
+        confirmBtn.disabled = this.value.trim().length === 0;
+    });
+    
+    // Manejar Enter en el campo de contraseña
+    passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !confirmBtn.disabled) {
+            deleteBook();
+        }
+    });
+    
+    // Manejar click en el botón de confirmar
+    confirmBtn.addEventListener('click', deleteBook);
+});
+
+async function deleteBook() {
+    if (!bookToDeleteId) return;
+    
+    const password = document.getElementById('deleteConfirmPassword').value;
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const btnText = confirmBtn.querySelector('.btn-text');
+    const passwordError = document.getElementById('passwordError');
+    
+    // Deshabilitar botón y mostrar estado de carga
+    confirmBtn.disabled = true;
+    btnText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Eliminando...';
+    
+    try {
+        // Verificar contraseña primero
+        const authResponse = await fetch('/auth/verify-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ password })
+        });
+        
+        const authData = await authResponse.json();
+        
+        if (!authResponse.ok) {
+            passwordError.textContent = authData.error || 'Contraseña incorrecta';
+            passwordError.style.display = 'block';
+            return;
+        }
+        
+        // Si la contraseña es correcta, eliminar el libro
+        const deleteResponse = await fetch(`/books/${bookToDeleteId}/reject`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const deleteData = await deleteResponse.json();
+        
+        if (deleteResponse.ok) {
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteBookModal'));
+            modal.hide();
+            
+            // Mostrar mensaje de éxito
+            showToast('Libro eliminado exitosamente', 'success');
+            
+            // Remover el libro del DOM
+            const bookElement = document.querySelector(`.book-item[data-id="${bookToDeleteId}"]`);
+            if (bookElement) {
+                bookElement.remove();
+            }
+            
+            // Actualizar contadores de filtros
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+            
+        } else {
+            passwordError.textContent = deleteData.error || 'Error al eliminar el libro';
+            passwordError.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('Error deleting book:', error);
+        passwordError.textContent = 'Error de conexión. Inténtalo de nuevo.';
+        passwordError.style.display = 'block';
+    } finally {
+        // Restaurar botón
+        confirmBtn.disabled = false;
+        btnText.innerHTML = '<i class="fas fa-trash me-1"></i>Eliminar Libro';
+    }
+}
+
+function showToast(message, type = 'info') {
+    // Crear toast dinámicamente
+    const toastContainer = document.createElement('div');
+    toastContainer.style.position = 'fixed';
+    toastContainer.style.top = '20px';
+    toastContainer.style.right = '20px';
+    toastContainer.style.zIndex = '9999';
+    
+    const alertClass = type === 'success' ? 'alert-success' : 
+                     type === 'error' ? 'alert-danger' : 'alert-info';
+    
+    toastContainer.innerHTML = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toastContainer);
+    
+    // Auto-remove después de 3 segundos
+    setTimeout(() => {
+        if (toastContainer.parentNode) {
+            toastContainer.remove();
+        }
+    }, 3000);
+}
+
+// Advanced Filters Functions
+function applyAdvancedFilters() {
+    // Get values from advanced filter selects
+    advancedFilters.genre = document.getElementById('genreFilter').value;
+    advancedFilters.language = document.getElementById('languageFilter').value;
+    advancedFilters.audience = document.getElementById('audienceFilter').value;
+    advancedFilters.tone = document.getElementById('toneFilter').value;
+    advancedFilters.length = document.getElementById('lengthFilter').value;
+    advancedFilters.pageSize = document.getElementById('pageSizeFilter').value;
+    
+    // Apply all filters
+    applyFilters();
+    
+    // Collapse advanced filters panel
+    const collapse = new bootstrap.Collapse(document.getElementById('advancedFilters'), {
+        hide: true
+    });
+}
+
+function clearAdvancedFilters() {
+    // Reset advanced filter values
+    document.getElementById('genreFilter').value = '';
+    document.getElementById('languageFilter').value = '';
+    document.getElementById('audienceFilter').value = '';
+    document.getElementById('toneFilter').value = '';
+    document.getElementById('lengthFilter').value = '';
+    document.getElementById('pageSizeFilter').value = '';
+    
+    // Reset advanced filters object
+    advancedFilters = {
+        genre: '',
+        language: '',
+        audience: '',
+        tone: '',
+        length: '',
+        pageSize: ''
+    };
+    
+    // Apply filters
+    applyFilters();
 }
 </script>
 {% endblock %}

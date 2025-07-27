@@ -471,10 +471,10 @@
                                 type="submit" 
                                 class="btn btn-success btn-lg"
                                 :disabled="isSubmitting"
-                                x-text="isSubmitting ? 'Generando...' : 'Generar Libro'"
                             >
                                 <i class="fas fa-magic me-2" x-show="!isSubmitting"></i>
                                 <span class="spinner-border spinner-border-sm me-2" x-show="isSubmitting"></span>
+                                <span x-text="isSubmitting ? 'Generando...' : 'Generar Libro'"></span>
                             </button>
                         </div>
                     </div>

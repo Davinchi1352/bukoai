@@ -62,7 +62,7 @@ def validate_book_parameters(data: Dict[str, Any]) -> Dict[str, Any]:
     
     # Language validation
     language = data.get('language', 'es')
-    valid_languages = ['es', 'en', 'fr', 'de', 'it', 'pt']
+    valid_languages = ['es', 'en', 'de']
     if language not in valid_languages:
         errors.append(f'Language must be one of: {", ".join(valid_languages)}')
     

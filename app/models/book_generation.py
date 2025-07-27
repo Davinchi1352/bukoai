@@ -332,16 +332,17 @@ class BookGeneration(BaseModel):
         db.session.commit()
     
     def update_tokens(self, prompt_tokens: int, completion_tokens: int, thinking_tokens: int = 0) -> None:
-        """Actualiza las métricas de tokens"""
-        self.prompt_tokens = prompt_tokens
-        self.completion_tokens = completion_tokens
-        self.thinking_tokens = thinking_tokens
-        self.total_tokens = prompt_tokens + completion_tokens + thinking_tokens
+        """Actualiza las métricas de tokens ACUMULANDO todas las fases (arquitectura + regeneración + generación)"""
+        # ACUMULAR tokens de todas las fases en lugar de sobrescribir
+        self.prompt_tokens = (self.prompt_tokens or 0) + prompt_tokens
+        self.completion_tokens = (self.completion_tokens or 0) + completion_tokens
+        self.thinking_tokens = (self.thinking_tokens or 0) + thinking_tokens
+        self.total_tokens = self.prompt_tokens + self.completion_tokens + self.thinking_tokens
         
-        # Calcular costo estimado (precios de ejemplo)
-        input_cost = (prompt_tokens / 1000) * 0.015
-        output_cost = (completion_tokens / 1000) * 0.075
-        thinking_cost = (thinking_tokens / 1000) * 0.015
+        # Calcular costo estimado total (precios Claude Sonnet 4)
+        input_cost = (self.prompt_tokens / 1000) * 0.015
+        output_cost = (self.completion_tokens / 1000) * 0.075
+        thinking_cost = (self.thinking_tokens / 1000) * 0.015
         self.estimated_cost = round(input_cost + output_cost + thinking_cost, 4)
         
         db.session.commit()

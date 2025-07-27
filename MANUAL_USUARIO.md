@@ -441,6 +441,22 @@ Buko AI ahora incluye un formulario wizard multi-paso para generar libros con in
 5. **Generación:** IA procesa el libro
 6. **Notificación:** Estado se actualiza en tiempo real
 
+### 🧠 **Visualización de Tokens de Pensamiento Extendido**
+- **Acceso:** Desde la vista de cualquier libro generado
+- **URL ejemplo:** http://localhost:5001/books/book/65
+- **Ubicación:** Modal "Configuración" → Sección "💰 Métricas de Generación"
+- **Métricas mostradas:**
+  - **Prompt tokens:** Tokens de entrada enviados a Claude
+  - **Completion tokens:** Tokens de contenido generado
+  - **Thinking tokens:** Tokens de razonamiento interno (pensamiento extendido)
+  - **Total tokens:** Suma de todos los tokens
+  - **Costo estimado:** Cálculo basado en precios Claude Sonnet 4
+- **Características:**
+  - ✅ Acumulación de tokens de todas las fases (arquitectura + regeneración + generación)
+  - ✅ Cálculo automático cuando la API no reporta thinking tokens
+  - ✅ Visualización en tiempo real durante la generación
+  - ✅ Historial completo de tokens por libro
+
 ### 🧪 **Pruebas del Formulario**
 
 #### **Prueba 1: Validación en Tiempo Real**
@@ -493,11 +509,28 @@ Buko AI ahora incluye un formulario wizard multi-paso para generar libros con in
 5. Resultado esperado: Acceso normal al wizard
 ```
 
+#### **Prueba 6: Verificación de Thinking Tokens**
+```bash
+# Test: Visualización de tokens de pensamiento extendido
+1. Ve a un libro completado: http://localhost:5001/books/book/65
+2. Haz clic en el botón "Configuración" (⚙️)
+3. Busca la sección "💰 Métricas de Generación"
+4. Resultado esperado: 
+   - Prompt tokens > 0
+   - Completion tokens > 0  
+   - Thinking tokens > 0 (si se usó pensamiento extendido)
+   - Total tokens = suma de todos
+   - Costo estimado en USD
+5. Verifica que los thinking tokens sean realistas
+6. Resultado esperado: ~1,000-2,000 thinking tokens para libros normales
+```
+
 ### 🌐 **URLs Relacionadas**
 - **Generador:** http://localhost:5001/books/generate
 - **Mis Libros:** http://localhost:5001/books/my-books
 - **Estado de Generación:** http://localhost:5001/books/generation/{id}
 - **Ver Libro:** http://localhost:5001/books/book/{id}
+- **Tokens y Métricas:** http://localhost:5001/books/book/{id} (Modal "Configuración")
 
 ### 🎯 **Próximas Funcionalidades**
 - **Sistema de Colas:** Procesamiento asíncrono con Celery
@@ -884,6 +917,9 @@ docker-compose -f docker-compose.dev.yml exec web black app
 - [ ] **MailHog:** Interfaz web accesible en http://localhost:8025
 - [ ] **Adminer:** Interfaz DB accesible en http://localhost:8081
 - [ ] **Health Checks:** API funcionan correctamente
+- [ ] **Thinking Tokens:** Se visualizan correctamente en las métricas de libros
+- [ ] **Parser Español:** Personajes y secciones especiales se generan correctamente
+- [ ] **Acumulación de Tokens:** Tokens se suman en todas las fases de generación
 
 ### 🔧 **Verificación Específica de MailHog**
 - [ ] **Interfaz Web:** http://localhost:8025 carga correctamente
@@ -928,4 +964,11 @@ docker-compose -f docker-compose.dev.yml exec web black app
 
 **¡Feliz testing! 🎉**
 
-*Última actualización: 2025-07-17 - Agregados health checks completos y documentación detallada de MailHog y Adminer*
+*Última actualización: 2025-07-27 - Agregados thinking tokens, visualización de métricas completas y corrección del parser en español*
+
+**Cambios recientes (2025-07-27):**
+- ✅ **Implementación de Thinking Tokens:** Captura y visualización completa de tokens de pensamiento extendido
+- ✅ **Parser corregido:** Uso de claves en español para personajes y secciones especiales
+- ✅ **Cálculo manual:** Estimación automática cuando la API no reporta thinking tokens
+- ✅ **Acumulación correcta:** Tokens se suman en lugar de sobrescribirse
+- ✅ **Libro 65 actualizado:** Thinking tokens calculados manualmente (1,291 tokens)

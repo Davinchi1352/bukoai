@@ -269,24 +269,47 @@ class ClaudeService:
                     async for event in stream:
                         chunk_count += 1
                         
+                        # Debug: Log todos los tipos de eventos para investigar thinking_delta
+                        if hasattr(event, 'type'):
+                            if 'thinking' in str(event.type).lower() or chunk_count <= 5:  # Log thinking events + primeros 5
+                                logger.info("stream_event_debug", 
+                                           book_id=book_id,
+                                           event_type=event.type,
+                                           chunk_count=chunk_count,
+                                           has_delta=hasattr(event, 'delta'),
+                                           event_attributes=list(vars(event).keys()) if hasattr(event, '__dict__') else [])
+                        
                         # Actualizar progreso optimizado para 10K usuarios (menos overhead)
                         if chunk_count % self.progress_check_interval == 0:
                             self._update_progress(book_id, "architecture_generation", 
                                                 f"Procesando chunk {chunk_count}")
                         
                         # Thinking blocks
-                        if event.type == "content_block_start" and event.content_block.type == "thinking":
+                        if event.type == "content_block_start" and hasattr(event, 'content_block') and event.content_block.type == "thinking":
                             current_block_index = event.index
                             self._update_progress(book_id, "architecture_thinking", "Iniciando análisis")
                             emit_generation_log(book_id, 'thinking', 'Analizando requerimientos y diseñando estructura...')
                             
                         elif event.type == "content_block_delta" and hasattr(event, 'delta'):
-                            if hasattr(event.delta, 'text'):
+                            # NUEVO: Thinking content via thinking_delta (según documentación Anthropic)
+                            if hasattr(event.delta, 'type') and event.delta.type == "thinking_delta":
+                                if hasattr(event.delta, 'thinking'):
+                                    thinking_content.append(event.delta.thinking)
+                                    if chunk_count % (self.progress_check_interval * 3) == 0:
+                                        emit_book_progress_update(book_id, {
+                                            'current': 25,
+                                            'total': 100,
+                                            'status': 'thinking',
+                                            'status_message': f'Claude pensando profundamente... ({len("".join(thinking_content))} chars)',
+                                            'timestamp': datetime.now(timezone.utc).isoformat()
+                                        })
+                            # Texto normal via text_delta
+                            elif hasattr(event.delta, 'text'):
                                 text_chunk = event.delta.text
                                 
-                                # Si es thinking content
-                                if current_block_index is not None and event.index == current_block_index:
-                                    thinking_content.append(text_chunk)
+                                # Si es contenido normal (no thinking)
+                                if current_block_index is None or event.index != current_block_index:
+                                    full_content.append(text_chunk)
                                     
                                     if chunk_count % (self.progress_check_interval * 2) == 0:  # Menos updates de UI
                                         emit_book_progress_update(book_id, {
@@ -456,14 +479,25 @@ class ClaudeService:
                                thinking_length=len(complete_thinking),
                                tokens_used=final_message.usage.input_tokens + final_message.usage.output_tokens)
                     
+                    # Debug thinking tokens - usar estimación si API no reporta
+                    thinking_tokens = getattr(final_message.usage, 'thinking_tokens', 0)
+                    if thinking_tokens == 0 and thinking_content:
+                        thinking_tokens = self.estimate_thinking_tokens(thinking_content)
+                    logger.info("claude_usage_debug", 
+                               book_id=book_id,
+                               prompt_tokens=final_message.usage.input_tokens,
+                               completion_tokens=final_message.usage.output_tokens,
+                               thinking_tokens=thinking_tokens,
+                               usage_attributes=dir(final_message.usage))
+                    
                     return {
                         'architecture': architecture,
                         'thinking': complete_thinking,
                         'usage': {
                             'prompt_tokens': final_message.usage.input_tokens,
                             'completion_tokens': final_message.usage.output_tokens,
-                            'thinking_tokens': getattr(final_message.usage, 'thinking_tokens', 0),
-                            'total_tokens': final_message.usage.input_tokens + final_message.usage.output_tokens + getattr(final_message.usage, 'thinking_tokens', 0)
+                            'thinking_tokens': thinking_tokens,
+                            'total_tokens': final_message.usage.input_tokens + final_message.usage.output_tokens + thinking_tokens
                         },
                         'model': final_message.model,
                         'stop_reason': final_message.stop_reason
@@ -885,21 +919,25 @@ Generate a comprehensive book architecture that the user can review, modify if n
                         emit_generation_log(book_id, 'thinking', 'Analizando feedback y replanteando arquitectura...')
                         
                     elif event.type == "content_block_delta" and hasattr(event, 'delta'):
-                        if hasattr(event.delta, 'text'):
-                            text_chunk = event.delta.text
-                            
-                            # Si es thinking content
-                            if current_block_index is not None and event.index == current_block_index:
-                                thinking_content.append(text_chunk)
-                                
+                        # NUEVO: Thinking content via thinking_delta (regeneración)
+                        if hasattr(event.delta, 'type') and event.delta.type == "thinking_delta":
+                            if hasattr(event.delta, 'thinking'):
+                                thinking_content.append(event.delta.thinking)
                                 if chunk_count % 50 == 0:
                                     emit_book_progress_update(book_id, {
                                         'current': 30,
                                         'total': 100,
                                         'status': 'thinking',
-                                        'status_message': 'Incorporando tus sugerencias y refinando estructura...',
+                                        'status_message': f'Refinando con feedback... ({len("".join(thinking_content))} chars thinking)',
                                         'timestamp': datetime.now(timezone.utc).isoformat()
                                     })
+                        # Texto normal via text_delta 
+                        elif hasattr(event.delta, 'text'):
+                            text_chunk = event.delta.text
+                            
+                            # Si es contenido normal (no thinking)
+                            if current_block_index is None or event.index != current_block_index:
+                                full_content.append(text_chunk)
                             
                             # Content principal
                             else:
@@ -947,6 +985,19 @@ Generate a comprehensive book architecture that the user can review, modify if n
                         architecture['regeneration_notes'] = complete_content
                         architecture['feedback_incorporated'] = True
                         
+                        # BACKEND ONLY: Parsear personajes y secciones especiales del Markdown
+                        parsed_elements = self._parse_markdown_architecture_elements(complete_content, book_params)
+                        if parsed_elements['characters']:
+                            architecture['characters'] = parsed_elements['characters']
+                            logger.info("extracted_characters_from_incomplete_json", 
+                                       book_id=book_id, 
+                                       count=len(parsed_elements['characters']))
+                        if parsed_elements['special_sections']:
+                            architecture['special_sections'] = parsed_elements['special_sections']
+                            logger.info("extracted_special_sections_from_incomplete_json", 
+                                       book_id=book_id, 
+                                       count=len(parsed_elements['special_sections']))
+                        
                 except json.JSONDecodeError:
                     logger.warning("regenerated_architecture_json_error", book_id=book_id)
                     # Si no es JSON válido, usar la arquitectura actual como base
@@ -954,6 +1005,19 @@ Generate a comprehensive book architecture that the user can review, modify if n
                     architecture['regeneration_content'] = complete_content
                     architecture['feedback_incorporated'] = True
                     architecture['regeneration_method'] = 'text_based'
+                    
+                    # BACKEND ONLY: Parsear personajes y secciones especiales del Markdown
+                    parsed_elements = self._parse_markdown_architecture_elements(complete_content, book_params)
+                    if parsed_elements['characters']:
+                        architecture['characters'] = parsed_elements['characters']
+                        logger.info("extracted_characters_from_markdown", 
+                                   book_id=book_id, 
+                                   count=len(parsed_elements['characters']))
+                    if parsed_elements['special_sections']:
+                        architecture['special_sections'] = parsed_elements['special_sections']
+                        logger.info("extracted_special_sections_from_markdown", 
+                                   book_id=book_id, 
+                                   count=len(parsed_elements['special_sections']))
                 
                 # Marcar que es una regeneración
                 architecture['regenerated'] = True
@@ -972,14 +1036,25 @@ Generate a comprehensive book architecture that the user can review, modify if n
                            thinking_length=len(complete_thinking),
                            feedback_incorporated=True)
                 
+                # Debug thinking tokens for regeneration - usar estimación si API no reporta
+                thinking_tokens = getattr(final_message.usage, 'thinking_tokens', 0)
+                if thinking_tokens == 0 and complete_thinking:
+                    thinking_tokens = self.estimate_thinking_tokens(complete_thinking)
+                logger.info("claude_regeneration_usage_debug", 
+                           book_id=book_id,
+                           prompt_tokens=final_message.usage.input_tokens,
+                           completion_tokens=final_message.usage.output_tokens,
+                           thinking_tokens=thinking_tokens,
+                           usage_attributes=dir(final_message.usage))
+                
                 return {
                     'architecture': architecture,
                     'thinking': complete_thinking,
                     'usage': {
                         'prompt_tokens': final_message.usage.input_tokens,
                         'completion_tokens': final_message.usage.output_tokens,
-                        'thinking_tokens': getattr(final_message.usage, 'thinking_tokens', 0),
-                        'total_tokens': final_message.usage.input_tokens + final_message.usage.output_tokens + getattr(final_message.usage, 'thinking_tokens', 0)
+                        'thinking_tokens': thinking_tokens,
+                        'total_tokens': final_message.usage.input_tokens + final_message.usage.output_tokens + thinking_tokens
                     },
                     'model': final_message.model,
                     'stop_reason': final_message.stop_reason,
@@ -1376,6 +1451,8 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
             complete_thinking_content = []
             total_tokens_used = 0
             total_thinking_tokens = 0
+            total_prompt_tokens = 0
+            total_completion_tokens = 0
             chunk_summaries = []
             
             # 🚨 SISTEMA DE COHERENCIA: Basado en arquitectura aprobada
@@ -1424,6 +1501,9 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 complete_thinking_content.append(introduction_result['thinking'])
                 total_tokens_used += introduction_result['usage']['total_tokens']
                 total_thinking_tokens += introduction_result['usage']['thinking_tokens']
+                # Introduction doesn't have separate prompt/completion tracking yet, but add placeholders
+                total_prompt_tokens += introduction_result['usage'].get('prompt_tokens', 0)
+                total_completion_tokens += introduction_result['usage'].get('completion_tokens', 0)
                 
                 emit_generation_log(book_id, 'success', 
                     f'✅ Introducción generada: {len(introduction_result["content"].split())} palabras')
@@ -1496,6 +1576,8 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 complete_thinking_content.append(chunk_result['thinking'])
                 total_tokens_used += chunk_result['usage']['total_tokens']
                 total_thinking_tokens += chunk_result['usage']['thinking_tokens']
+                total_prompt_tokens += chunk_result['usage'].get('prompt_tokens', 0)
+                total_completion_tokens += chunk_result['usage'].get('completion_tokens', 0)
                 
                 emit_generation_log(book_id, 'success', 
                     f'✅ Chunk {idx + 1} integrado: {len(chunk_result["content"].split())} palabras')
@@ -1583,6 +1665,8 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 complete_thinking_content.append(chunk_result['thinking'])
                 total_tokens_used += chunk_result['usage']['total_tokens']
                 total_thinking_tokens += chunk_result['usage']['thinking_tokens']
+                total_prompt_tokens += chunk_result['usage'].get('prompt_tokens', 0)
+                total_completion_tokens += chunk_result['usage'].get('completion_tokens', 0)
                 
                 # Guardar resumen para contexto
                 chunk_summaries.append({
@@ -1647,6 +1731,9 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 complete_thinking_content.append(conclusion_result['thinking'])
                 total_tokens_used += conclusion_result['usage']['total_tokens']
                 total_thinking_tokens += conclusion_result['usage']['thinking_tokens']
+                # Conclusion doesn't have separate prompt/completion tracking yet, but add placeholders
+                total_prompt_tokens += conclusion_result['usage'].get('prompt_tokens', 0)
+                total_completion_tokens += conclusion_result['usage'].get('completion_tokens', 0)
                 
                 # Recalcular contenido final con conclusión
                 final_content = '\n\n'.join(complete_book_content)
@@ -1663,13 +1750,22 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 'timestamp': datetime.now(timezone.utc).isoformat()
             })
             
+            # Debug thinking tokens in multichunk generation
+            logger.info("multichunk_usage_debug", 
+                       book_id=book_id,
+                       total_tokens_used=total_tokens_used,
+                       total_thinking_tokens=total_thinking_tokens,
+                       total_prompt_tokens=total_prompt_tokens,
+                       total_completion_tokens=total_completion_tokens,
+                       token_sum_check=total_prompt_tokens + total_completion_tokens)
+            
             # Resultado final
             return {
                 'content': final_content,
                 'thinking': final_thinking,
                 'usage': {
-                    'prompt_tokens': total_tokens_used - total_thinking_tokens,  # Aproximado
-                    'completion_tokens': total_tokens_used - total_thinking_tokens,  # Tokens de contenido
+                    'prompt_tokens': total_prompt_tokens,
+                    'completion_tokens': total_completion_tokens,
                     'thinking_tokens': total_thinking_tokens,
                     'total_tokens': total_tokens_used
                 },
@@ -1750,28 +1846,28 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                         })
                     
                     elif event.type == "content_block_delta" and hasattr(event, 'delta'):
-                        if hasattr(event.delta, 'text'):
+                        # NUEVO: Thinking content via thinking_delta (multichunk)
+                        if hasattr(event.delta, 'type') and event.delta.type == "thinking_delta":
+                            if hasattr(event.delta, 'thinking'):
+                                chunk_thinking.append(event.delta.thinking)
+                                # Nota: thinking tokens se reportarán correctamente al final via usage
+                        # Texto normal via text_delta
+                        elif hasattr(event.delta, 'text'):
                             text_chunk = event.delta.text
+                            # Content principal
+                            chunk_content.append(text_chunk)
+                            chunk_tokens += len(text_chunk.split())  # Estimación temporal
                             
-                            # Si es thinking content
-                            if current_block_index is not None and event.index == current_block_index:
-                                chunk_thinking.append(text_chunk)
-                                thinking_tokens += len(text_chunk.split())
-                            else:
-                                # Content principal
-                                chunk_content.append(text_chunk)
-                                chunk_tokens += len(text_chunk.split())
-                                
-                                # Update progress
-                                if len(chunk_content) % 50 == 0:
-                                    current_words = len(''.join(chunk_content).split())
-                                    emit_book_progress_update(book_id, {
-                                        'current': progress_base + 15 + min(50, (len(chunk_content) // 10)),
-                                        'total': 100,
-                                        'status': 'writing',
-                                        'status_message': f'Escribiendo chunk {chunk_info["index"]} - {current_words} palabras...',
-                                        'timestamp': datetime.now(timezone.utc).isoformat()
-                                    })
+                            # Update progress
+                            if len(chunk_content) % 50 == 0:
+                                current_words = len(''.join(chunk_content).split())
+                                emit_book_progress_update(book_id, {
+                                    'current': progress_base + 15 + min(50, (len(chunk_content) // 10)),
+                                    'total': 100,
+                                    'status': 'writing',
+                                    'status_message': f'Escribiendo chunk {chunk_info["index"]} - {current_words} palabras...',
+                                    'timestamp': datetime.now(timezone.utc).isoformat()
+                                })
                     
                     elif event.type == "content_block_stop":
                         if current_block_index == event.index:
@@ -1783,9 +1879,16 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 
                 # Obtener métricas finales del stream
                 final_message = await stream.get_final_message()
+                prompt_tokens = 0
+                completion_tokens = 0
                 if hasattr(final_message, 'usage'):
-                    chunk_tokens = final_message.usage.input_tokens + final_message.usage.output_tokens
+                    prompt_tokens = final_message.usage.input_tokens
+                    completion_tokens = final_message.usage.output_tokens
+                    chunk_tokens = prompt_tokens + completion_tokens
                     thinking_tokens = getattr(final_message.usage, 'thinking_tokens', 0)
+                    # Usar estimación si API no reporta thinking tokens
+                    if thinking_tokens == 0 and final_chunk_thinking:
+                        thinking_tokens = self.estimate_thinking_tokens(final_chunk_thinking)
             
             final_chunk_content = ''.join(chunk_content)
             final_chunk_thinking = ''.join(chunk_thinking)
@@ -1797,9 +1900,10 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 'content': final_chunk_content,
                 'thinking': final_chunk_thinking,
                 'usage': {
-                    'total_tokens': chunk_tokens,
+                    'prompt_tokens': prompt_tokens,
+                    'completion_tokens': completion_tokens,
                     'thinking_tokens': thinking_tokens,
-                    'output_tokens': len(final_chunk_content.split()),
+                    'total_tokens': chunk_tokens,
                     'chunk_info': chunk_info
                 }
             }
@@ -1889,10 +1993,16 @@ Genera la introducción completa ahora:
                     if event.type == "content_block_start" and event.content_block.type == "thinking":
                         current_block_index = event.index
                     elif event.type == "content_block_delta" and hasattr(event, 'delta'):
-                        if hasattr(event.delta, 'text'):
+                        # NUEVO: Thinking content via thinking_delta (introducción)
+                        if hasattr(event.delta, 'type') and event.delta.type == "thinking_delta":
+                            if hasattr(event.delta, 'thinking'):
+                                intro_thinking.append(event.delta.thinking)
+                        # Texto normal via text_delta
+                        elif hasattr(event.delta, 'text'):
                             text_chunk = event.delta.text
-                            if current_block_index is not None and event.index == current_block_index:
-                                intro_thinking.append(text_chunk)
+                            # Solo contenido no-thinking
+                            if current_block_index is None or event.index != current_block_index:
+                                intro_content.append(text_chunk)
                             else:
                                 intro_content.append(text_chunk)
                     elif event.type == "content_block_stop":
@@ -1906,12 +2016,17 @@ Genera la introducción completa ahora:
             
             emit_generation_log(book_id, 'success', f'Introducción generada: {len(final_intro_content.split())} palabras')
             
+            # Calcular thinking tokens con estimación si es necesario
+            thinking_tokens = getattr(final_message.usage, 'thinking_tokens', 0) if hasattr(final_message, 'usage') else 0
+            if thinking_tokens == 0 and final_intro_thinking:
+                thinking_tokens = self.estimate_thinking_tokens(final_intro_thinking)
+            
             return {
                 'content': final_intro_content,
                 'thinking': final_intro_thinking,
                 'usage': {
                     'total_tokens': final_message.usage.input_tokens + final_message.usage.output_tokens if hasattr(final_message, 'usage') else 0,
-                    'thinking_tokens': getattr(final_message.usage, 'thinking_tokens', 0) if hasattr(final_message, 'usage') else 0
+                    'thinking_tokens': thinking_tokens
                 }
             }
             
@@ -2006,11 +2121,15 @@ Genera la conclusión completa ahora:
                     if event.type == "content_block_start" and event.content_block.type == "thinking":
                         current_block_index = event.index
                     elif event.type == "content_block_delta" and hasattr(event, 'delta'):
-                        if hasattr(event.delta, 'text'):
+                        # NUEVO: Thinking content via thinking_delta (conclusión)
+                        if hasattr(event.delta, 'type') and event.delta.type == "thinking_delta":
+                            if hasattr(event.delta, 'thinking'):
+                                conclusion_thinking.append(event.delta.thinking)
+                        # Texto normal via text_delta
+                        elif hasattr(event.delta, 'text'):
                             text_chunk = event.delta.text
-                            if current_block_index is not None and event.index == current_block_index:
-                                conclusion_thinking.append(text_chunk)
-                            else:
+                            # Solo contenido no-thinking
+                            if current_block_index is None or event.index != current_block_index:
                                 conclusion_content.append(text_chunk)
                     elif event.type == "content_block_stop":
                         if current_block_index == event.index:
@@ -2023,12 +2142,17 @@ Genera la conclusión completa ahora:
             
             emit_generation_log(book_id, 'success', f'Conclusión generada: {len(final_conclusion_content.split())} palabras')
             
+            # Calcular thinking tokens con estimación si es necesario
+            thinking_tokens = getattr(final_message.usage, 'thinking_tokens', 0) if hasattr(final_message, 'usage') else 0
+            if thinking_tokens == 0 and final_conclusion_thinking:
+                thinking_tokens = self.estimate_thinking_tokens(final_conclusion_thinking)
+            
             return {
                 'content': final_conclusion_content,
                 'thinking': final_conclusion_thinking,
                 'usage': {
                     'total_tokens': final_message.usage.input_tokens + final_message.usage.output_tokens if hasattr(final_message, 'usage') else 0,
-                    'thinking_tokens': getattr(final_message.usage, 'thinking_tokens', 0) if hasattr(final_message, 'usage') else 0
+                    'thinking_tokens': thinking_tokens
                 }
             }
             
@@ -2613,6 +2737,259 @@ Regenera COMPLETAMENTE el capítulo considerando todo el feedback del usuario y 
 El capítulo regenerado debe ser un contenido completamente nuevo, mucho más extenso, mejor organizado, y que responda específicamente a todas las solicitudes del feedback del usuario.
 
 Regenera el capítulo ahora en formato Markdown siguiendo todas estas especificaciones:"""
+
+    def _parse_markdown_architecture_elements(self, markdown_content: str, book_params: Dict[str, Any]) -> Dict[str, List[Dict[str, str]]]:
+        """
+        Parsea personajes y secciones especiales del contenido Markdown de regeneración.
+        Solo para backend - no afecta frontend existente.
+        """
+        import re
+        
+        characters = []
+        special_sections = []
+        
+        # Parsear personajes - NUEVO FORMATO INLINE (prioridad)
+        # Buscar patrones como: **Personaje principal**: *Ana Rodríguez*, estudiante de intercambio
+        inline_character_patterns = [
+            r'\*\*Personaje principal\*\*:\s*\*([^*]+)\*,?\s*(.*?)(?=\n|$)',
+            r'\*\*Personaje secundario\*\*:\s*\*([^*]+)\*,?\s*(.*?)(?=\n|$)', 
+            r'\*\*Protagonista\*\*:\s*\*([^*]+)\*,?\s*(.*?)(?=\n|$)',
+            r'\*\*Narrador\*\*:\s*\*([^*]+)\*,?\s*(.*?)(?=\n|$)'
+        ]
+        
+        for pattern in inline_character_patterns:
+            inline_matches = re.finditer(pattern, markdown_content, re.MULTILINE | re.IGNORECASE)
+            for match in inline_matches:
+                name = match.group(1).strip()
+                description = match.group(2).strip()
+                
+                # Extraer rol del tipo de personaje del pattern
+                role = "Personaje Principal"
+                if "secundario" in pattern.lower():
+                    role = "Personaje Secundario"
+                elif "protagonista" in pattern.lower():
+                    role = "Protagonista"
+                elif "narrador" in pattern.lower():
+                    role = "Narrador"
+                
+                if name and len(name) > 1:
+                    characters.append({
+                        "name": name,
+                        "role": role,
+                        "description": description or f"Personaje en {book_params.get('title', 'el libro')}"
+                    })
+        
+        # Parsear personajes - FORMATO TRADICIONAL (para compatibilidad)
+        # Solo si no encontramos personajes en formato inline
+        if not characters:
+            character_section_patterns = [
+                r'### \*\*PERSONAJES RECURRENTES\*\*.*?\n(.*?)(?=\n### |\n## |\n# |$)',
+                r'## \*\*👥 PERSONAJES GUÍA DEL LIBRO\*\*.*?\n(.*?)(?=\n## |\n# |$)',
+                r'## 🎭 PERSONAJES.*?\n(.*?)(?=\n## |\n# |$)',
+                r'## PERSONAJES.*?\n(.*?)(?=\n## |\n# |$)',
+                r'# PERSONAJES.*?\n(.*?)(?=\n## |\n# |$)'
+            ]
+            
+            for pattern in character_section_patterns:
+                character_match = re.search(pattern, markdown_content, re.DOTALL | re.IGNORECASE)
+                if character_match:
+                    character_content = character_match.group(1)
+                    
+                    # Extraer personajes individuales (formato: ### **🎓 Herr Professor Schmidt**)
+                    character_blocks = re.findall(r'### \*\*(.+?)\*\*.*?\n(.*?)(?=\n### |\n## |\n# |$)', character_content, re.DOTALL)
+                    
+                    for char_name_line, char_details in character_blocks:
+                        # Limpiar nombre (remover emojis y formateo)
+                        name_match = re.search(r'(?:[🎓💼🎒🌍]\s*)?(.+?)$', char_name_line.strip())
+                        name = name_match.group(1).strip() if name_match else char_name_line.strip()
+                        
+                        # Extraer rol de la línea con *El Académico Tradicional*
+                        role_match = re.search(r'>\s*\*([^*]+)\*', char_details)
+                        role = role_match.group(1).strip() if role_match else "Personaje Principal"
+                        
+                        # Extraer descripción de las líneas de rol o bullets
+                        desc_lines = []
+                        for line in char_details.split('\n'):
+                            line = line.strip()
+                            if line.startswith('- **Rol:**'):
+                                bullet_match = re.search(r'- \*\*Rol:\*\*\s*(.*)', line)
+                                if bullet_match:
+                                    desc_lines.append(bullet_match.group(1))
+                            elif line.startswith('- **Especialidad:**'):
+                                bullet_match = re.search(r'- \*\*Especialidad:\*\*\s*(.*)', line)
+                                if bullet_match:
+                                    desc_lines.append(bullet_match.group(1))
+                            elif line.startswith('- **Estilo:**'):
+                                bullet_match = re.search(r'- \*\*Estilo:\*\*\s*(.*)', line)
+                                if bullet_match:
+                                    desc_lines.append(bullet_match.group(1))
+                        
+                        description = '. '.join(desc_lines) if desc_lines else f"Personaje guía especializado en {book_params.get('title', 'el libro')}"
+                        
+                        if name and len(name) > 1:  # Validar que tiene contenido válido
+                            characters.append({
+                                "name": name,
+                                "role": role,
+                                "description": description
+                            })
+                    
+                    break  # Solo procesar la primera sección de personajes encontrada
+        
+        # Parsear secciones especiales - NUEVO FORMATO BULLET POINTS (prioridad)
+        # Buscar patrones como: - **Secciones especiales**: seguido de bullet points con emojis
+        bullet_special_pattern = r'- \*\*Secciones especiales\*\*:?\s*\n((?:\s*- [📝💡🎯⚡🔍📚][^\n]*\n?)+)'
+        bullet_match = re.search(bullet_special_pattern, markdown_content, re.MULTILINE | re.IGNORECASE)
+        
+        if bullet_match:
+            bullet_content = bullet_match.group(1)
+            # Extraer cada bullet point con emoji (con espacios opcionales al inicio)
+            bullet_sections = re.findall(r'\s*- ([📝💡🎯⚡🔍📚])\s*\*\*([^*]+)\*\*:?\s*(.*?)(?=\n|$)', bullet_content, re.MULTILINE)
+            
+            for emoji, section_name, section_desc in bullet_sections:
+                section_type = section_name.strip()
+                description = section_desc.strip()
+                
+                # Valores por defecto basados en el emoji y tipo
+                frequency = "Según sea necesario"
+                purpose = description or f"Elemento especial que mejora la experiencia de lectura en {book_params.get('title', 'el libro')}"
+                
+                # Ajustar frecuencia según el tipo detectado
+                if "ejercicio" in section_type.lower() or "práctica" in section_type.lower():
+                    frequency = "2-3 por capítulo"
+                elif "vocabulario" in section_type.lower() or "glosario" in section_type.lower():
+                    frequency = "1 por capítulo"
+                elif "consejo" in section_type.lower() or "tip" in section_type.lower():
+                    frequency = "2-3 por capítulo"
+                elif "cultural" in section_type.lower() or "contexto" in section_type.lower():
+                    frequency = "1-2 por capítulo"
+                
+                if section_type and len(section_type) > 1:
+                    special_sections.append({
+                        "type": section_type,
+                        "frequency": frequency,
+                        "purpose": purpose
+                    })
+        
+        # Parsear secciones especiales - FORMATO TRADICIONAL (para compatibilidad)
+        # Solo si no encontramos secciones en formato bullet points
+        if not special_sections:
+            special_section_patterns = [
+                r'## \*\*🔧 SECCIONES ESPECIALES EXTRAÍBLES\*\*.*?\n(.*?)(?=\n## |\n# |$)',
+                r'## 🔧 SECCIONES.*?\n(.*?)(?=\n## |\n# |$)',
+                r'## SECCIONES ESPECIALES.*?\n(.*?)(?=\n## |\n# |$)',
+                r'# SECCIONES ESPECIALES.*?\n(.*?)(?=\n## |\n# |$)'
+            ]
+            
+            for pattern in special_section_patterns:
+                section_match = re.search(pattern, markdown_content, re.DOTALL | re.IGNORECASE)
+                if section_match:
+                    section_content = section_match.group(1)
+                    
+                    # Extraer secciones individuales (formato: ### **💡 CONSEJO DEL EXPERTO**)
+                    section_blocks = re.findall(r'### \*\*(.+?)\*\*.*?\n(.*?)(?=\n### |\n## |\n# |$)', section_content, re.DOTALL)
+                    
+                    for section_type_line, section_details in section_blocks:
+                        # Limpiar tipo de sección (remover emojis)
+                        type_match = re.search(r'(?:[💡🎯📝⚡🔍📚]\s*)?(.+?)$', section_type_line.strip())
+                        section_type = type_match.group(1).strip() if type_match else section_type_line.strip()
+                        
+                        # Valores por defecto basados en el tipo de sección
+                        frequency = "Según sea necesario"
+                        purpose = f"Elemento especial que mejora la experiencia de lectura en {book_params.get('title', 'el libro')}"
+                        
+                        # Intentar extraer información específica de los bloques de código markdown
+                        if "CONSEJO DEL EXPERTO" in section_type:
+                            frequency = "2-3 por capítulo"
+                            purpose = "Consejos prácticos y profesionales de expertos para mejorar el dominio del alemán"
+                        elif "ENFOQUE PRÁCTICO" in section_type:
+                            frequency = "1 por capítulo"
+                            purpose = "Aplicaciones prácticas de las expresiones en situaciones reales específicas"
+                        elif "EJERCICIO RÁPIDO" in section_type:
+                            frequency = "2-3 por capítulo"
+                            purpose = "Actividades interactivas para practicar y consolidar las expresiones aprendidas"
+                        elif "EXPRESIÓN DEL DÍA" in section_type:
+                            frequency = "1 por capítulo"
+                            purpose = "Destacar una expresión especialmente útil con explicación detallada y contexto cultural"
+                        elif "ANÁLISIS CULTURAL" in section_type:
+                            frequency = "1-2 por capítulo"
+                            purpose = "Explicaciones del contexto cultural alemán para usar las expresiones apropiadamente"
+                        elif "VOCABULARIO CLAVE" in section_type:
+                            frequency = "1 por capítulo"
+                            purpose = "Tablas organizadas con vocabulario esencial relacionado con las expresiones del capítulo"
+                        
+                        if section_type and len(section_type) > 1:  # Validar contenido válido
+                            special_sections.append({
+                                "type": section_type,
+                                "frequency": frequency,
+                                "purpose": purpose
+                            })
+                    
+                    break  # Solo procesar la primera sección especial encontrada
+        
+        return {
+            "personajes": characters,
+            "secciones_especiales": special_sections
+        }
+
+    def estimate_thinking_tokens(self, thinking_content: str) -> int:
+        """
+        Estima el número de thinking tokens basado en el contenido de thinking.
+        
+        Como la API de Anthropic no siempre reporta thinking_tokens correctamente,
+        calculamos una estimación basada en el contenido capturado.
+        
+        Args:
+            thinking_content: El texto del thinking content capturado
+            
+        Returns:
+            Estimación de thinking tokens (int)
+        """
+        if not thinking_content or len(thinking_content.strip()) == 0:
+            return 0
+        
+        # Limpiar el contenido para conteo más preciso
+        cleaned_content = thinking_content.strip()
+        
+        # Método 1: Estimación por caracteres (1 token ≈ 4 caracteres)
+        char_based_tokens = len(cleaned_content) // 4
+        
+        # Método 2: Estimación por palabras (1 token ≈ 0.75 palabras) 
+        words = len(cleaned_content.split())
+        word_based_tokens = int(words / 0.75)
+        
+        # Método 3: Estimación híbrida considerando espacios y puntuación
+        # Contar tokens más precisamente considerando:
+        # - Palabras regulares
+        # - Números 
+        # - Puntuación
+        # - Espacios y saltos de línea
+        
+        import re
+        
+        # Contar diferentes tipos de elementos
+        word_tokens = len(re.findall(r'\b\w+\b', cleaned_content))  # Palabras
+        number_tokens = len(re.findall(r'\b\d+\b', cleaned_content))  # Números
+        punct_tokens = len(re.findall(r'[.!?;:,\-(){}[\]"]', cleaned_content))  # Puntuación
+        newline_tokens = cleaned_content.count('\n')  # Saltos de línea
+        
+        # Estimación más precisa
+        estimated_tokens = word_tokens + (number_tokens * 0.8) + (punct_tokens * 0.3) + (newline_tokens * 0.1)
+        
+        # Usar promedio ponderado de los tres métodos
+        # Dar más peso al método híbrido que es más preciso
+        final_estimate = int(
+            (char_based_tokens * 0.2) + 
+            (word_based_tokens * 0.3) + 
+            (estimated_tokens * 0.5)
+        )
+        
+        # Aplicar límites razonables
+        min_tokens = max(1, len(cleaned_content) // 6)  # Mínimo conservador
+        max_tokens = len(cleaned_content) // 2  # Máximo conservador
+        
+        final_estimate = max(min_tokens, min(final_estimate, max_tokens))
+        
+        return final_estimate
 
 
 # Singleton instance
