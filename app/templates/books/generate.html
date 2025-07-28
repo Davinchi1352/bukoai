@@ -224,7 +224,7 @@
                                         >
                                             <i class="fas fa-file-alt fa-2x mb-2 text-primary"></i>
                                             <div class="small">Corto</div>
-                                            <div class="text-muted" style="font-size: 0.75rem">50-100 páginas</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">90-120 páginas</div>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -235,7 +235,7 @@
                                         >
                                             <i class="fas fa-book fa-2x mb-2 text-primary"></i>
                                             <div class="small">Medio</div>
-                                            <div class="text-muted" style="font-size: 0.75rem">100-200 páginas</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">180-240 páginas</div>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -246,9 +246,13 @@
                                         >
                                             <i class="fas fa-book-open fa-2x mb-2 text-primary"></i>
                                             <div class="small">Largo</div>
-                                            <div class="text-muted" style="font-size: 0.75rem">200+ páginas</div>
+                                            <div class="text-muted" style="font-size: 0.75rem">270-360 páginas</div>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="alert alert-info mt-3 py-2">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <small><strong>Nota:</strong> Los rangos mostrados se ajustarán según el <strong>tamaño de página</strong> e <strong>interlineado</strong> que selecciones. Formatos más grandes dan ligeramente más contenido.</small>
                                 </div>
                             </div>
                             
@@ -774,9 +778,9 @@ function bookWizard() {
         
         getLengthName(length) {
             const lengths = {
-                'short': 'Corto (50-100 páginas)',
-                'medium': 'Medio (100-200 páginas)',
-                'long': 'Largo (200+ páginas)'
+                'short': 'Corto (90-120 páginas)',
+                'medium': 'Medio (180-240 páginas)',
+                'long': 'Largo (270-360 páginas)'
             };
             return lengths[length] || '';
         },

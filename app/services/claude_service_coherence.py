@@ -5,14 +5,24 @@ import json
 import re
 from typing import Dict, List, Any, Tuple
 import structlog
+from ..utils.page_calculations import get_words_per_page, calculate_target_words
 
 logger = structlog.get_logger()
 
 class BookCoherenceManager:
     """Gestiona la coherencia y distribución de páginas basado en la arquitectura aprobada"""
     
-    def __init__(self):
-        self.words_per_page = 350  # Estándar
+    def __init__(self, page_size: str = 'pocket', line_spacing: str = 'medium'):
+        # Usar cálculo dinámico pero AGREGAR 20% más para forzar más contenido
+        base_words_per_page = get_words_per_page(page_size, line_spacing)
+        self.words_per_page = int(base_words_per_page * 1.2)  # 20% más para forzar contenido extra
+        self.page_size = page_size
+        self.line_spacing = line_spacing
+        logger.info("coherence_manager_initialized", 
+                   base_words_per_page=base_words_per_page,
+                   enhanced_words_per_page=self.words_per_page,
+                   page_size=page_size, 
+                   line_spacing=line_spacing)
         
     def extract_target_pages_from_architecture(self, approved_architecture: Dict[str, Any], book_params: Dict[str, Any]) -> int:
         """Extrae el target de páginas correcto desde la arquitectura"""
@@ -179,7 +189,7 @@ class BookCoherenceManager:
     def calculate_chunk_page_distribution(self, structured_chapters: List[Dict[str, Any]], target_pages: int) -> List[Dict[str, Any]]:
         """Calcula distribución de páginas por chunk manteniendo coherencia"""
         
-        max_chapters_per_chunk = 5  # Máximo para mantener coherencia
+        max_chapters_per_chunk = 4   # 🚀 OPTIMIZADO: Control preciso de páginas (3-4 capítulos por chunk)
         chunks = []
         
         for i in range(0, len(structured_chapters), max_chapters_per_chunk):

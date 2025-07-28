@@ -67,22 +67,22 @@ class ClaudeService:
         )
         
         self.model = current_app.config.get('CLAUDE_MODEL', 'claude-sonnet-4-20250514')
-        # 🚀 MAX_TOKENS OPTIMIZADOS: Específicos por tipo de contenido para mayor velocidad
+        # 🚀 MAX_TOKENS OPTIMIZADOS: Eficiencia máxima SIN comprometer páginas
         self.max_tokens_config = {
-            'architecture': 16000,      # Reducido de 32000 - Suficiente para arquitectura
-            'chunk_main': 28000,        # Reducido de 64000 - Optimizado para chunks principales
-            'introduction': 8000,       # Reducido de 16000 - Introducciones compactas
-            'conclusion': 8000,         # Reducido de 16000 - Conclusiones concisas
-            'continuation': 16000,      # Nuevo - Para chunks de continuación
-            'expansion': 12000          # Nuevo - Para expansiones orgánicas (deshabilitadas)
+            'architecture': 12000,      # 🚀 Reducido de 16K→12K - Arquitectura eficiente
+            'chunk_main': 32000,        # 🚀 Aumentado de 28K→32K - Chunks MÁS GRANDES = menos llamadas
+            'introduction': 6000,       # 🚀 Reducido de 8K→6K - Introducciones eficientes
+            'conclusion': 6000,         # 🚀 Reducido de 8K→6K - Conclusiones eficientes  
+            'continuation': 20000,      # 🚀 Aumentado de 16K→20K - Continuaciones más sustanciales
+            'expansion': 10000          # 🚀 Reducido de 12K→10K - Expansiones precisas
         }
         self.max_tokens = current_app.config.get('CLAUDE_MAX_TOKENS', 28000)  # Default optimizado
         self.temperature = current_app.config.get('CLAUDE_TEMPERATURE', 1.0)
-        self.thinking_budget = current_app.config.get('CLAUDE_THINKING_BUDGET', 25000)  # Optimizado para velocidad
+        self.thinking_budget = current_app.config.get('CLAUDE_THINKING_BUDGET', 35000)  # 🚀 AMPLIADO: Aumentado para pensamiento extendido de alta calidad
         
-        # Multi-chunk configuration
+        # Multi-chunk configuration OPTIMIZADO para VELOCIDAD + CALIDAD
         self.chunk_overlap = 500  # Tokens de overlap entre chunks para continuidad
-        self.max_chunks = 5       # Máximo de chunks por libro
+        self.max_chunks = 3       # 🚀 OPTIMIZADO: Reducido de 5→3 para VELOCIDAD máxima
         
         # Timeouts generosos para contenidos extensos de alta calidad
         self.architecture_timeout = 2400  # 40 minutos para arquitectura (contenidos extensos)
@@ -100,20 +100,23 @@ class ClaudeService:
         self.progress_timeout = 1200      # 20 minutos sin progreso = posible cuelgue
         self.progress_check_interval = 50 # Verificar progreso cada 50 chunks (menos overhead)
         
-        # Coherence manager
+        # Default coherence manager (se reconfigura por libro)
         self.coherence_manager = BookCoherenceManager()
         
         # Retry configuration
         self.max_retries = current_app.config.get('CLAUDE_MAX_RETRIES', 3)
         self.retry_delay = current_app.config.get('CLAUDE_RETRY_DELAY', 1.0)
+    
+    def _get_coherence_manager_for_book(self, book_params: Dict[str, Any]) -> BookCoherenceManager:
+        """Crea un coherence manager configurado específicamente para el formato del libro"""
+        page_size = book_params.get('page_size', 'pocket')
+        line_spacing = book_params.get('line_spacing', 'medium')
         
-        logger.info("claude_service_initialized", 
-                   model=self.model,
-                   max_tokens_optimized=self.max_tokens_config,
-                   architecture_timeout=self.architecture_timeout,
-                   chunk_timeout=self.chunk_timeout,
-                   target_users=10000,
-                   progress_check_interval=self.progress_check_interval)
+        logger.info("creating_book_specific_coherence_manager", 
+                   page_size=page_size, 
+                   line_spacing=line_spacing)
+        
+        return BookCoherenceManager(page_size=page_size, line_spacing=line_spacing)
     
     def _get_optimized_tokens(self, content_type: str) -> int:
         """🚀 Obtiene tokens optimizados según tipo de contenido"""
@@ -122,7 +125,8 @@ class ClaudeService:
     def _get_optimized_thinking_budget(self, content_type: str) -> int:
         """🚀 Obtiene thinking budget optimizado según tipo de contenido"""
         max_tokens = self._get_optimized_tokens(content_type)
-        return min(max_tokens - 1000, self.thinking_budget)  # Dejar margen de 1000 tokens
+        # 🧠 PENSAMIENTO EXTENDIDO: Usar todo el budget disponible para máxima calidad
+        return min(max_tokens - 500, self.thinking_budget)  # Reducido margen de 1000→500 para más thinking
     
     # =====================================
     # CIRCUIT BREAKER Y MONITOREO
@@ -481,8 +485,8 @@ class ClaudeService:
                     
                     # Debug thinking tokens - usar estimación si API no reporta
                     thinking_tokens = getattr(final_message.usage, 'thinking_tokens', 0)
-                    if thinking_tokens == 0 and thinking_content:
-                        thinking_tokens = self.estimate_thinking_tokens(thinking_content)
+                    if thinking_tokens == 0 and complete_thinking:
+                        thinking_tokens = self.estimate_thinking_tokens(complete_thinking)
                     logger.info("claude_usage_debug", 
                                book_id=book_id,
                                prompt_tokens=final_message.usage.input_tokens,
@@ -676,6 +680,14 @@ Your output must be a well-structured JSON with the following format (this is ju
 - Provide enough detail for user to understand the full book structure
 - Respect all user preferences (TOC, introduction, conclusion, etc.)
 
+🚨 **CRÍTICO - OBLIGATORIEDAD DE PÁGINAS:**
+- **PROMESA AL USUARIO**: El usuario ha seleccionado un rango específico de páginas y DEBEMOS cumplirlo
+- **DISTRIBUCIÓN OBLIGATORIA**: La suma EXACTA de todas las páginas estimadas DEBE igualar el target del usuario
+- **RESPONSABILIDAD**: Fallar en el targeting de páginas = Romper la promesa comercial al cliente
+- **CÁLCULO PRECISO**: Cada capítulo debe tener páginas realistas que sumen EXACTAMENTE el total prometido
+- **NO BAJO-ESTIMACIÓN**: Es mejor sobrestimar ligeramente que subestimar páginas
+- **FORMATO ESPECÍFICO**: Considerar que diferentes formatos (page_size + line_spacing) afectan el contenido real
+
 DO NOT write any actual book content - only the detailed architecture and structure using the user's exact specifications."""
 
     def _build_architecture_user_prompt(self, book_params: Dict[str, Any]) -> str:
@@ -746,12 +758,20 @@ DO NOT write any actual book content - only the detailed architecture and struct
 6. 🎯 **CRITICAL PAGE DISTRIBUTION**: The sum of ALL chapter pages + introduction pages + conclusion pages must EXACTLY equal {page_count} pages
 7. All text in the architecture (titles, summaries, descriptions) must be in {language_name.upper()}
 
-📊 **PAGE DISTRIBUTION GUIDANCE:**
-- Total target: {page_count} pages (THIS IS MANDATORY)
+🚨 **OBLIGATORIEDAD CRÍTICA - CUMPLIMIENTO DE PÁGINAS:**
+- **PROMESA COMERCIAL**: El usuario pagó por {page_count} páginas específicas con formato {page_size}/{line_spacing}
+- **CONSECUENCIAS**: No cumplir = Cliente insatisfecho + Promesa rota + Pérdida de confianza
+- **TARGETING OBLIGATORIO**: CADA página estimada cuenta para el resultado final
+- **PRECISIÓN MATEMÁTICA**: Total debe ser EXACTAMENTE {page_count} páginas, ni una más ni una menos
+- **RESPONSABILIDAD TOTAL**: Eres responsable de que la arquitectura permita cumplir esta promesa
+
+📊 **PAGE DISTRIBUTION GUIDANCE (OBLIGATORIA):**
+- **Total target: {page_count} páginas (MANDATORIO - SIN EXCEPCIONES)**
 - Introduction: 3-5% of total pages ({"2-3" if page_count < 100 else "3-5"} pages)
 - Conclusion: 3-5% of total pages ({"2-3" if page_count < 100 else "3-5"} pages)  
 - Chapters: Remaining pages distributed logically ({page_count - (3 if page_count < 100 else 5) - (3 if page_count < 100 else 5)} pages total for chapters)
 - Average per chapter: ~{(page_count - (6 if page_count < 100 else 10)) // book_params.get('chapter_count', 10)} pages, but vary based on content complexity
+- **VERIFICACIÓN**: Suma intro + chapters + conclusion = {page_count} páginas EXACTAS
 
 🛑 **WHAT NOT TO DO:**
 - Do NOT write actual chapter content
@@ -887,7 +907,7 @@ Generate a comprehensive book architecture that the user can review, modify if n
             # Crear streaming request con thinking habilitado
             # Para regeneración usamos tokens optimizados similar a arquitectura inicial
             regen_max_tokens = min(32000, self.max_tokens)  # Aumentado para arquitectura mejorada
-            regen_budget_tokens = min(30000, self.thinking_budget)
+            regen_budget_tokens = min(32000, self.thinking_budget)  # 🧠 Ampliado para regeneración con thinking extendido
             
             async with self.client.messages.stream(
                 model=self.model,
@@ -1190,6 +1210,13 @@ QUALITY REQUIREMENTS:
 - Ensure chapter count and page estimates remain realistic
 - Preserve good elements from the original while improving problematic areas
 
+🚨 **OBLIGATORIEDAD CRÍTICA DE PÁGINAS (EN REGENERACIÓN):**
+- **MANTENER PROMESA**: El target de páginas original DEBE mantenerse exacto
+- **NO COMPROMETER**: Las mejoras NO pueden reducir el cumplimiento de páginas
+- **MEJOR DISTRIBUCIÓN**: Mejorar cómo se distribuyen las páginas, no reducir el total
+- **RESPONSABILIDAD TOTAL**: Una regeneración que comprometa las páginas = FALLO CRÍTICO
+- **VERIFICACIÓN OBLIGATORIA**: La nueva arquitectura DEBE sumar exactamente las mismas páginas target
+
 DO NOT simply make minor cosmetic changes - make substantial improvements based on the specific feedback provided."""
 
     def _build_regeneration_user_prompt(self, book_params: Dict[str, Any], current_architecture: Dict[str, Any], feedback_what: str, feedback_how: str) -> str:
@@ -1291,6 +1318,13 @@ DO NOT simply make minor cosmetic changes - make substantial improvements based 
 - The result should align perfectly with the user's vision
 - Maintain professional quality and structure throughout
 
+🚨 **OBLIGATORIEDAD CRÍTICA DE PÁGINAS (REGENERACIÓN):**
+- **COMPROMISO COMERCIAL**: Las {page_count} páginas prometidas son INEGOCIABLES
+- **NO REDUCIR**: El feedback NO puede ser excusa para reducir páginas
+- **MEJORAR DISTRIBUCIÓN**: Redistribuir mejor las páginas entre capítulos
+- **VERIFICACIÓN FINAL**: Nueva arquitectura DEBE sumar EXACTAMENTE {page_count} páginas
+- **RESPONSABILIDAD**: Fallar en el targeting = Romper promesa al cliente pagador
+
 Generate the improved architecture in {language_name.upper()} that fully incorporates the user's feedback and creates a superior book structure."""
 
 
@@ -1324,7 +1358,7 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
             
             # Para regeneración de capítulos, necesitamos más tokens para capítulos más extensos
             chapter_max_tokens = 32000  # Aumentado para capítulos muy extensos
-            chapter_budget_tokens = min(30000, self.thinking_budget)  # Mantener relación correcta
+            chapter_budget_tokens = min(34000, self.thinking_budget)  # 🧠 Ampliado para regeneración de capítulos con thinking profundo
             
             response = await self.client.messages.create(
                 model=self.model,
@@ -1426,9 +1460,9 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
             if total_chapters == 0:
                 raise Exception("No se encontraron capítulos en la arquitectura")
             
-            # 🚀 OPTIMIZACIÓN: Chunks más grandes para reducir necesidad de continuación
-            # Calcular chunks necesarios (máximo 15 capítulos por chunk, antes era 12)
-            chapters_per_chunk = max(2, min(15, total_chapters // max(2, self.max_chunks - 1) + 1))
+            # 🚀 OPTIMIZACIÓN: Balance PERFECTO entre VELOCIDAD y TARGETING PRECISO DE PÁGINAS
+            # Calcular chunks necesarios (3-4 capítulos por chunk - óptimo para control de páginas)
+            chapters_per_chunk = max(3, min(4, total_chapters // max(1, self.max_chunks - 1) + 1))
             chunks = []
             
             for i in range(0, total_chapters, chapters_per_chunk):
@@ -1455,20 +1489,23 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
             total_completion_tokens = 0
             chunk_summaries = []
             
-            # 🚨 SISTEMA DE COHERENCIA: Basado en arquitectura aprobada
+            # 🚨 SISTEMA DE COHERENCIA: Basado en arquitectura aprobada con formato específico
+            
+            # Obtener coherence manager configurado para este libro específico
+            coherence_manager = self._get_coherence_manager_for_book(book_params)
             
             # 1. Extraer target real de la arquitectura
-            target_pages = self.coherence_manager.extract_target_pages_from_architecture(
+            target_pages = coherence_manager.extract_target_pages_from_architecture(
                 approved_architecture, book_params
             )
             
             # 2. Validar y estructurar capítulos con páginas target
-            structured_chapters = self.coherence_manager.validate_and_structure_chapters(
+            structured_chapters = coherence_manager.validate_and_structure_chapters(
                 approved_architecture, target_pages
             )
             
             # 3. Calcular distribución coherente por chunks
-            chunk_distributions = self.coherence_manager.calculate_chunk_page_distribution(
+            chunk_distributions = coherence_manager.calculate_chunk_page_distribution(
                 structured_chapters, target_pages
             )
             
@@ -1483,7 +1520,7 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                        planned_chunks=len(chunk_distributions))
             
             chunk_num = 0
-            max_total_chunks = 4  # 🚀 OPTIMIZACIÓN: Reducido de 8 → 4 para evitar bucles largos
+            max_total_chunks = 4  # 🚀 OPTIMIZADO: 3 principales + 1 adicional máximo para VELOCIDAD
             generated_chapters = []  # Track capítulos generados
             
             # 📖 GENERAR INTRODUCCIÓN (si está configurada)
@@ -1617,7 +1654,7 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
             if additional_chunks_needed > 0 and chunk_num < max_total_chunks:
                 
                 # Generar estrategia de continuación inteligente
-                continuation_strategy = self.coherence_manager.generate_continuation_strategy(
+                continuation_strategy = coherence_manager.generate_continuation_strategy(
                     current_pages, target_pages, generated_chapters
                 )
                 
@@ -1877,6 +1914,10 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                             emit_generation_log(book_id, 'thinking', 
                                 f'Chunk {chunk_info["index"]} - Planificación: {len(full_thinking.split())} palabras de pensamiento')
                 
+                # Combinar contenido antes de usar
+                final_chunk_content = ''.join(chunk_content)
+                final_chunk_thinking = ''.join(chunk_thinking)
+                
                 # Obtener métricas finales del stream
                 final_message = await stream.get_final_message()
                 prompt_tokens = 0
@@ -1889,9 +1930,6 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                     # Usar estimación si API no reporta thinking tokens
                     if thinking_tokens == 0 and final_chunk_thinking:
                         thinking_tokens = self.estimate_thinking_tokens(final_chunk_thinking)
-            
-            final_chunk_content = ''.join(chunk_content)
-            final_chunk_thinking = ''.join(chunk_thinking)
             
             emit_generation_log(book_id, 'success', 
                 f'Chunk {chunk_info["index"]} generado: {len(final_chunk_content.split())} palabras, {thinking_tokens} thinking tokens')
@@ -1969,6 +2007,13 @@ Escribe la introducción completa para este libro siguiendo exactamente la arqui
 5. Incluye: presentación del tema, importancia, qué aprenderá el lector, estructura del libro
 6. Conecta directamente con el primer capítulo
 
+🚨 **OBLIGATORIEDAD CRÍTICA - TARGETING DE INTRODUCCIÓN:**
+- **PÁGINAS PROMETIDAS**: Esta introducción DEBE ocupar exactamente {intro_pages} páginas
+- **PALABRAS EXACTAS**: Target obligatorio = {intro_words:,} palabras (formato {page_size}/{line_spacing})
+- **RESPONSABILIDAD**: Fallar el targeting = Comprometer páginas totales del libro
+- **EXPANSIÓN OBLIGATORIA**: Si el contenido natural no alcanza {intro_words:,} palabras, expandir orgánicamente
+- **CALIDAD + CANTIDAD**: Mantener excelencia pero cumplir target de palabras sin excusas
+
 Genera la introducción completa ahora:
 """
 
@@ -1983,10 +2028,10 @@ Genera la introducción completa ahora:
             
             async with self.client.messages.stream(
                 model=self.model,
-                max_tokens=self._get_optimized_tokens('introduction'),  # 🚀 8000 optimizado para introducción
+                max_tokens=self._get_optimized_tokens('introduction'),  # 🚀 6000 optimizado para introducción
                 temperature=self.temperature,
                 messages=messages,
-                thinking={"type": "enabled", "budget_tokens": self.thinking_budget // 4}
+                thinking={"type": "enabled", "budget_tokens": min(12000, self.thinking_budget // 3)}  # 🧠 Ampliado thinking para introducción
             ) as stream:
                 
                 async for event in stream:
@@ -2097,6 +2142,14 @@ Escribe la conclusión completa para este libro siguiendo exactamente la arquite
 6. Incluye: resumen de aprendizajes, reflexiones finales, próximos pasos
 7. Cierra de manera inspiradora y coherente con todo el contenido
 
+🚨 **OBLIGATORIEDAD CRÍTICA - TARGETING DE CONCLUSIÓN:**
+- **PÁGINAS PROMETIDAS**: Esta conclusión DEBE ocupar exactamente {conclusion_pages} páginas
+- **PALABRAS EXACTAS**: Target obligatorio = {conclusion_words:,} palabras (formato {page_size}/{line_spacing})
+- **RESPONSABILIDAD**: Fallar el targeting = Comprometer páginas totales prometidas al cliente
+- **EXPANSIÓN OBLIGATORIA**: Si el contenido natural no alcanza {conclusion_words:,} palabras, expandir orgánicamente
+- **CALIDAD + CANTIDAD**: Mantener excelencia pero cumplir target de palabras sin excusas
+- **CIERRE COMPLETO**: Una conclusión corta = Libro incompleto = Cliente insatisfecho
+
 Genera la conclusión completa ahora:
 """
 
@@ -2111,10 +2164,10 @@ Genera la conclusión completa ahora:
             
             async with self.client.messages.stream(
                 model=self.model,
-                max_tokens=self.max_tokens // 4,  # Menos tokens para conclusión
+                max_tokens=self._get_optimized_tokens('conclusion'),  # 🚀 6000 optimizado para conclusión
                 temperature=self.temperature,
                 messages=messages,
-                thinking={"type": "enabled", "budget_tokens": self.thinking_budget // 4}
+                thinking={"type": "enabled", "budget_tokens": min(12000, self.thinking_budget // 3)}  # 🧠 Ampliado thinking para conclusión
             ) as stream:
                 
                 async for event in stream:
@@ -2265,12 +2318,19 @@ Genera la conclusión completa ahora:
 - Resumen: {chapter.get('summary', 'Contenido del capítulo')}
 - Puntos clave: {', '.join(chapter.get('key_points', []))}
 - Objetivos de aprendizaje: {', '.join(chapter.get('learning_objectives', []))}
-- 🎯 PÁGINAS TARGET PARA ESTE CAPÍTULO: {chapter_pages}
-- 📝 PALABRAS PRECISAS TARGET: {chapter_words:,} (basado en formato {page_size}/{line_spacing})
+- 🚨 **PÁGINAS OBLIGATORIAS**: {chapter_pages} páginas EXACTAS (NO negociable)
+- 🚨 **PALABRAS TARGET**: {chapter_words:,} palabras mínimas (formato {page_size}/{line_spacing})
 """
         
         # Tipo de chunk para instrucciones específicas
         chunk_type = "DE CONTINUACIÓN" if chunk_info.get('is_continuation', False) else "PLANIFICADO"
+        
+        # Formatear target_words correctamente
+        target_words = chunk_info.get('target_words', 'NO ESPECIFICADO')
+        if isinstance(target_words, (int, float)):
+            target_words_str = f"{int(target_words):,}"
+        else:
+            target_words_str = str(target_words)
         
         user_prompt = f"""
 **CLAUDE SONNET 4 - GENERACIÓN MULTI-CHUNKED DE ALTA CALIDAD**
@@ -2329,6 +2389,17 @@ Estás generando el CHUNK {chunk_type} {chunk_info['index']} de un libro. Debes 
 - **Ejercicios reflexivos**: Preguntas que inviten al análisis del lector
 
 **🚨 CALIDAD SOBRE CANTIDAD**: El objetivo es generar contenido naturalmente extenso de ALTO VALOR, no relleno. Cada párrafo debe aportar valor único al lector.
+
+🚨 **OBLIGATORIEDAD CRÍTICA - CUMPLIMIENTO DE PÁGINAS:**
+- **PROMESA COMERCIAL**: Este chunk DEBE generar exactamente las páginas asignadas en la arquitectura
+- **TARGETING OBLIGATORIO**: Target páginas = {chunk_info.get('target_pages', 'NO ESPECIFICADO')} páginas
+- **TARGET PALABRAS**: {target_words_str} palabras (formato {book_params.get('page_size', 'pocket')}/{book_params.get('line_spacing', 'medium')})
+- **RESPONSABILIDAD TOTAL**: Generar menos = Fallar la promesa al cliente pagador
+- **PÁGINAS POR CAPÍTULO**: CADA capítulo individual debe cumplir sus páginas estimadas de la arquitectura
+- **NO DISTRIBUCIÓN DESIGUAL**: No generar capítulos cortos para compensar con otros largos
+- **EXPANSIÓN OBLIGATORIA**: Si el contenido natural no alcanza el target, DEBES expandir orgánicamente
+- **NO SUBESTIMAR**: Es mejor generar 110% del target que 90%
+- **VERIFICACIÓN**: Cada párrafo cuenta hacia el cumplimiento de páginas prometidas
 
 {"🔄 CONTINUACIÓN: Expande orgánicamente el contenido para alcanzar las páginas faltantes manteniendo la excelencia" if chunk_info.get('is_continuation', False) else "✍️ CREACIÓN: Desarrolla cada capítulo con la profundidad que merece según la arquitectura aprobada"}"""
 
@@ -2486,6 +2557,15 @@ Eres un editor experto especializado en enriquecer libros manteniendo fluidez na
 
 **RESULTADO ESPERADO:**
 Contenido expandido que se lea como si siempre hubiera tenido esa extensión, rico en valor y perfectamente fluido. El lector no debe notar dónde terminaba el contenido original y dónde empezó la expansión.
+
+🚨 **OBLIGATORIEDAD CRÍTICA - EXPANSIÓN PARA CUMPLIR PÁGINAS:**
+- **PROMESA COMERCIAL**: El usuario pagó por {target_words:,} palabras y DEBEMOS entregarlas
+- **DÉFICIT ACTUAL**: Faltan {words_needed:,} palabras para cumplir la promesa
+- **RESPONSABILIDAD TOTAL**: No alcanzar el target = Fallar al cliente pagador
+- **EXPANSIÓN OBLIGATORIA**: DEBES agregar exactamente {words_needed:,} palabras (o más)
+- **CALIDAD MANTENIDA**: La expansión debe mantener la excelencia del contenido original
+- **NO RELLENO**: Cada palabra agregada debe aportar valor real al lector
+- **VERIFICACIÓN**: El resultado final DEBE tener mínimo {target_words:,} palabras
 
 **INSTRUCCIÓN FINAL:**
 Devuelve el contenido completo expandido, manteniendo TODO el contenido original más las adiciones orgánicas. Escribe en {language_name.upper()} exclusivamente."""
@@ -2736,6 +2816,14 @@ Regenera COMPLETAMENTE el capítulo considerando todo el feedback del usuario y 
 **✅ RESULTADO ESPERADO:**
 El capítulo regenerado debe ser un contenido completamente nuevo, mucho más extenso, mejor organizado, y que responda específicamente a todas las solicitudes del feedback del usuario.
 
+🚨 **OBLIGATORIEDAD CRÍTICA - TARGETING EN REGENERACIÓN:**
+- **PROMESA COMERCIAL**: Este capítulo regenerado forma parte de las páginas prometidas al cliente
+- **TARGET PALABRAS**: Generar aproximadamente {target_words} para cumplir expectativas
+- **RESPONSABILIDAD**: Una regeneración corta = Comprometer páginas totales del libro
+- **EXPANSIÓN OBLIGATORIA**: Si el contenido natural no alcanza el target, expandir con valor
+- **CALIDAD + CANTIDAD**: Mejorar según feedback PERO mantener extensión adecuada
+- **NO REDUCIR**: El feedback NO puede ser excusa para generar menos contenido
+
 Regenera el capítulo ahora en formato Markdown siguiendo todas estas especificaciones:"""
 
     def _parse_markdown_architecture_elements(self, markdown_content: str, book_params: Dict[str, Any]) -> Dict[str, List[Dict[str, str]]]:
@@ -2931,7 +3019,7 @@ Regenera el capítulo ahora en formato Markdown siguiendo todas estas especifica
             "secciones_especiales": special_sections
         }
 
-    def estimate_thinking_tokens(self, thinking_content: str) -> int:
+    def estimate_thinking_tokens(self, thinking_content) -> int:
         """
         Estima el número de thinking tokens basado en el contenido de thinking.
         
@@ -2939,11 +3027,17 @@ Regenera el capítulo ahora en formato Markdown siguiendo todas estas especifica
         calculamos una estimación basada en el contenido capturado.
         
         Args:
-            thinking_content: El texto del thinking content capturado
+            thinking_content: El texto del thinking content capturado (str) o lista de strings
             
         Returns:
             Estimación de thinking tokens (int)
         """
+        # Manejar tanto listas como cadenas para mayor robustez
+        if isinstance(thinking_content, list):
+            thinking_content = ''.join(thinking_content)
+        elif not isinstance(thinking_content, str):
+            thinking_content = str(thinking_content)
+            
         if not thinking_content or len(thinking_content.strip()) == 0:
             return 0
         

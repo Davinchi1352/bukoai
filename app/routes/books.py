@@ -8,6 +8,7 @@ from app.models.subscription import Subscription
 from app.services.claude_service import ClaudeService
 from app import db, cache
 from app.utils.decorators import subscription_required
+from app.utils.page_calculations import calculate_pages_from_words
 import json
 from datetime import datetime, timezone
 
@@ -393,9 +394,13 @@ def view_book(book_id):
     # Calcular estadísticas si no existen (para libros completados sin estadísticas)
     if book.status == BookStatus.COMPLETED and book.content:
         if not book.final_pages or not book.final_words:
-            # Calcular desde el contenido actual
+            # Calcular desde el contenido actual usando formato específico
             content_words = len(book.content.split()) if book.content else 0
-            content_pages = max(1, content_words // 350) if content_words > 0 else 0
+            content_pages = calculate_pages_from_words(
+                content_words, 
+                book.format_size or 'pocket', 
+                book.line_spacing or 'medium'
+            )
             
             # Actualizar si no existen valores
             if not book.final_words:
@@ -410,7 +415,13 @@ def view_book(book_id):
                 db.session.rollback()
     
     # Asegurar valores mínimos para mostrar
-    display_pages = book.final_pages or (len(book.content.split()) // 350 if book.content else 0) or 0
+    display_pages = book.final_pages or (
+        calculate_pages_from_words(
+            len(book.content.split()) if book.content else 0,
+            book.format_size or 'pocket',
+            book.line_spacing or 'medium'
+        ) if book.content else 0
+    ) or 0
     display_words = book.final_words or (len(book.content.split()) if book.content else 0) or 0
     
     return render_template('books/view_book_compact.html', 
