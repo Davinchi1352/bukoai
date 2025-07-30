@@ -14,12 +14,12 @@ from .base import BaseModel, db
 
 class BookStatus(enum.Enum):
     """Estados de generación de libros"""
-    QUEUED = "queued"
-    ARCHITECTURE_REVIEW = "architecture_review"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
+    QUEUED = "QUEUED"
+    ARCHITECTURE_REVIEW = "ARCHITECTURE_REVIEW"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
 
 
 class BookFormat(enum.Enum):
@@ -63,6 +63,7 @@ class BookGeneration(BaseModel):
     
     # Contenido generado
     content = Column(Text, nullable=True)
+    content_html = Column(Text, nullable=True)  # Contenido en HTML estructurado para formateo profesional
     thinking_content = Column(Text, nullable=True)
     thinking_length = Column(Integer, default=0, nullable=False)
     
@@ -209,7 +210,8 @@ class BookGeneration(BaseModel):
     def mark_completed(self, content: str, final_stats: Dict[str, Any]) -> None:
         """Marca el libro como completado"""
         self.status = BookStatus.COMPLETED
-        self.content = content
+        self.content = content  # Mantener para compatibilidad
+        self.content_html = content  # El contenido ya viene en HTML estructurado
         self.completed_at = datetime.now(timezone.utc)
         
         # Actualizar estadísticas finales
@@ -260,6 +262,16 @@ class BookGeneration(BaseModel):
             self.architecture = updated_architecture
         self.architecture_approved_at = datetime.now(timezone.utc)
         self.status = BookStatus.QUEUED  # Volver a cola para generación completa
+        
+        # Convertir contenido markdown existente a HTML si existe
+        if self.content and not self.content_html:
+            from app.services.markdown_to_html_service import convert_markdown_to_content_html
+            try:
+                self.content_html = convert_markdown_to_content_html(self.content)
+            except Exception as e:
+                # Log error pero no fallar la aprobación
+                print(f"Error converting markdown to HTML: {e}")
+        
         db.session.commit()
     
     def add_regeneration_feedback(self, feedback_what: str, feedback_how: str, current_architecture: Dict[str, Any]) -> None:
@@ -613,17 +625,20 @@ class BookGeneration(BaseModel):
                 return "Iniciando generación con Claude AI..."
             
             elapsed_minutes = (datetime.now(timezone.utc) - self.started_at).total_seconds() / 60
+            estimated_total_minutes = self.page_count * 0.5  # Misma lógica que _calculate_progress()
+            progress_percentage = min(90, max(10, 10 + int((elapsed_minutes / estimated_total_minutes) * 80)))
             
-            if elapsed_minutes < 1:
+            # Mensajes basados en progreso real en lugar de tiempo fijo
+            if progress_percentage < 15:
                 return "Conectando con Claude AI y analizando tu solicitud..."
-            elif elapsed_minutes < 3:
-                return "Claude está pensando profundamente en tu libro..."
-            elif elapsed_minutes < 8:
-                return f"Generando contenido... ({int(elapsed_minutes)} min transcurridos)"
-            elif elapsed_minutes < 15:
-                return f"Escribiendo capítulos... ({int(elapsed_minutes)} min transcurridos)"
+            elif progress_percentage < 30:
+                return f"Claude está pensando profundamente en tu libro... ({int(elapsed_minutes)} min, {progress_percentage}%)"
+            elif progress_percentage < 50:
+                return f"Generando contenido... ({int(elapsed_minutes)} min, {progress_percentage}%)"
+            elif progress_percentage < 75:
+                return f"Escribiendo capítulos... ({int(elapsed_minutes)} min, {progress_percentage}%)"
             else:
-                return f"Finalizando generación... ({int(elapsed_minutes)} min transcurridos)"
+                return f"Finalizando generación... ({int(elapsed_minutes)} min, {progress_percentage}%)"
         elif self.status == BookStatus.COMPLETED:
             return "Generación completada exitosamente"
         elif self.status == BookStatus.FAILED:

@@ -155,6 +155,20 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Archivos temporales específicos del proyecto
+fix_*.py
+postprocess_*.py
+test_generation_*.py
+backup_cleanup_*/
+cleanup_*.py
+*_temp.py
+*_tmp.py
+
+# Archivos de desarrollo y debugging
+debug_*.py
+temp_*.py
+scratch_*.py
+
 # IDEs
 .vscode/
 .idea/

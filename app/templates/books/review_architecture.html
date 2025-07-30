@@ -1440,6 +1440,18 @@
 <script>
 // Global variables
 let currentArchitecture = {{ book.architecture|tojson if book.architecture else '{}' }};
+
+// Debug: Log architecture structure on page load
+console.log('🏗️ ARCHITECTURE DEBUG - currentArchitecture loaded:', currentArchitecture);
+console.log('🏗️ ARCHITECTURE DEBUG - has structure property?', !!currentArchitecture.structure);
+console.log('🏗️ ARCHITECTURE DEBUG - direct chapters?', !!currentArchitecture.chapters);
+console.log('🏗️ ARCHITECTURE DEBUG - direct introduction?', !!currentArchitecture.introduction);
+console.log('🏗️ ARCHITECTURE DEBUG - direct conclusion?', !!currentArchitecture.conclusion);
+if (currentArchitecture.structure) {
+    console.log('🏗️ ARCHITECTURE DEBUG - structure.chapters?', !!currentArchitecture.structure.chapters);
+    console.log('🏗️ ARCHITECTURE DEBUG - structure.introduction?', !!currentArchitecture.structure.introduction);
+    console.log('🏗️ ARCHITECTURE DEBUG - structure.conclusion?', !!currentArchitecture.structure.conclusion);
+}
 const bookId = {{ book.id }};
 
 // Global format multipliers - definido una sola vez para evitar duplicación
@@ -1802,7 +1814,8 @@ function loadArchitectureData() {
         calculated_words: calculatedWords,
         words_per_page: wordsPerPage
     });
-    document.getElementById('totalChapters').textContent = currentArchitecture.structure?.chapters?.length || userChapters;
+    const structureData = currentArchitecture.structure || currentArchitecture;
+    document.getElementById('totalChapters').textContent = structureData.chapters?.length || userChapters;
     document.getElementById('bookSummary').textContent = currentArchitecture.summary || {{ book.key_topics|tojson if book.key_topics else '"Descripción del libro basada en los temas seleccionados por el usuario"' }};
     document.getElementById('writingApproach').textContent = currentArchitecture.writing_approach || `Enfoque {{ book.writing_style or "profesional" }} con tono {{ book.tone or "formal" }} para {{ book.target_audience or "lectores generales" }}`;
     
@@ -1833,12 +1846,19 @@ function loadArchitectureData() {
 }
 
 function loadStructure() {
-    const structure = currentArchitecture.structure;
-    if (!structure) return;
+    // Check if we have structure data - could be in currentArchitecture.structure or directly in currentArchitecture
+    const structure = currentArchitecture.structure || currentArchitecture;
+    if (!structure) {
+        console.warn('No structure data found in currentArchitecture');
+        return;
+    }
+    
+    console.log('Loading structure data:', structure);
     
     // Load introduction
     const introContainer = document.getElementById('introductionSection');
     if (structure.introduction) {
+        console.log('Loading introduction:', structure.introduction);
         introContainer.innerHTML = `
             <div class="architecture-section">
                 <div class="section-title">
@@ -1848,11 +1868,14 @@ function loadStructure() {
                 <div class="chapter-pages">${structure.introduction.estimated_pages || structure.introduction.pages || 0} páginas estimadas</div>
             </div>
         `;
+    } else {
+        console.warn('No introduction data found');
     }
     
     // Load chapters
     const chaptersContainer = document.getElementById('chaptersSection');
     if (structure.chapters && structure.chapters.length > 0) {
+        console.log('Loading chapters:', structure.chapters.length, 'chapters found');
         const chaptersHtml = structure.chapters.map((chapter, index) => `
             <div class="chapter-item" data-chapter-index="${index}">
                 <div class="chapter-item-header">
@@ -1903,11 +1926,20 @@ function loadStructure() {
                 </div>
             </div>
         `;
+    } else {
+        console.warn('No chapters data found');
+        chaptersContainer.innerHTML = `
+            <div class="architecture-section">
+                <div class="section-title">📚 Capítulos</div>
+                <div class="chapter-summary">No se encontraron capítulos en la arquitectura</div>
+            </div>
+        `;
     }
     
     // Load conclusion
     const conclusionContainer = document.getElementById('conclusionSection');
     if (structure.conclusion) {
+        console.log('Loading conclusion:', structure.conclusion);
         conclusionContainer.innerHTML = `
             <div class="architecture-section">
                 <div class="section-title">
@@ -1915,6 +1947,14 @@ function loadStructure() {
                 </div>
                 <div class="chapter-summary">${structure.conclusion.summary || 'Sin descripción'}</div>
                 <div class="chapter-pages">${structure.conclusion.estimated_pages || structure.conclusion.pages || 0} páginas estimadas</div>
+            </div>
+        `;
+    } else {
+        console.warn('No conclusion data found');
+        conclusionContainer.innerHTML = `
+            <div class="architecture-section">
+                <div class="section-title">🎯 Conclusión</div>
+                <div class="chapter-summary">No se encontró conclusión en la arquitectura</div>
             </div>
         `;
     }
@@ -2741,6 +2781,13 @@ async function approveArchitecture() {
             format_size: currentArchitecture.format_size
         });
         
+        console.log('🏗️ COMPLETE ARCHITECTURE BEING SENT:', currentArchitecture);
+        console.log('🏗️ ARCHITECTURE KEYS:', Object.keys(currentArchitecture));
+        console.log('🏗️ HAS TITLE:', !!currentArchitecture.title);
+        console.log('🏗️ HAS SUMMARY:', !!currentArchitecture.summary);
+        console.log('🏗️ HAS CHAPTERS:', !!currentArchitecture.chapters);
+        console.log('🏗️ HAS STRUCTURE:', !!currentArchitecture.structure);
+        
         const response = await fetch(`/books/architecture/${bookId}/approve`, {
             method: 'POST',
             headers: {
@@ -2757,7 +2804,12 @@ async function approveArchitecture() {
             alert('¡Arquitectura aprobada! Iniciando generación completa del libro...');
             window.location.href = result.redirect_url;
         } else {
-            alert('Error aprobando arquitectura: ' + result.error);
+            let errorMessage = 'Error aprobando arquitectura: ' + result.error;
+            if (result.validation_errors && result.validation_errors.length > 0) {
+                errorMessage += '\n\nErrores específicos:\n• ' + result.validation_errors.join('\n• ');
+            }
+            alert(errorMessage);
+            console.error('Architecture approval failed:', result);
         }
     } catch (error) {
         console.error('Error approving architecture:', error);
@@ -2970,7 +3022,7 @@ async function confirmRejectBook() {
         // Mostrar indicador de carga
         showSaveIndicator('🗑️ Eliminando libro...', 'info');
         
-        const response = await fetch(`/books/${bookId}/reject`, {
+        const response = await fetch(`/books/book/${bookId}/reject`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

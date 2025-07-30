@@ -225,6 +225,101 @@ curl http://localhost:5001/pricing
 
 ---
 
+## 🔍 Lecciones Aprendidas y Errores Comunes
+
+### 🐛 Problemas de Redirect Inesperados
+
+**Síntoma:** JavaScript navega correctamente pero la página redirige inmediatamente de vuelta.
+
+**Diagnóstico paso a paso:**
+1. ✅ Verificar JavaScript (URL construcción, eventos)
+2. ✅ Verificar definición de variables en template (bookData, etc.)
+3. ✅ Verificar rutas Flask registradas
+4. ✅ Verificar configuración nginx/proxy
+5. ✅ Verificar autenticación (@login_required)
+6. ❌ **Verificar errores en templates Jinja2** ← **CAUSA COMÚN**
+7. ❌ **Verificar logs del servidor para excepciones** ← **CRÍTICO**
+
+**Error específico encontrado (2025-07-29):**
+```
+UndefinedError: 'dict object' has no attribute 'book_info'
+```
+
+**Causa raíz:** Referencias incorrectas en template `formatting_viewer_professional.html`:
+```html
+<!-- INCORRECTO -->
+{{ preview_data.book_info.statistics.chapters }}
+
+<!-- CORRECTO -->
+{{ preview_data.statistics.chapters }}
+```
+
+**Lección:** Los redirects inesperados en Flask casi siempre son causados por:
+1. **Errores de template Jinja2** (más común)
+2. **Excepciones en el controlador** capturadas por try-catch
+3. **Verificaciones de estado/autenticación**
+
+**Herramientas de debugging:**
+- Siempre agregar logs detallados en controladores
+- Usar `logger.error()` con traceback completo
+- Verificar logs del servidor, no solo del navegador
+- Probar endpoints directamente con curl para verificar autenticación
+
+### 🔌 Problemas de WebSocket en Tiempo Real
+
+**Síntoma:** Página de generación no se actualiza automáticamente, requiere refresh manual.
+
+**Diagnóstico paso a paso:**
+1. ✅ Verificar que Celery worker está procesando (logs del worker)
+2. ✅ Verificar que libro está progresando (API `/books/api/{id}/status`)
+3. ✅ Verificar que worker emite eventos correctamente (`emitting event "book_progress"`)
+4. ❌ **Verificar conexión WebSocket desde frontend** ← **PROBLEMA COMÚN**
+5. ❌ **Verificar autenticación en WebSocket** ← **CAUSA FRECUENTE**
+
+**Error específico encontrado (2025-07-29):**
+- Worker emite correctamente: `emitting event "book_progress" to book_5`
+- Frontend no recibe actualizaciones automáticas
+- Polling backup funciona correctamente cada 5 segundos
+- No hay logs de suscripción WebSocket en servidor
+
+**Causa probable:** Problema de autenticación de sesión en WebSocket o conexión SocketIO.
+
+**Solución temporal:** El polling backup mantiene la funcionalidad, aunque menos fluida.
+
+**Lección:** Siempre implementar polling como backup para WebSocket en aplicaciones críticas.
+
+### 📄 Limitación de Páginas por Tokens Claude AI
+
+**Síntoma:** Libros generan menos páginas que las configuradas por el usuario (ej: 96 páginas vs 180 solicitadas).
+
+**Causa raíz identificada (2025-07-30):**
+- **Límites de tokens**: `max_chunks = 3` × `chunk_main = 32,000` = 96,000 tokens máximo
+- **Conversión real**: ~0.75 palabras/token = ~72,000 palabras máximo teórico
+- **Páginas máximas**: 72,000 ÷ 350 palabras/página = ~206 páginas máximo teórico
+- **Restricción adicional**: Solo 1 chunk extra si déficit > 70% y > 15 páginas
+
+**Configuración actual en `claude_service.py:70-85`:**
+```python
+max_tokens_config = {
+    'chunk_main': 32000,        # Limita contenido por chunk
+}
+self.max_chunks = 3             # Máximo 3 chunks principales
+```
+
+**Ejemplo libro 5:**
+- **Prometido**: 180 páginas (configuración "Medio 100-200 páginas")
+- **Generado**: 96 páginas (33,805 palabras)
+- **Utilización**: 47% del máximo teórico
+
+**Impacto comercial:**
+- ❌ Brecha entre promesa comercial (180 páginas) y capacidad técnica (~96 páginas)
+- ❌ Usuario recibe menos contenido del pagado
+- ❌ Sistema calcula correctamente pero no puede generar físicamente
+
+**Lección:** Los límites técnicos deben estar alineados con las promesas comerciales. Revisar configuración de chunks o ajustar rangos de páginas prometidas.
+
+---
+
 ## 📋 Comandos Útiles
 
 ```bash
@@ -280,7 +375,15 @@ curl http://localhost:8081
 **Calidad del código:** Excelente (optimizado + limpio + sin deuda técnica)  
 **Estado actual:** **SISTEMA COMPLETAMENTE OPTIMIZADO Y FUNCIONANDO + THINKING TOKENS** 🚀
 
-**✅ Cambios recientes (2025-07-27):**
+**✅ Cambios recientes:**
+
+**2025-07-29:**
+- **Formateo Profesional:** Módulo de formateo profesional completamente funcional
+- **Problema de redirect:** Solucionado error `'dict object' has no attribute 'book_info'`
+- **Template corregido:** Referencias de `preview_data.book_info.*` a `preview_data.*`
+- **Lecciones documentadas:** Guía para futuros problemas de redirect inesperados
+
+**2025-07-27:**
 - **Thinking tokens implementados:** Captura, cálculo manual y visualización completa
 - **Parser corregido:** Claves en español para mejor generación de contenido
 - **Métricas de tokens:** Acumulación correcta en todas las fases

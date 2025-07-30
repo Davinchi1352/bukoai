@@ -529,7 +529,7 @@
             <div class="card h-100">
                 <div class="card-body text-center py-4">
                     <div class="progress-container">
-                        {% set display_progress = 100 if book.status.value == 'completed' else (book.progress or 0) %}
+                        {% set display_progress = 100 if book.status.value == 'COMPLETED' else (book.progress or 0) %}
                         <div id="progressCircle" class="progress-circle" style="background: conic-gradient(var(--accent-color) {{ display_progress * 3.6 }}deg, var(--background-tertiary) {{ display_progress * 3.6 }}deg);">
                             <div class="progress-text">
                                 <div id="progressValue" class="progress-value">{{ display_progress }}</div>
@@ -539,11 +539,11 @@
                     </div>
                     
                     <div class="mt-4 mb-3">
-                        <div id="statusBadge" class="status-badge {% if book.status.value == 'completed' %}badge-completed{% elif book.status.value == 'failed' %}badge-failed{% else %}badge-processing{% endif %}">
-                            {% if book.status.value == 'completed' %}
+                        <div id="statusBadge" class="status-badge {% if book.status.value == 'COMPLETED' %}badge-completed{% elif book.status.value == 'FAILED' %}badge-failed{% else %}badge-processing{% endif %}">
+                            {% if book.status.value == 'COMPLETED' %}
                                 <i class="fas fa-check-circle"></i>
                                 <span>Completado</span>
-                            {% elif book.status.value == 'failed' %}
+                            {% elif book.status.value == 'FAILED' %}
                                 <i class="fas fa-exclamation-triangle"></i>
                                 <span>Error</span>
                             {% else %}
@@ -554,15 +554,15 @@
                     </div>
                     
                     <h6 id="currentStep" class="text-muted mb-0">
-                        {% if book.status.value == 'completed' %}
+                        {% if book.status.value == 'COMPLETED' %}
                             ¡Generación completada exitosamente!
-                        {% elif book.status.value == 'failed' %}
+                        {% elif book.status.value == 'FAILED' %}
                             Error en la generación
                         {% elif book.status.value == 'architecture_review' %}
                             Arquitectura lista para revisión
                         {% elif book.status.value == 'generating' %}
                             Generando contenido del libro...
-                        {% elif book.status.value == 'queued' %}
+                        {% elif book.status.value == 'QUEUED' %}
                             En cola de procesamiento...
                         {% else %}
                             Preparando generación...
@@ -581,7 +581,7 @@
                             <i class="fas fa-clock"></i>
                         </div>
                         <div id="elapsedTime" class="metric-value">
-                            {% if book.status.value == 'completed' and book.started_at and book.completed_at %}
+                            {% if book.status.value == 'COMPLETED' and book.started_at and book.completed_at %}
                                 {% set elapsed_seconds = (book.completed_at - book.started_at).total_seconds() %}
                                 {% set minutes = (elapsed_seconds // 60)|int %}
                                 {% set seconds = (elapsed_seconds % 60)|int %}
@@ -599,14 +599,14 @@
                             <i class="fas fa-file-alt"></i>
                         </div>
                         <div id="pageCount" class="metric-value">
-                            {% if book.status.value == 'completed' %}
+                            {% if book.status.value == 'COMPLETED' %}
                                 {{ book.final_pages or 0 }}
                             {% else %}
                                 {{ book_info.target_pages or 0 }}
                             {% endif %}
                         </div>
                         <div class="metric-label">
-                            {% if book.status.value == 'completed' %}
+                            {% if book.status.value == 'COMPLETED' %}
                                 Páginas
                             {% else %}
                                 Páginas objetivo
@@ -620,14 +620,14 @@
                             <i class="fas fa-font"></i>
                         </div>
                         <div id="wordCount" class="metric-value">
-                            {% if book.status.value == 'completed' %}
+                            {% if book.status.value == 'COMPLETED' %}
                                 {{ book.final_words or 0 }}
                             {% else %}
                                 {{ "{:,}".format(book_info.target_words) if book_info.target_words > 0 else 0 }}
                             {% endif %}
                         </div>
                         <div class="metric-label">
-                            {% if book.status.value == 'completed' %}
+                            {% if book.status.value == 'COMPLETED' %}
                                 Palabras
                             {% else %}
                                 Palabras objetivo
@@ -640,7 +640,7 @@
                         <div class="metric-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning-color);">
                             <i class="fas fa-brain"></i>
                         </div>
-                        <div id="aiStatus" class="metric-value">{% if book.status.value == 'completed' %}Completado{% elif book.status.value == 'failed' %}Error{% else %}Activo{% endif %}</div>
+                        <div id="aiStatus" class="metric-value">{% if book.status.value == 'COMPLETED' %}Completado{% elif book.status.value == 'FAILED' %}Error{% else %}Activo{% endif %}</div>
                         <div class="metric-label">Claude AI</div>
                     </div>
                 </div>
@@ -734,7 +734,7 @@
     </div>
     
     <!-- Completion Actions -->
-    <div id="completionActions" class="row g-4 mt-4" style="{% if book.status.value == 'completed' %}display: block;{% else %}display: none;{% endif %}">
+    <div id="completionActions" class="row g-4 mt-4" style="{% if book.status.value == 'COMPLETED' %}display: block;{% else %}display: none;{% endif %}">
         <div class="col-12">
             <div class="card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color: var(--success-color);">
                 <div class="card-body text-center py-4">
@@ -761,7 +761,7 @@
     </div>
 
     <!-- Failed Actions -->
-    <div id="failedActions" class="row g-4 mt-4" style="{% if book.status.value == 'failed' %}display: block;{% else %}display: none;{% endif %}">
+    <div id="failedActions" class="row g-4 mt-4" style="{% if book.status.value == 'FAILED' %}display: block;{% else %}display: none;{% endif %}">
         <div class="col-12">
             <div class="card" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-color: var(--error-color);">
                 <div class="card-body text-center py-4">
@@ -799,17 +799,18 @@
 const state = {
     bookId: {{ book.id }},
     bookUuid: '{{ book.uuid }}',
-    bookStatus: '{{ book.status.value }}',
-    currentStatus: '{{ book.status.value }}',
+    bookStatus: '{{ book.status.value|lower }}',
+    currentStatus: '{{ book.status.value|lower }}',
     startTime: new Date('{{ book.created_at.isoformat() }}'),
     elapsedInterval: null,
     statusPollingInterval: null,
     socket: null,
-    currentProgress: {% if book.status.value == 'completed' %}100{% else %}{{ book.progress or 0 }}{% endif %},
+    currentProgress: {% if book.status.value == 'COMPLETED' %}100{% else %}{{ book.progress or 0 }}{% endif %},
+    progressAnimation: null,
     thinkingStartTime: null,
     stats: {
-        pages: {% if book.status.value == 'completed' %}{{ book.final_pages or 0 }}{% else %}{{ book_info.target_pages or 0 }}{% endif %},
-        words: {% if book.status.value == 'completed' %}{{ book.final_words or 0 }}{% else %}{{ book_info.target_words or 0 }}{% endif %},
+        pages: {% if book.status.value == 'COMPLETED' %}{{ book.final_pages or 0 }}{% else %}{{ book_info.target_pages or 0 }}{% endif %},
+        words: {% if book.status.value == 'COMPLETED' %}{{ book.final_words or 0 }}{% else %}{{ book_info.target_words or 0 }}{% endif %},
         chapters: {{ book.chapter_count or 0 }},
         thinkingChars: 0,
         thinkingWords: 0
@@ -821,14 +822,14 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Initializing book generation status page...');
     
     // Asegurar valores iniciales válidos - usar 100% para libros completados
-    const initialProgress = {% if book.status.value == 'completed' %}100{% else %}{{ book.progress or 0 }}{% endif %};
+    const initialProgress = {% if book.status.value == 'COMPLETED' %}100{% else %}{{ book.progress or 0 }}{% endif %};
     console.log('Initial progress:', initialProgress, 'Book status:', '{{ book.status.value }}');
     updateProgressCircle(initialProgress);
     
     // Inicializar estadísticas con valores por defecto si están vacías
     const initialStats = {
-        pages: {% if book.status.value == 'completed' %}{{ book.final_pages or 0 }}{% else %}{{ book_info.target_pages or 0 }}{% endif %},
-        words: {% if book.status.value == 'completed' %}{{ book.final_words or 0 }}{% else %}{{ book_info.target_words or 0 }}{% endif %},
+        pages: {% if book.status.value == 'COMPLETED' %}{{ book.final_pages or 0 }}{% else %}{{ book_info.target_pages or 0 }}{% endif %},
+        words: {% if book.status.value == 'COMPLETED' %}{{ book.final_words or 0 }}{% else %}{{ book_info.target_words or 0 }}{% endif %},
         chapters: {{ book.chapter_count or 0 }}
     };
     
@@ -847,14 +848,18 @@ document.addEventListener('DOMContentLoaded', () => {
     {% if book_info.has_architecture %}
     addLog('info', 'Arquitectura disponible', '{{ book_info.architecture_chapters }} capítulos definidos');
     {% else %}
-    addLog('warning', 'Sin arquitectura - usando configuración inicial');
+        {% if book.status.value == 'PROCESSING' %}
+        addLog('info', 'Generando arquitectura personalizada...', 'El sistema está creando la estructura óptima para tu libro');
+        {% else %}
+        addLog('warning', 'Sin arquitectura - usando configuración inicial');
+        {% endif %}
     {% endif %}
     
-    {% if book.status.value == 'completed' %}
+    {% if book.status.value == 'COMPLETED' %}
     // Logs para libro completado
     addLog('success', '¡Libro generado exitosamente!');
     addLog('info', 'Estado: Completado', '{{ book.completed_at.strftime('%d/%m/%Y %H:%M') if book.completed_at else 'N/A' }}');
-    {% elif book.status.value == 'failed' %}
+    {% elif book.status.value == 'FAILED' %}
     // Logs para libro fallido
     addLog('error', 'Error en la generación del libro');
     {% if book.error_message %}
@@ -867,12 +872,12 @@ document.addEventListener('DOMContentLoaded', () => {
     addLog('info', 'Estado: Esperando revisión del usuario');
     {% elif book.status.value == 'generating' %}
     addLog('info', 'Generación en progreso...');
-    {% elif book.status.value == 'queued' %}
+    {% elif book.status.value == 'QUEUED' %}
     addLog('info', 'Libro en cola de procesamiento');
     {% endif %}
     
     // Solo inicializar timer si está en proceso
-    {% if book.status.value not in ['completed', 'failed'] %}
+    {% if book.status.value not in ['COMPLETED', 'FAILED'] %}
     initializeTimer();
     {% endif %}
     
@@ -894,13 +899,31 @@ function startStatusPolling() {
             const response = await fetch(`/books/api/${state.bookId}/status`);
             if (response.ok) {
                 const data = await response.json();
-                console.log('🔄 Polling status:', data.status, 'Progress:', data.progress);
+                // Normalize status to lowercase for consistent comparison
+                const normalizedStatus = data.status ? data.status.toLowerCase() : '';
+                console.log('🔄 Polling status:', data.status, '→', normalizedStatus, 'Progress:', data.progress, 'Current UI status:', state.currentStatus);
                 
-                // If status changed to architecture_review, redirect
-                if (data.status === 'architecture_review' && state.currentStatus !== 'architecture_review') {
+                // If status changed to architecture_review, update UI and redirect
+                if (normalizedStatus === 'architecture_review' && state.currentStatus !== 'architecture_review') {
                     console.log('🔄 Detected architecture review via polling');
                     state.currentStatus = 'architecture_review';
+                    
+                    // Update UI elements immediately
+                    updateProgressCircle(100);
+                    
+                    // Update status badge
+                    const badge = document.getElementById('statusBadge');
+                    badge.className = 'status-badge badge-completed';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i><span>Arquitectura Lista</span>';
+                    
+                    // Update current step
+                    document.getElementById('currentStep').textContent = '¡Arquitectura generada! Redirigiendo a revisión...';
+                    
+                    // Update AI status
+                    updateAIStatus('Arquitectura Lista');
+                    
                     addLog('success', '¡Arquitectura generada! Redirigiendo a página de revisión...');
+                    
                     setTimeout(() => {
                         window.location.href = `/books/architecture/${state.bookId}`;
                     }, 2000);
@@ -909,7 +932,7 @@ function startStatusPolling() {
                 }
                 
                 // If status changed to completed or failed, update UI
-                if (data.status === 'completed' && state.currentStatus !== 'completed') {
+                if (normalizedStatus === 'completed' && state.currentStatus !== 'completed') {
                     console.log('🔄 Detected completion via polling');
                     state.currentStatus = 'completed';
                     handleBookCompleted({
@@ -917,7 +940,7 @@ function startStatusPolling() {
                         final_stats: data.stats || {}
                     });
                     clearInterval(state.statusPollingInterval);
-                } else if (data.status === 'failed' && state.currentStatus !== 'failed') {
+                } else if (normalizedStatus === 'failed' && state.currentStatus !== 'failed') {
                     console.log('🔄 Detected failure via polling');
                     state.currentStatus = 'failed';
                     handleBookFailed({
@@ -925,10 +948,46 @@ function startStatusPolling() {
                         error_message: data.error_message || 'Error desconocido'
                     });
                     clearInterval(state.statusPollingInterval);
-                } else if (data.status === 'processing') {
-                    // Update progress for processing books
+                } else if (normalizedStatus === 'processing') {
+                    // Update progress and UI for processing books
+                    console.log('🔄 Updating UI for PROCESSING status', data);
+                    
                     if (data.progress !== undefined) {
                         updateProgressCircle(data.progress);
+                    }
+                    
+                    // Update status badge if not already processing
+                    if (state.currentStatus !== 'processing') {
+                        console.log('🔄 Updating status badge to PROCESSING');
+                        const badge = document.getElementById('statusBadge');
+                        badge.className = 'status-badge badge-processing';
+                        badge.innerHTML = '<i class="fas fa-cog fa-spin"></i><span>Procesando</span>';
+                        
+                        updateAIStatus('Procesando');
+                        state.currentStatus = 'processing';
+                    }
+                    
+                    // Update current step message if available
+                    if (data.message && data.message.trim() !== '') {
+                        console.log('🔄 Updating currentStep message:', data.message);
+                        document.getElementById('currentStep').textContent = data.message;
+                    }
+                    
+                    // Update stats if available
+                    if (data.stats) {
+                        console.log('🔄 Updating stats:', data.stats);
+                        updateStats(data.stats);
+                    }
+                } else if (normalizedStatus === 'queued') {
+                    // Update UI for queued books
+                    if (state.currentStatus !== 'queued') {
+                        const badge = document.getElementById('statusBadge');
+                        badge.className = 'status-badge badge-processing';
+                        badge.innerHTML = '<i class="fas fa-clock"></i><span>En Cola</span>';
+                        
+                        document.getElementById('currentStep').textContent = 'En cola de procesamiento...';
+                        updateAIStatus('En Cola');
+                        state.currentStatus = 'queued';
                     }
                 }
             }
@@ -1120,10 +1179,61 @@ function updateProgressCircle(progress) {
     // Validar y limpiar el valor de progreso
     const cleanProgress = isNaN(progress) || progress === null || progress === undefined ? 0 : Math.max(0, Math.min(100, Number(progress)));
     
-    state.currentProgress = cleanProgress;
-    document.getElementById('progressValue').textContent = Math.round(cleanProgress);
-    const circle = document.getElementById('progressCircle');
-    circle.style.background = `conic-gradient(var(--accent-color) ${cleanProgress * 3.6}deg, var(--background-tertiary) ${cleanProgress * 3.6}deg)`;
+    const currentProgress = state.currentProgress || 0;
+    const progressDiff = Math.abs(cleanProgress - currentProgress);
+    
+    // Si el salto es muy grande (>30%), hacer animación suave
+    if (progressDiff > 30 && currentProgress > 0) {
+        console.log(`🎬 Large progress jump detected: ${currentProgress}% → ${cleanProgress}%, animating...`);
+        animateProgressTo(cleanProgress);
+    } else {
+        // Actualización normal
+        state.currentProgress = cleanProgress;
+        document.getElementById('progressValue').textContent = Math.round(cleanProgress);
+        const circle = document.getElementById('progressCircle');
+        circle.style.background = `conic-gradient(var(--accent-color) ${cleanProgress * 3.6}deg, var(--background-tertiary) ${cleanProgress * 3.6}deg)`;
+    }
+}
+
+function animateProgressTo(targetProgress) {
+    // Cancelar animación previa si existe
+    if (state.progressAnimation) {
+        clearInterval(state.progressAnimation);
+    }
+    
+    const startProgress = state.currentProgress || 0;
+    const progressDiff = targetProgress - startProgress;
+    const duration = 1500; // 1.5 segundos
+    const steps = 30; // 30 pasos
+    const stepSize = progressDiff / steps;
+    const stepDuration = duration / steps;
+    
+    let currentStep = 0;
+    
+    state.progressAnimation = setInterval(() => {
+        currentStep++;
+        const newProgress = startProgress + (stepSize * currentStep);
+        
+        // Actualizar progreso
+        state.currentProgress = newProgress;
+        document.getElementById('progressValue').textContent = Math.round(newProgress);
+        const circle = document.getElementById('progressCircle');
+        circle.style.background = `conic-gradient(var(--accent-color) ${newProgress * 3.6}deg, var(--background-tertiary) ${newProgress * 3.6}deg)`;
+        
+        // Finalizar animación
+        if (currentStep >= steps) {
+            clearInterval(state.progressAnimation);
+            state.progressAnimation = null;
+            
+            // Asegurar valor final exacto
+            state.currentProgress = targetProgress;
+            document.getElementById('progressValue').textContent = Math.round(targetProgress);
+            const finalCircle = document.getElementById('progressCircle');
+            finalCircle.style.background = `conic-gradient(var(--accent-color) ${targetProgress * 3.6}deg, var(--background-tertiary) ${targetProgress * 3.6}deg)`;
+            
+            console.log(`🎬 Progress animation completed: ${targetProgress}%`);
+        }
+    }, stepDuration);
 }
 
 function updateStats(stats) {
@@ -1530,7 +1640,7 @@ async function retryBookGeneration() {
         retryButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Reintentando...';
         
         try {
-            const response = await fetch(`/books/${state.bookId}/retry`, {
+            const response = await fetch(`/books/book/${state.bookId}/retry`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

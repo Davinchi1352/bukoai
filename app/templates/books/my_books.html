@@ -102,13 +102,13 @@
             Todos ({{ books|length }})
         </button>
         <button class="filter-tab">
-            Completados ({{ books|selectattr('status.value', 'equalto', 'completed')|list|length }})
+            Completados ({{ books|selectattr('status.value', 'equalto', 'COMPLETED')|list|length }})
         </button>
         <button class="filter-tab">
-            En Proceso ({{ books|selectattr('status.value', 'equalto', 'processing')|list|length }})
+            En Proceso ({{ books|selectattr('status.value', 'equalto', 'PROCESSING')|list|length }})
         </button>
         <button class="filter-tab">
-            Con Errores ({{ books|selectattr('status.value', 'equalto', 'failed')|list|length }})
+            Con Errores ({{ books|selectattr('status.value', 'equalto', 'FAILED')|list|length }})
         </button>
     </div>
     
@@ -261,13 +261,13 @@
                 <div class="card-body p-0">
                     <div class="book-cover" style="background: {{ book.get_cover_gradient() }}">
                         <span class="badge status-badge">
-                            {% if book.status.value == 'completed' %}
+                            {% if book.status.value == 'COMPLETED' %}
                                 <span class="badge bg-success">Completado</span>
-                            {% elif book.status.value == 'processing' %}
+                            {% elif book.status.value == 'PROCESSING' %}
                                 <span class="badge bg-primary">En Proceso</span>
-                            {% elif book.status.value == 'failed' %}
+                            {% elif book.status.value == 'FAILED' %}
                                 <span class="badge bg-danger">Error</span>
-                            {% elif book.status.value == 'pending' %}
+                            {% elif book.status.value == 'QUEUED' %}
                                 <span class="badge bg-warning">Pendiente</span>
                             {% else %}
                                 <span class="badge bg-secondary">{{ book.status.value|title }}</span>
@@ -276,7 +276,7 @@
                         
                         <div class="title">{{ book.title }}</div>
                         
-                        {% if book.status.value == 'processing' %}
+                        {% if book.status.value == 'PROCESSING' %}
                         <div class="progress-overlay">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span>{{ book.progress or 0 }}%</span>
@@ -308,7 +308,7 @@
                         </div>
                         
                         <div class="d-flex gap-2">
-                            {% if book.status.value == 'completed' %}
+                            {% if book.status.value == 'COMPLETED' %}
                                 <a 
                                     href="{{ url_for('books.view_book', book_id=book.id) }}" 
                                     class="btn btn-primary btn-sm flex-fill"
@@ -326,27 +326,35 @@
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li>
-                                            <a 
+                                            <button 
                                                 class="dropdown-item" 
-                                                href="{{ url_for('books.download_book', book_id=book.id, format='pdf') }}"
+                                                onclick="showExportModal({{ book.id }}, 'pdf')"
                                             >
                                                 <i class="fas fa-file-pdf me-2"></i>Descargar PDF
-                                            </a>
+                                            </button>
                                         </li>
                                         <li>
-                                            <a 
+                                            <button 
                                                 class="dropdown-item" 
-                                                href="{{ url_for('books.download_book', book_id=book.id, format='epub') }}"
+                                                onclick="showExportModal({{ book.id }}, 'epub')"
                                             >
                                                 <i class="fas fa-book me-2"></i>Descargar EPUB
-                                            </a>
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button 
+                                                class="dropdown-item" 
+                                                onclick="showExportModal({{ book.id }}, 'docx')"
+                                            >
+                                                <i class="fas fa-file-word me-2"></i>Descargar DOCX
+                                            </button>
                                         </li>
                                         <li>
                                             <a 
                                                 class="dropdown-item" 
-                                                href="{{ url_for('books.download_book', book_id=book.id, format='docx') }}"
+                                                href="{{ url_for('books.download_book', book_id=book.id, format='txt') }}"
                                             >
-                                                <i class="fas fa-file-word me-2"></i>Descargar DOCX
+                                                <i class="fas fa-file-alt me-2"></i>Descargar TXT
                                             </a>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
@@ -360,7 +368,7 @@
                                         </li>
                                     </ul>
                                 </div>
-                            {% elif book.status.value == 'processing' %}
+                            {% elif book.status.value == 'PROCESSING' %}
                                 <a 
                                     href="{{ url_for('books.generation_status', book_id=book.id) }}" 
                                     class="btn btn-primary btn-sm flex-fill"
@@ -375,7 +383,7 @@
                                 >
                                     <i class="fas fa-trash"></i>
                                 </button>
-                            {% elif book.status.value == 'failed' %}
+                            {% elif book.status.value == 'FAILED' %}
                                 <a 
                                     href="{{ url_for('books.generation_status', book_id=book.id) }}" 
                                     class="btn btn-outline-danger btn-sm flex-fill"
@@ -458,19 +466,22 @@
                 <p>¿Estás seguro de que deseas eliminar el libro:</p>
                 <p class="fw-bold text-primary" id="bookToDeleteTitle"></p>
                 
-                <div class="mb-3">
-                    <label for="deleteConfirmPassword" class="form-label">
-                        <strong>Por seguridad, ingresa tu contraseña:</strong>
-                    </label>
-                    <input 
-                        type="password" 
-                        class="form-control" 
-                        id="deleteConfirmPassword" 
-                        placeholder="Tu contraseña"
-                        required
-                    >
-                    <div id="passwordError" class="text-danger small mt-1" style="display: none;"></div>
-                </div>
+                <form id="deleteBookForm">
+                    <div class="mb-3">
+                        <label for="deleteConfirmPassword" class="form-label">
+                            <strong>Por seguridad, ingresa tu contraseña:</strong>
+                        </label>
+                        <input 
+                            type="password" 
+                            class="form-control" 
+                            id="deleteConfirmPassword" 
+                            placeholder="Tu contraseña"
+                            autocomplete="new-password"
+                            required
+                        >
+                        <div id="passwordError" class="text-danger small mt-1" style="display: none;"></div>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -481,6 +492,119 @@
                     <i class="fas fa-trash me-1"></i>
                     <span class="btn-text">Eliminar Libro</span>
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Selección de Formato de Exportación -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="fas fa-download me-2"></i>
+                    Exportar Libro
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Selecciona el formato de exportación
+                        </h6>
+                        <p class="text-muted small">
+                            Puedes descargar tu libro en formato estándar o específico para plataformas de publicación.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Formato Estándar -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-file me-2"></i>
+                                    Formato Estándar
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="small text-muted mb-3">
+                                    Formato profesional con tamaño carta (6"x9"), márgenes estándar y tipografía Times New Roman.
+                                </p>
+                                <button 
+                                    class="btn btn-primary w-100 mb-2" 
+                                    onclick="downloadBook('standard', event)"
+                                >
+                                    <i class="fas fa-download me-2"></i>
+                                    Descargar Estándar
+                                </button>
+                                <div class="text-muted small">
+                                    <strong>Características:</strong><br>
+                                    • Tamaño 6"x9" (15.24 cm x 22.86 cm)<br>
+                                    • Márgenes: 2.5cm superior/inferior, 2cm laterales<br>
+                                    • Fuente: Times New Roman 12pt<br>
+                                    • Interlineado: 1.5<br>
+                                    • Índice interactivo<br>
+                                    • Portada automática
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Formatos Específicos por Plataforma -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-store me-2"></i>
+                                    Específico por Plataforma
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="small text-muted mb-3">
+                                    Formatos optimizados para cada plataforma de publicación con requisitos específicos.
+                                </p>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small"><strong>Selecciona la plataforma:</strong></label>
+                                    <select class="form-select form-select-sm" id="platformSelect">
+                                        <option value="">-- Selecciona una plataforma --</option>
+                                        <option value="amazon_kdp">📚 Amazon Kindle Direct Publishing</option>
+                                        <option value="google_play">📖 Google Play Books</option>
+                                        <option value="apple_books">🍎 Apple Books</option>
+                                        <option value="kobo">📱 Kobo Writing Life</option>
+                                        <option value="smashwords">📝 Smashwords</option>
+                                        <option value="gumroad">💰 Gumroad (Venta Directa)</option>
+                                        <option value="payhip">💳 Payhip (Venta Directa)</option>
+                                    </select>
+                                </div>
+                                
+                                <button 
+                                    class="btn btn-success w-100 mb-2" 
+                                    id="downloadPlatformBtn"
+                                    onclick="downloadBook('platform', event)"
+                                    disabled
+                                >
+                                    <i class="fas fa-download me-2"></i>
+                                    Descargar para Plataforma
+                                </button>
+                                
+                                <div class="platform-info text-muted small" id="platformInfo" style="display: none;">
+                                    <!-- Información dinámica de la plataforma seleccionada -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Consejo:</strong> Si no estás seguro, usa el formato estándar. Es compatible con la mayoría de plataformas y listo para imprimir.
+                </div>
             </div>
         </div>
     </div>
@@ -517,9 +641,9 @@ function initializeFilters() {
     filterTabs.forEach(tab => {
         tab.addEventListener('click', function() {
             const filter = this.textContent.toLowerCase().includes('todos') ? 'all' :
-                           this.textContent.toLowerCase().includes('completados') ? 'completed' :
-                           this.textContent.toLowerCase().includes('proceso') ? 'processing' :
-                           this.textContent.toLowerCase().includes('errores') ? 'failed' : 'all';
+                           this.textContent.toLowerCase().includes('completados') ? 'COMPLETED' :
+                           this.textContent.toLowerCase().includes('proceso') ? 'PROCESSING' :
+                           this.textContent.toLowerCase().includes('errores') ? 'FAILED' : 'all';
             
             setFilter(filter);
         });
@@ -565,9 +689,9 @@ function setFilter(filter) {
 function getFilterIndex(filter) {
     switch(filter) {
         case 'all': return 1;
-        case 'completed': return 2;
-        case 'processing': return 3;
-        case 'failed': return 4;
+        case 'COMPLETED': return 2;
+        case 'PROCESSING': return 3;
+        case 'FAILED': return 4;
         default: return 1;
     }
 }
@@ -694,7 +818,7 @@ function sortBooks(books) {
             case 'title_desc':
                 return b.dataset.title.localeCompare(a.dataset.title);
             case 'status':
-                const statusOrder = { 'processing': 0, 'pending': 1, 'completed': 2, 'failed': 3 };
+                const statusOrder = { 'PROCESSING': 0, 'QUEUED': 1, 'COMPLETED': 2, 'FAILED': 3 };
                 return (statusOrder[a.dataset.status] || 4) - (statusOrder[b.dataset.status] || 4);
             default:
                 return 0;
@@ -708,7 +832,7 @@ function sortBooks(books) {
 }
 
 async function refreshProcessingBooks() {
-    const processingBooks = document.querySelectorAll('.book-item[data-status="processing"]');
+    const processingBooks = document.querySelectorAll('.book-item[data-status="PROCESSING"]');
     
     for (const bookElement of processingBooks) {
         const bookId = bookElement.dataset.id;
@@ -717,7 +841,7 @@ async function refreshProcessingBooks() {
                 const response = await fetch(`/books/api/${bookId}/status`);
                 const data = await response.json();
                 
-                if (data.status !== 'processing') {
+                if (data.status !== 'PROCESSING') {
                     // Reload page if status changed
                     window.location.reload();
                 }
@@ -804,7 +928,7 @@ async function deleteBook() {
         }
         
         // Si la contraseña es correcta, eliminar el libro
-        const deleteResponse = await fetch(`/books/${bookToDeleteId}/reject`, {
+        const deleteResponse = await fetch(`/books/book/${bookToDeleteId}/reject`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -917,6 +1041,233 @@ function clearAdvancedFilters() {
     
     // Apply filters
     applyFilters();
+}
+
+// Export Modal Functions
+let currentBookId = null;
+let currentFormat = null;
+
+function showExportModal(bookId, format) {
+    currentBookId = bookId;
+    currentFormat = format;
+    
+    // Update modal title with format
+    const modalTitle = document.getElementById('exportModalLabel');
+    const formatText = format.toUpperCase();
+    modalTitle.innerHTML = `<i class="fas fa-download me-2"></i>Exportar Libro - ${formatText}`;
+    
+    // Reset platform selection
+    document.getElementById('platformSelect').value = '';
+    document.getElementById('downloadPlatformBtn').disabled = true;
+    document.getElementById('platformInfo').style.display = 'none';
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+    modal.show();
+}
+
+// Platform information
+const platformInfo = {
+    amazon_kdp: {
+        name: "Amazon Kindle Direct Publishing",
+        features: [
+            "• Tamaño 6\"x9\" optimizado para Kindle",
+            "• Márgenes específicos para KDP",
+            "• Fuente Times New Roman/Georgia",
+            "• Índice interactivo para Kindle",
+            "• Portada 2560x1600px (1.6:1)",
+            "• Sin números de página (auto-generados)"
+        ]
+    },
+    google_play: {
+        name: "Google Play Books",
+        features: [
+            "• EPUB validado para Google Play",
+            "• Metadatos completos incluidos",
+            "• Índice interactivo validado",
+            "• Portada mín. 1400px de ancho",
+            "• Fuente Times New Roman",
+            "• Interlineado 1.15"
+        ]
+    },
+    apple_books: {
+        name: "Apple Books",
+        features: [
+            "• EPUB optimizado para Apple Books",
+            "• Fuente Georgia recomendada",
+            "• Interlineado 1.2-1.5",
+            "• Portada mín. 1400px ancho",
+            "• Validado para App Store",
+            "• Compatible con iPad/iPhone"
+        ]
+    },
+    kobo: {
+        name: "Kobo Writing Life",
+        features: [
+            "• EPUB validado para Kobo",
+            "• Portada 1600x2400px (2:3)",
+            "• Fuente Times New Roman",
+            "• Sin encabezados/pies de página",
+            "• Índice interactivo",
+            "• Optimizado para e-readers Kobo"
+        ]
+    },
+    smashwords: {
+        name: "Smashwords",
+        features: [
+            "• Formato DOC para Smashwords",
+            "• Plantilla oficial compatible",
+            "• Fuente Times New Roman 12pt",
+            "• Interlineado 1.5 estricto",
+            "• Sin estilos complejos",
+            "• Portada 1600px mín."
+        ]
+    },
+    gumroad: {
+        name: "Gumroad (Venta Directa)",
+        features: [
+            "• PDF y EPUB incluidos",
+            "• Tamaño 6\"x9\" o Carta",
+            "• Fuentes profesionales",
+            "• Página de copyright visible",
+            "• Portada alta calidad 1600x2400px",
+            "• Listo para venta directa"
+        ]
+    },
+    payhip: {
+        name: "Payhip (Venta Directa)",
+        features: [
+            "• PDF y EPUB optimizados",
+            "• Tamaño A4 o Carta",
+            "• Metadatos completos",
+            "• Fuente Arial/Georgia",
+            "• Portada 1600x2400px",
+            "• Compatible con mercados digitales"
+        ]
+    }
+};
+
+// Handle platform selection
+document.addEventListener('DOMContentLoaded', function() {
+    const platformSelect = document.getElementById('platformSelect');
+    const downloadBtn = document.getElementById('downloadPlatformBtn');
+    const platformInfoDiv = document.getElementById('platformInfo');
+    
+    if (platformSelect) {
+        platformSelect.addEventListener('change', function() {
+            const selectedPlatform = this.value;
+            
+            if (selectedPlatform) {
+                downloadBtn.disabled = false;
+                
+                // Show platform info
+                const info = platformInfo[selectedPlatform];
+                if (info) {
+                    platformInfoDiv.innerHTML = `
+                        <strong>Optimizado para ${info.name}:</strong><br>
+                        ${info.features.join('<br>')}
+                    `;
+                    platformInfoDiv.style.display = 'block';
+                }
+            } else {
+                downloadBtn.disabled = true;
+                platformInfoDiv.style.display = 'none';
+            }
+        });
+    }
+});
+
+function downloadBook(type, event) {
+    // Prevent default behavior and stop event propagation
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    if (!currentBookId || !currentFormat) {
+        console.error('Book ID or format not set');
+        return;
+    }
+    
+    let downloadUrl;
+    
+    if (type === 'standard') {
+        // Standard download
+        downloadUrl = `/books/book/${currentBookId}/download/${currentFormat}`;
+    } else if (type === 'platform') {
+        // Platform-specific download
+        const platform = document.getElementById('platformSelect').value;
+        if (!platform) {
+            alert('Por favor selecciona una plataforma.');
+            return;
+        }
+        downloadUrl = `/books/book/${currentBookId}/download/${currentFormat}/${platform}`;
+    }
+    
+    // Get the button that was clicked
+    let btn;
+    if (event && event.target) {
+        btn = event.target.closest('button');
+    } else {
+        // Fallback: find the button based on type
+        if (type === 'standard') {
+            btn = document.querySelector('button[onclick*="downloadBook(\'standard\')"]');
+        } else {
+            btn = document.getElementById('downloadPlatformBtn');
+        }
+    }
+    
+    if (btn) {
+        // Show loading state
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generando...';
+        btn.disabled = true;
+        
+        // Reset button after a delay
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 3000);
+    }
+    
+    // Start download using fetch to ensure cookies are sent
+    fetch(downloadUrl, {
+        method: 'GET',
+        credentials: 'same-origin', // Ensure cookies are sent
+        headers: {
+            'Accept': 'application/octet-stream'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        // Create blob URL and download
+        const url = window.URL.createObjectURL(blob);
+        const tempLink = document.createElement('a');
+        tempLink.href = url;
+        tempLink.download = `${currentBookId}.${currentFormat}`;
+        tempLink.style.display = 'none';
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('Download failed:', error);
+        alert('Error al descargar el archivo. Por favor, inténtalo de nuevo.');
+    });
+    
+    // Close modal after a short delay
+    setTimeout(() => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }, 1000);
 }
 </script>
 {% endblock %}

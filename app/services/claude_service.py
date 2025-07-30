@@ -78,11 +78,11 @@ class ClaudeService:
         }
         self.max_tokens = current_app.config.get('CLAUDE_MAX_TOKENS', 28000)  # Default optimizado
         self.temperature = current_app.config.get('CLAUDE_TEMPERATURE', 1.0)
-        self.thinking_budget = current_app.config.get('CLAUDE_THINKING_BUDGET', 35000)  # 🚀 AMPLIADO: Aumentado para pensamiento extendido de alta calidad
+        self.thinking_budget = current_app.config.get('CLAUDE_THINKING_BUDGET', 45000)  # 🚀 AMPLIADO: 45K para pensamiento extendido de máxima calidad
         
-        # Multi-chunk configuration OPTIMIZADO para VELOCIDAD + CALIDAD
+        # Multi-chunk configuration OPTIMIZADO para CONTROL DE PÁGINAS + CALIDAD
         self.chunk_overlap = 500  # Tokens de overlap entre chunks para continuidad
-        self.max_chunks = 3       # 🚀 OPTIMIZADO: Reducido de 5→3 para VELOCIDAD máxima
+        self.max_chunks = 5       # 🚀 OPTIMIZADO: 5 chunks para mejor control de páginas por capítulo
         
         # Timeouts generosos para contenidos extensos de alta calidad
         self.architecture_timeout = 2400  # 40 minutos para arquitectura (contenidos extensos)
@@ -619,6 +619,8 @@ Your output must be a well-structured JSON with the following format (this is ju
   "line_spacing": "[USE USER'S SELECTED LINE SPACING]",
   "chapter_count": "[USE USER'S REQUESTED CHAPTER COUNT]",
   "writing_style": "[USE USER'S SELECTED WRITING STYLE]",
+  "writing_approach": "MANDATORY: Specific writing approach for THIS book content - describe HOW the book will be written",
+  "key_themes": ["MANDATORY: List exactly 3-5 specific themes for THIS book content", "Theme 2", "Theme 3"],
   "include_toc": "[USE USER'S TOC PREFERENCE]",
   "include_introduction": "[USE USER'S INTRODUCTION PREFERENCE]",
   "include_conclusion": "[USE USER'S CONCLUSION PREFERENCE]",
@@ -646,18 +648,16 @@ Your output must be a well-structured JSON with the following format (this is ju
   },
   "characters": [
     {
-      "name": "Character Name",
-      "role": "Character role/importance",
-      "description": "Brief character description"
+      "name": "MANDATORY: Specific character name for THIS book content",
+      "role": "MANDATORY: Character role relevant to book topic",
+      "description": "MANDATORY: Description specific to book theme"
     }
   ],
-  "key_themes": ["Theme 1", "Theme 2"],
-  "writing_approach": "How the book will be written",
   "special_sections": [
     {
-      "type": "exercises/examples/case_studies",
-      "frequency": "per chapter/throughout book",
-      "purpose": "Why included"
+      "type": "MANDATORY: Specific section type for THIS book",
+      "frequency": "MANDATORY: How often it appears",
+      "purpose": "MANDATORY: Why it helps with book goals"
     }
   ],
   "additional_instructions": "[INCLUDE USER'S ADDITIONAL INSTRUCTIONS IF PROVIDED]"
@@ -680,13 +680,22 @@ Your output must be a well-structured JSON with the following format (this is ju
 - Provide enough detail for user to understand the full book structure
 - Respect all user preferences (TOC, introduction, conclusion, etc.)
 
-🚨 **CRÍTICO - OBLIGATORIEDAD DE PÁGINAS:**
-- **PROMESA AL USUARIO**: El usuario ha seleccionado un rango específico de páginas y DEBEMOS cumplirlo
-- **DISTRIBUCIÓN OBLIGATORIA**: La suma EXACTA de todas las páginas estimadas DEBE igualar el target del usuario
-- **RESPONSABILIDAD**: Fallar en el targeting de páginas = Romper la promesa comercial al cliente
-- **CÁLCULO PRECISO**: Cada capítulo debe tener páginas realistas que sumen EXACTAMENTE el total prometido
-- **NO BAJO-ESTIMACIÓN**: Es mejor sobrestimar ligeramente que subestimar páginas
-- **FORMATO ESPECÍFICO**: Considerar que diferentes formatos (page_size + line_spacing) afectan el contenido real
+🚨 **CRÍTICO - PÁGINAS SON ABSOLUTAMENTE OBLIGATORIAS:**
+- **COMPROMISO COMERCIAL INEGOCIABLE**: El usuario PAGÓ por un número específico de páginas
+- **CUMPLIMIENTO MATEMÁTICO**: La suma EXACTA debe igualar el target - NI UNA PÁGINA MENOS
+- **RESPONSABILIDAD TOTAL**: Fallar = Incumplimiento contractual y pérdida de confianza
+- **CÁLCULO MILIMÉTRICO**: Cada capítulo DEBE tener páginas que GARANTICEN el total prometido
+- **SOBRESTIMAR SIEMPRE**: Mejor 5% más páginas que 1% menos
+- **FACTOR FORMATO**: page_size + line_spacing determinan densidad - AJUSTAR en consecuencia
+- **NO HAY EXCUSAS**: Calidad NO puede ser excusa para reducir páginas prometidas
+
+🚨 **CAMPOS OBLIGATORIOS - SIN EXCEPCIONES:**
+- **writing_approach**: CAMPO OBLIGATORIO (string) que describe cómo se escribirá ESTE libro específico. Ejemplo: "Enfoque práctico basado en situaciones reales con progresión gradual..." NO usar "enfoque profesional" genérico.
+- **key_themes**: CAMPO OBLIGATORIO (array) con exactamente 3-5 temas específicos del CONTENIDO de este libro. Ejemplo para libro de alemán: ["Expresiones cotidianas alemanas", "Comunicación profesional"]. NO usar ["Trabajo Remoto", "Herramientas Digitales"] genéricos.
+- **characters**: CAMPO OBLIGATORIO (array) con 3-4 personajes específicos del tema del libro. Para libro de alemán: profesores alemanes, estudiantes, nativos alemanes, etc. NO usar "María González" o "Carlos Mendoza" genéricos.
+- **special_sections**: CAMPO OBLIGATORIO (array) con 3-5 secciones especiales específicas del contenido. Para libro de alemán: "Ejercicios de pronunciación", "Diálogos auténticos", etc. NO usar "Casos de Estudio Reales" genéricos.
+
+⚠️ ESTOS CAMPOS DEBEN APARECER EN LA ESTRUCTURA PRINCIPAL DEL JSON, NO dentro de otros campos como "innovative_features".
 
 DO NOT write any actual book content - only the detailed architecture and structure using the user's exact specifications."""
 
@@ -753,7 +762,12 @@ DO NOT write any actual book content - only the detailed architecture and struct
 1. Generate ONLY the book architecture/structure - NO actual book content
 2. Create a JSON with chapter titles, summaries, and structure - NOT the chapters themselves
 3. Use ALL the configuration values exactly as provided above
-4. The JSON must include: title, summary, target_pages ({page_count}), estimated_words ({total_words:,}), genre, tone, target_audience, language, page_size ({page_size}), line_spacing ({line_spacing}), chapter_count ({book_params.get('chapter_count', 10)}), writing_style, include_toc, include_introduction, include_conclusion
+4. The JSON must include: title, summary, target_pages ({page_count}), estimated_words ({total_words:,}), genre, tone, target_audience, language, page_size ({page_size}), line_spacing ({line_spacing}), chapter_count ({book_params.get('chapter_count', 10)}), writing_style, writing_approach, key_themes, include_toc, include_introduction, include_conclusion
+
+🚨 **OBLIGATORY FIELDS - NO EXCEPTIONS:**
+- **writing_approach** (string): MANDATORY field describing the specific writing approach for THIS book. NOT a generic template.
+- **key_themes** (array): MANDATORY array of 3-5 specific themes for THIS book content. NOT generic themes.
+
 5. Create exactly {book_params.get('chapter_count', 10)} chapters in the structure
 6. 🎯 **CRITICAL PAGE DISTRIBUTION**: The sum of ALL chapter pages + introduction pages + conclusion pages must EXACTLY equal {page_count} pages
 7. All text in the architecture (titles, summaries, descriptions) must be in {language_name.upper()}
@@ -773,16 +787,43 @@ DO NOT write any actual book content - only the detailed architecture and struct
 - Average per chapter: ~{(page_count - (6 if page_count < 100 else 10)) // book_params.get('chapter_count', 10)} pages, but vary based on content complexity
 - **VERIFICACIÓN**: Suma intro + chapters + conclusion = {page_count} páginas EXACTAS
 
+🚨 **MANDATORY FIELDS - SPECIFIC EXAMPLES:**
+
+**writing_approach** (string): OBLIGATORIO - Describe el enfoque de escritura específico para ESTE libro. 
+- Ejemplo para libro de alemán: "Enfoque práctico basado en situaciones reales con progresión gradual de expresiones básicas a profesionales, priorizando aplicación inmediata de cada Redemittel en contextos cotidianos alemanes"
+- NO usar: "Enfoque profesional" o templates genéricos
+
+**key_themes** (array de strings): OBLIGATORIO - Exactamente 3-5 temas específicos del contenido del libro.
+- Ejemplo para libro de alemán: ["Expresiones cotidianas alemanas", "Comunicación profesional en alemán", "Fluidez conversacional", "Redemittel prácticas", "Alemán para situaciones reales"]
+- NO usar: ["Trabajo Remoto Internacional", "Herramientas Digitales", "Superación de Barreras"]
+
+**characters** (array de objetos): OBLIGATORIO - 3-4 personajes específicos del tema del libro con name, role, description.
+- Ejemplo para libro de alemán: Profesora Schmidt (profesora nativa), Hans Müller (estudiante aventajado), etc.
+- NO usar: María González, Carlos Mendoza u otros nombres genéricos
+
+**special_sections** (array de objetos): OBLIGATORIO - 3-5 secciones especiales específicas del contenido con type, frequency, purpose.
+- Ejemplo para libro de alemán: Ejercicios de pronunciación, Diálogos auténticos, Tablas de conjugación, etc.
+- NO usar: Casos de Estudio Reales, Ejercicios Prácticos u otros tipos genéricos
+
 🛑 **WHAT NOT TO DO:**
-- Do NOT write actual chapter content
+- Do NOT write actual book content
 - Do NOT write paragraphs of book text
 - Do NOT create the book itself
+- Do NOT use generic templates for writing_approach, key_themes, characters, or special_sections
 - ONLY create the structural outline/architecture in JSON format
 
 Remember: You are creating a BLUEPRINT of the book, not writing the book itself.
 - Structure should be appropriate for {book_params.get('genre', 'General')} genre
 - Target a total of {book_params.get('page_count', 50)} pages
 - Include {book_params.get('chapter_count', 10)} main chapters
+
+🚨 **FINAL VERIFICATION CHECKLIST:**
+✅ JSON includes "writing_approach" field with book-specific approach
+✅ JSON includes "key_themes" array with 3-5 specific themes  
+✅ JSON includes "characters" array with 3-4 book-specific characters
+✅ JSON includes "special_sections" array with 3-5 content-specific sections
+✅ Total pages sum to exactly {page_count}
+✅ All text in {language_name.upper()}
 
 Generate a comprehensive book architecture that the user can review, modify if needed, and approve before full content generation begins."""
 
@@ -997,8 +1038,9 @@ Generate a comprehensive book architecture that the user can review, modify if n
                     import json
                     architecture = json.loads(complete_content)
                     
-                    # Validar que la arquitectura regenerada tenga la estructura mínima requerida
-                    if not architecture.get('structure') or not architecture.get('structure', {}).get('chapters'):
+                    # Validar que la arquitectura regenerada tenga la estructura mínima requerida - Compatible con ambos formatos
+                    has_chapters = bool(architecture.get('structure', {}).get('chapters') or architecture.get('chapters'))
+                    if not has_chapters:
                         logger.warning("regenerated_architecture_incomplete", book_id=book_id)
                         # Intentar usar la arquitectura actual con mejoras textuales
                         architecture = current_architecture.copy()
@@ -1433,10 +1475,14 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
         """
         try:
             # Log crítico del inicio con Claude Sonnet 4
+            # Obtener capítulos compatibles con ambos formatos para logging
+            logging_chapters = (approved_architecture.get('structure', {}).get('chapters', []) or 
+                              approved_architecture.get('chapters', []))
+            
             logger.info("starting_multichunk_generation",
                        book_id=book_id,
                        model=self.model,
-                       chapters_count=len(approved_architecture.get('structure', {}).get('chapters', [])),
+                       chapters_count=len(logging_chapters),
                        target_pages=approved_architecture.get('target_pages'),
                        estimated_words=approved_architecture.get('estimated_words'),
                        max_tokens_per_chunk=self.max_tokens,
@@ -1453,9 +1499,24 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 'timestamp': datetime.now(timezone.utc).isoformat()
             })
             
-            # Dividir capítulos en chunks
-            chapters = approved_architecture.get('structure', {}).get('chapters', [])
+            # Dividir capítulos en chunks - Compatible con ambos formatos de arquitectura
+            chapters = []
+            if approved_architecture.get('structure', {}).get('chapters'):
+                # Formato: architecture.structure.chapters
+                chapters = approved_architecture['structure']['chapters']
+            elif approved_architecture.get('chapters'):
+                # Formato: architecture.chapters (nuevo formato)
+                chapters = approved_architecture['chapters']
+            
             total_chapters = len(chapters)
+            
+            logger.info("chapters_access_debug",
+                       book_id=book_id,
+                       has_structure=bool(approved_architecture.get('structure')),
+                       has_structure_chapters=bool(approved_architecture.get('structure', {}).get('chapters')),
+                       has_direct_chapters=bool(approved_architecture.get('chapters')),
+                       chapters_found=total_chapters,
+                       architecture_keys=list(approved_architecture.keys()))
             
             if total_chapters == 0:
                 raise Exception("No se encontraron capítulos en la arquitectura")
@@ -1520,7 +1581,7 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                        planned_chunks=len(chunk_distributions))
             
             chunk_num = 0
-            max_total_chunks = 4  # 🚀 OPTIMIZADO: 3 principales + 1 adicional máximo para VELOCIDAD
+            max_total_chunks = 7  # 🚀 OPTIMIZADO: 5 principales + 2 adicionales máximo para CONTROL DE PÁGINAS
             generated_chapters = []  # Track capítulos generados
             
             # 📖 GENERAR INTRODUCCIÓN (si está configurada)
@@ -1778,6 +1839,37 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 final_words = len(final_content.split())
                 final_pages = final_words // 350
             
+            # 🔧 POST-PROCESAMIENTO AUTOMÁTICO DEL CONTENIDO
+            emit_book_progress_update(book_id, {
+                'current': 96,
+                'total': 100,
+                'status': 'postprocessing',
+                'status_message': 'Post-procesando contenido: eliminando títulos técnicos y renumerando capítulos...',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            
+            try:
+                from .book_postprocessor import BookPostProcessor
+                postprocessor = BookPostProcessor()
+                book_title = book_params.get('title', approved_architecture.get('title', ''))
+                processed_content = postprocessor.process_book_content(final_content, book_title)
+                
+                # Recalcular métricas después del post-procesamiento
+                processed_words = len(processed_content.split())
+                processed_pages = processed_words // 350
+                
+                processing_stats = postprocessor.get_processing_stats()
+                emit_generation_log(book_id, 'success', 
+                    f'📝 Post-procesamiento completado: {processing_stats["chapters_numbered"]} capítulos renumerados, {processing_stats["total_sections"]} secciones organizadas')
+                
+                final_content = processed_content
+                final_words = processed_words
+                final_pages = processed_pages
+                
+            except Exception as e:
+                logger.error("postprocessing_error", book_id=book_id, error=str(e))
+                emit_generation_log(book_id, 'warning', f'⚠️ Error en post-procesamiento, usando contenido original: {str(e)}')
+            
             # Progreso final
             emit_book_progress_update(book_id, {
                 'current': 98,
@@ -1992,6 +2084,14 @@ Escribe la introducción completa para este libro siguiendo exactamente la arqui
 - Audiencia: {book_params.get('target_audience', approved_architecture.get('target_audience', 'General'))}
 - Tono: {book_params.get('tone', approved_architecture.get('tone', 'Profesional'))}
 - Estilo: {book_params.get('writing_style', approved_architecture.get('writing_style', 'Professional and engaging'))}
+- Enfoque de escritura: {approved_architecture.get('writing_approach', 'Enfoque profesional estándar')}
+- Temas clave: {', '.join(approved_architecture.get('key_themes', ['Temas generales']))}
+
+**👥 PERSONAJES DEL LIBRO (presentar si es apropiado):**
+{self._format_characters_for_prompt(approved_architecture.get('characters', []))}
+
+**📋 SECCIONES ESPECIALES (mencionar si corresponde):**
+{self._format_special_sections_for_prompt(approved_architecture.get('special_sections', []))}
 
 **📝 INTRODUCCIÓN A GENERAR:**
 - Título: {introduction_info.get('title', 'Introducción')}
@@ -2014,7 +2114,13 @@ Escribe la introducción completa para este libro siguiendo exactamente la arqui
 - **EXPANSIÓN OBLIGATORIA**: Si el contenido natural no alcanza {intro_words:,} palabras, expandir orgánicamente
 - **CALIDAD + CANTIDAD**: Mantener excelencia pero cumplir target de palabras sin excusas
 
-Genera la introducción completa ahora:
+🚨 **FORMATO HTML OBLIGATORIO:**
+- Tu respuesta debe contener ÚNICAMENTE HTML válido
+- ❌ NO usar Markdown, NO usar texto plano
+- ✅ Usar <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
+- Comenzar con <h1>Introducción</h1> o título apropiado
+
+Genera la introducción completa en HTML ahora:
 """
 
             messages = [{"role": "user", "content": [{"type": "text", "text": prompt}]}]
@@ -2120,7 +2226,15 @@ Escribe la conclusión completa para este libro siguiendo exactamente la arquite
 - Género: {book_params.get('genre', approved_architecture.get('genre', 'General'))}
 - Audiencia: {book_params.get('target_audience', approved_architecture.get('target_audience', 'General'))}
 - Tono: {book_params.get('tone', approved_architecture.get('tone', 'Profesional'))}
-- Estilo: {book_params.get('writing_style', approved_architecture.get('writing_style', 'Professional and engaging'))}
+- Estilo: {book_params.get('writing_style', approved_architecture.get('writing_style', 'Professional and engaging'))}  
+- Enfoque de escritura: {approved_architecture.get('writing_approach', 'Enfoque profesional estándar')}
+- Temas clave: {', '.join(approved_architecture.get('key_themes', ['Temas generales']))}
+
+**👥 PERSONAJES DEL LIBRO (hacer referencias finales si es apropiado):**
+{self._format_characters_for_prompt(approved_architecture.get('characters', []))}
+
+**📋 SECCIONES ESPECIALES (mencionar logros o resultados si corresponde):**
+{self._format_special_sections_for_prompt(approved_architecture.get('special_sections', []))}
 
 **📝 CONCLUSIÓN A GENERAR:**
 - Título: {conclusion_info.get('title', 'Conclusión')}
@@ -2150,7 +2264,13 @@ Escribe la conclusión completa para este libro siguiendo exactamente la arquite
 - **CALIDAD + CANTIDAD**: Mantener excelencia pero cumplir target de palabras sin excusas
 - **CIERRE COMPLETO**: Una conclusión corta = Libro incompleto = Cliente insatisfecho
 
-Genera la conclusión completa ahora:
+🚨 **FORMATO HTML OBLIGATORIO:**
+- Tu respuesta debe contener ÚNICAMENTE HTML válido
+- ❌ NO usar Markdown, NO usar texto plano
+- ✅ Usar <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
+- Comenzar con <h1>Conclusión</h1> o título apropiado
+
+Genera la conclusión completa en HTML ahora:
 """
 
             messages = [{"role": "user", "content": [{"type": "text", "text": prompt}]}]
@@ -2294,7 +2414,7 @@ Genera la conclusión completa ahora:
             total_chunk_pages = chunk_info.get('target_pages', 0)
             
             chapters_to_generate += f"""
-**📋 CHUNK PLANIFICADO - {total_chunk_pages} PÁGINAS TARGET**
+**📋 CONTENIDO PLANIFICADO - {total_chunk_pages} PÁGINAS TARGET**
 
 """
             # Calcular palabras precisas por página basado en formato
@@ -2333,9 +2453,9 @@ Genera la conclusión completa ahora:
             target_words_str = str(target_words)
         
         user_prompt = f"""
-**CLAUDE SONNET 4 - GENERACIÓN MULTI-CHUNKED DE ALTA CALIDAD**
+**CLAUDE SONNET 4 - GENERACIÓN DE CONTENIDO DE ALTA CALIDAD**
 
-Estás generando el CHUNK {chunk_type} {chunk_info['index']} de un libro. Debes mantener PERFECTA CONTINUIDAD y MÁXIMA CALIDAD.
+Estás generando una sección específica de un libro. Debes mantener PERFECTA CONTINUIDAD y MÁXIMA CALIDAD con el resto del contenido.
 
 {continuity_context}
 
@@ -2347,6 +2467,14 @@ Estás generando el CHUNK {chunk_type} {chunk_info['index']} de un libro. Debes 
 - Audiencia objetivo: {book_params.get('target_audience', approved_architecture.get('target_audience', 'General'))}
 - Tono requerido: {book_params.get('tone', approved_architecture.get('tone', 'Profesional'))}
 - Estilo de escritura: {book_params.get('writing_style', approved_architecture.get('writing_style', 'Professional and engaging'))}
+- Enfoque de escritura: {approved_architecture.get('writing_approach', 'Enfoque profesional estándar')}
+- Temas clave del libro: {', '.join(approved_architecture.get('key_themes', ['Temas generales']))}
+
+**👥 PERSONAJES DEL LIBRO (mantener consistencia):**
+{self._format_characters_for_prompt(approved_architecture.get('characters', []))}
+
+**📋 SECCIONES ESPECIALES (incluir cuando sea apropiado):**
+{self._format_special_sections_for_prompt(approved_architecture.get('special_sections', []))}
 
 **📖 ESTRUCTURA COMPLETA DEL LIBRO (para evitar duplicación):**
 {self._build_complete_book_structure(approved_architecture)}
@@ -2369,14 +2497,33 @@ Estás generando el CHUNK {chunk_type} {chunk_info['index']} de un libro. Debes 
 3. **ESTILO DE ESCRITURA**: Sigue estrictamente el estilo "{book_params.get('writing_style', approved_architecture.get('writing_style', 'Professional and engaging'))}" en cada párrafo
 4. **TONO**: Mantén consistentemente el tono {book_params.get('tone', approved_architecture.get('tone', 'Profesional')).upper()} durante todo el contenido
 5. **AUDIENCIA**: Escribe específicamente para {book_params.get('target_audience', approved_architecture.get('target_audience', 'General'))} - adapta vocabulario y ejemplos
-6. **CONTENIDO**: Genera contenido COMPLETO, EXTENSO y VALIOSO (no resúmenes ni relleno)
-7. **CONTINUIDAD**: Mantén perfección narrativa con contenido anterior - sin cortes abruptos
-8. **ESTRUCTURA**: {"Continúa expandiendo orgánicamente donde quedó" if chunk_info.get('is_continuation', False) else "Empieza directamente con el primer capítulo de este chunk"}
-9. **PROFUNDIDAD**: Cada concepto debe desarrollarse con múltiples niveles de profundidad
-10. **EJEMPLOS**: Incluye casos reales, anécdotas, metáforas que ilustren cada punto específicos del contexto descrito
-11. **VALOR PRÁCTICO**: Proporciona consejos implementables, herramientas y metodologías relevantes al tema
-12. **ENGAGEMENT**: Mantén al lector enganchado con contenido interesante y relevante al género y audiencia
-13. **🚨 NO DUPLICACIÓN**: NUNCA repitas información que ya aparece en otros capítulos de la estructura completa mostrada arriba. Cada capítulo debe tener contenido único y específico
+6. **ENFOQUE DE ESCRITURA**: Aplica consistentemente el enfoque definido en la arquitectura: "{approved_architecture.get('writing_approach', 'Enfoque profesional estándar')}"
+7. **TEMAS CLAVE**: Mantén enfoque en los temas centrales definidos: {', '.join(approved_architecture.get('key_themes', ['Temas generales']))} - cada capítulo debe contribuir a estos temas
+
+🚫 **PROHIBICIONES ABSOLUTAS - CONTENIDO LIMPIO:**
+8. **NO TÍTULOS TÉCNICOS**: JAMÁS incluyas títulos como "CHUNK", "SECCIÓN", "PARTE", "PLANIFICADO" o cualquier referencia técnica de organización interna
+9. **NO NUMERACIÓN CONSECUTIVA**: NO uses numeración secuencial en capítulos (Capítulo 1, 2, 3...) - usa títulos descriptivos únicos
+10. **NO REPETIR TÍTULO DEL LIBRO**: NUNCA reproduzcas el título completo del libro como encabezado dentro del contenido
+11. **CONTENIDO PURO**: Genera únicamente el contenido final que el lector debe ver, sin marcadores organizacionales internos
+
+🚨 **PÁGINAS SON ABSOLUTAMENTE OBLIGATORIAS - NO NEGOCIABLE:**
+12. **VOLUMEN EXACTO**: Genera EXACTAMENTE las páginas especificadas para cada capítulo - es un compromiso comercial
+13. **CONTROL MATEMÁTICO**: Cada capítulo DEBE alcanzar su target de palabras calculado - usa el pensamiento extendido para planificar
+14. **NO REDUCIR**: JAMÁS reduzcas contenido por "calidad" - páginas prometidas = páginas entregadas
+15. **SOBRESTIMAR**: Si dudas, genera 5-10% MÁS contenido del calculado para garantizar cumplimiento
+
+🧠 **COHERENCIA Y NO DUPLICACIÓN - CRÍTICO:**  
+16. **ARQUITECTURA TOTAL**: Conoces la estructura COMPLETA del libro - mantén coherencia absoluta con todos los capítulos
+17. **ZERO DUPLICACIÓN**: NO repitas conceptos, ejemplos o información ya cubierta en otros capítulos
+18. **CONTINUIDAD NARRATIVA**: Mantén perfección narrativa - cada capítulo debe fluir naturalmente del anterior
+19. **PERSONAJES/HISTORIAS**: UTILIZA consistentemente los personajes definidos en la arquitectura - manténlos coherentes en personalidad, rol y contribución
+20. **SECCIONES ESPECIALES**: INCORPORA las secciones especiales definidas cuando sean apropiadas para el contenido del capítulo
+21. **PROGRESIÓN LÓGICA**: Cada capítulo debe construir sobre los anteriores sin repetir fundamentos ya explicados
+
+📚 **DESARROLLO PROFUNDO:**
+22. **CONTENIDO EXTENSO**: Desarrolla cada concepto con múltiples niveles de profundidad y ejemplos únicos
+23. **VALOR PRÁCTICO**: Proporciona herramientas implementables específicas para cada tema
+24. **ENGAGEMENT**: Mantén al lector completamente enganchado con contenido relevante y específico
 
 **📚 TÉCNICAS DE EXPANSIÓN NATURAL:**
 - **Contexto histórico**: Cómo evolucionaron los conceptos, antecedentes relevantes
@@ -2387,8 +2534,78 @@ Estás generando el CHUNK {chunk_type} {chunk_info['index']} de un libro. Debes 
 - **Herramientas y recursos**: Software, técnicas, recursos útiles
 - **Conexiones interdisciplinarias**: Cómo se relaciona con otros campos
 - **Ejercicios reflexivos**: Preguntas que inviten al análisis del lector
+- **Narrativas con personajes**: Usa los personajes definidos para ilustrar conceptos y crear conexión emocional
+- **Secciones especiales integradas**: Incorpora las secciones especiales de manera natural dentro del flujo del contenido
 
 **🚨 CALIDAD SOBRE CANTIDAD**: El objetivo es generar contenido naturalmente extenso de ALTO VALOR, no relleno. Cada párrafo debe aportar valor único al lector.
+
+**📝 FORMATO DE SALIDA - HTML OBLIGATORIO:**
+🚨 **CRÍTICO**: El contenido DEBE generarse EXCLUSIVAMENTE en formato HTML profesional y semánticamente correcto. 
+❌ **PROHIBIDO**: NO usar Markdown, NO usar texto plano, NO usar ningún otro formato.
+✅ **OBLIGATORIO**: TODO el contenido debe estar envuelto en etiquetas HTML válidas.
+
+1. **Elementos de estructura principal:**
+   - `<h1>` para títulos de capítulos (solo uno por capítulo)
+   - `<h2>` para secciones principales
+   - `<h3>` para subsecciones
+   - `<h4>` para subsubsecciones si es necesario
+
+2. **Elementos de contenido:**
+   - `<p>` para párrafos normales (OBLIGATORIO para todo texto)
+   - `<ul>` y `<li>` para listas con bullets
+   - `<ol>` y `<li>` para listas numeradas
+   - `<em>` para énfasis/cursivas
+   - `<strong>` para texto en negritas
+   - `<blockquote>` para citas destacadas
+
+3. **Elementos especiales para contenido educativo:**
+   - `<div class="example">` para ejemplos prácticos
+   - `<div class="exercise">` para ejercicios
+   - `<div class="tip">` para consejos destacados
+   - `<div class="warning">` para advertencias importantes
+   - `<div class="case-study">` para casos de estudio
+
+4. **Formato específico para expresiones (si aplica):**
+   - `<div class="expression">` para expresiones numeradas
+   - `<span class="phonetic">` para transcripciones fonéticas
+   - `<div class="translation">` para traducciones
+   - `<div class="usage">` para descripciones de uso
+
+5. **Reglas críticas de HTML - CUMPLIMIENTO OBLIGATORIO:**
+   - 🚨 **TODO el texto debe estar dentro de elementos HTML apropiados**
+   - ❌ **JAMÁS usar texto plano sin etiquetas**
+   - ❌ **JAMÁS usar sintaxis Markdown (# ## ### ** * ` etc.)**
+   - ❌ **JAMÁS usar líneas de texto sin <p>, <h1>, <h2>, etc.**
+   - ✅ **Mantener estructura semántica consistente HTML válida**
+   - ✅ **Usar clases CSS descriptivas para formateo posterior**
+   - ✅ **HTML debe ser válido, bien formado y sin errores**
+
+**EJEMPLO de estructura HTML esperada:**
+```html
+<h1>Saludos y Presentaciones - Primeras Impresiones Perfectas</h1>
+
+<p>Introducción al capítulo con contenido relevante...</p>
+
+<h2>La Arquitectura Cultural de los Saludos</h2>
+<p>Contenido de la sección...</p>
+
+<div class="example">
+<h3>Ejemplo Práctico</h3>
+<p>Descripción del ejemplo...</p>
+</div>
+
+<ul>
+<li>Punto importante uno</li>
+<li>Punto importante dos</li>
+</ul>
+```
+
+🚨 **VERIFICACIÓN FINAL - FORMATO HTML:**
+- Antes de enviar tu respuesta, verifica que CADA línea de texto esté envuelta en HTML
+- Si ves texto plano sin etiquetas: ❌ INCORRECTO
+- Si ves sintaxis Markdown (#, **, etc.): ❌ INCORRECTO  
+- Si ves solo etiquetas HTML válidas: ✅ CORRECTO
+- **REGLA DE ORO**: Si no es HTML válido, NO lo envíes
 
 🚨 **OBLIGATORIEDAD CRÍTICA - CUMPLIMIENTO DE PÁGINAS:**
 - **PROMESA COMERCIAL**: Este chunk DEBE generar exactamente las páginas asignadas en la arquitectura
@@ -2401,7 +2618,10 @@ Estás generando el CHUNK {chunk_type} {chunk_info['index']} de un libro. Debes 
 - **NO SUBESTIMAR**: Es mejor generar 110% del target que 90%
 - **VERIFICACIÓN**: Cada párrafo cuenta hacia el cumplimiento de páginas prometidas
 
-{"🔄 CONTINUACIÓN: Expande orgánicamente el contenido para alcanzar las páginas faltantes manteniendo la excelencia" if chunk_info.get('is_continuation', False) else "✍️ CREACIÓN: Desarrolla cada capítulo con la profundidad que merece según la arquitectura aprobada"}"""
+{"🔄 CONTINUACIÓN: Expande orgánicamente el contenido para alcanzar las páginas faltantes manteniendo la excelencia" if chunk_info.get('is_continuation', False) else "✍️ CREACIÓN: Desarrolla cada capítulo con la profundidad que merece según la arquitectura aprobada"}
+
+🚨 **RECORDATORIO FINAL - FORMATO HTML OBLIGATORIO:**
+Tu respuesta debe contener ÚNICAMENTE HTML válido. NO incluyas explicaciones, comentarios o texto fuera del HTML del libro. Comienza directamente con `<h1>` y termina con la última etiqueta HTML del contenido."""
 
         return [
             {
@@ -2419,8 +2639,15 @@ Estás generando el CHUNK {chunk_type} {chunk_info['index']} de un libro. Debes 
         """
         Construye una vista completa de la estructura del libro para evitar duplicación entre chunks.
         """
+        # Obtener capítulos compatibles con ambos formatos
         structure = approved_architecture.get('structure', {})
-        chapters = structure.get('chapters', [])
+        chapters = []
+        if structure.get('chapters'):
+            # Formato: architecture.structure.chapters
+            chapters = structure['chapters']
+        elif approved_architecture.get('chapters'):
+            # Formato: architecture.chapters (nuevo formato)
+            chapters = approved_architecture['chapters']
         
         if not chapters:
             return "Estructura de capítulos no disponible"
@@ -2463,6 +2690,40 @@ Estás generando el CHUNK {chunk_type} {chunk_info['index']} de un libro. Debes 
 • Mantén el enfoque en el propósito específico del capítulo que estás generando"""
         
         return structure_text
+    
+    def _format_characters_for_prompt(self, characters: List[Dict[str, Any]]) -> str:
+        """
+        Formatea los personajes de la arquitectura para incluir en el prompt.
+        """
+        if not characters:
+            return "No hay personajes específicos definidos."
+        
+        formatted_chars = []
+        for i, character in enumerate(characters, 1):
+            name = character.get('name', f'Personaje {i}')
+            role = character.get('role', 'Personaje')
+            description = character.get('description', 'Sin descripción')
+            
+            formatted_chars.append(f"• **{name}** ({role}): {description}")
+        
+        return "\n".join(formatted_chars)
+    
+    def _format_special_sections_for_prompt(self, special_sections: List[Dict[str, Any]]) -> str:
+        """
+        Formatea las secciones especiales de la arquitectura para incluir en el prompt.
+        """
+        if not special_sections:
+            return "No hay secciones especiales definidas."
+        
+        formatted_sections = []
+        for i, section in enumerate(special_sections, 1):
+            section_type = section.get('type', f'Sección {i}')
+            purpose = section.get('purpose', 'Propósito no especificado')
+            frequency = section.get('frequency', 'ocasional')
+            
+            formatted_sections.append(f"• **{section_type}** ({frequency}): {purpose}")
+        
+        return "\n".join(formatted_sections)
     
     # =====================================
     # EXPANSIÓN ORGÁNICA PARA CUMPLIMIENTO DE PÁGINAS
@@ -2718,7 +2979,7 @@ Tu tarea es regenerar completamente capítulos existentes, mejorándolos según 
 - Estructura profesional y bien organizada
 - Contenido más extenso y detallado que el original
 - Ejemplos prácticos y casos de estudio relevantes
-- Formato Markdown apropiado y profesional
+- 🚨 **FORMATO HTML OBLIGATORIO** - NO Markdown
 - Tono profesional pero accesible
 
 Características específicas de formato y estructura que DEBES seguir:
@@ -2731,7 +2992,7 @@ Características específicas de formato y estructura que DEBES seguir:
 - Utiliza **texto en negrita** para términos clave e importantes
 - Utiliza *cursiva* para énfasis y conceptos
 - Incluye citas y bloques destacados usando > cuando sea apropiado
-- Utiliza tablas en Markdown cuando ayuden a organizar información
+- Utiliza tablas HTML cuando ayuden a organizar información
 - Incluye separadores (---) entre secciones principales cuando mejore la legibilidad
 
 **📊 ESTRUCTURA Y ORGANIZACIÓN:**
@@ -2751,7 +3012,9 @@ Características específicas de formato y estructura que DEBES seguir:
 
 **✅ INSTRUCCIONES FINALES:**
 - Mantén el título del capítulo pero transforma completamente el contenido
-- Responde EXCLUSIVAMENTE con el contenido del capítulo regenerado en Markdown
+- 🚨 **FORMATO HTML OBLIGATORIO**: Responde EXCLUSIVAMENTE con el contenido del capítulo regenerado en HTML válido
+- ❌ **NO MARKDOWN**: JAMÁS uses sintaxis Markdown (# ## ### ** * `)
+- ✅ **SOLO HTML**: Usa <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
 - NO incluyas metadatos, comentarios o explicaciones fuera del contenido del capítulo
 - Asegúrate de que el resultado sea un capítulo completo, profesional y bien estructurado"""
     
@@ -2765,8 +3028,12 @@ Características específicas de formato y estructura que DEBES seguir:
                 # Obtener palabras estimadas de la arquitectura
                 estimated_words = book.architecture.get('estimated_words', 0)
                 if estimated_words > 0:
-                    # Obtener número de capítulos
-                    chapters = book.architecture.get('structure', {}).get('chapters', [])
+                    # Obtener número de capítulos - Compatible con ambos formatos
+                    chapters = []
+                    if book.architecture.get('structure', {}).get('chapters'):
+                        chapters = book.architecture['structure']['chapters']
+                    elif book.architecture.get('chapters'):
+                        chapters = book.architecture['chapters']
                     chapter_count = len(chapters) if chapters else book.chapter_count or 10
                     
                     # Calcular palabras por capítulo promedio + 20%
@@ -2792,11 +3059,11 @@ INSTRUCCIONES ESPECÍFICAS DE REGENERACIÓN:
 Regenera COMPLETAMENTE el capítulo considerando todo el feedback del usuario y aplicando las mejores prácticas de escritura profesional.
 
 **📝 FORMATO Y ESTRUCTURA REQUERIDOS:**
-1. Mantén el título del capítulo (##) pero transforma completamente todo el contenido
-2. Utiliza la estructura de formato Markdown profesional especificada en las instrucciones del sistema
-3. Organiza el contenido en secciones lógicas con encabezados H3 (###) y H4 (####) cuando sea necesario
-4. Incluye listas, tablas, citas y elementos visuales en Markdown para mejorar la legibilidad
-5. Asegúrate de usar **texto en negrita** para conceptos clave y *cursiva* para énfasis
+1. Mantén el título del capítulo con <h1> pero transforma completamente todo el contenido
+2. Utiliza estructura HTML profesional con etiquetas semánticamente correctas
+3. Organiza el contenido en secciones lógicas con encabezados <h3> y <h4> cuando sea necesario
+4. Incluye listas, tablas, citas y elementos visuales en HTML para mejorar la legibilidad
+5. Asegúrate de usar <strong> para conceptos clave y <em> para énfasis
 
 **📊 CONTENIDO Y EXTENSIÓN:**
 6. Haz el contenido mucho más {target_words}
@@ -2824,7 +3091,8 @@ El capítulo regenerado debe ser un contenido completamente nuevo, mucho más ex
 - **CALIDAD + CANTIDAD**: Mejorar según feedback PERO mantener extensión adecuada
 - **NO REDUCIR**: El feedback NO puede ser excusa para generar menos contenido
 
-Regenera el capítulo ahora en formato Markdown siguiendo todas estas especificaciones:"""
+🚨 **REGENERA EL CAPÍTULO AHORA EN FORMATO HTML SIGUIENDO TODAS ESTAS ESPECIFICACIONES:**
+Tu respuesta debe contener ÚNICAMENTE HTML válido del capítulo regenerado. NO incluyas explicaciones o comentarios."""
 
     def _parse_markdown_architecture_elements(self, markdown_content: str, book_params: Dict[str, Any]) -> Dict[str, List[Dict[str, str]]]:
         """

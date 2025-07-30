@@ -381,7 +381,8 @@ def _generate_book_task_impl(self, book_id):
             emit_book_progress_update(book_id, progress_data)
         
         # Actualizar libro con el contenido generado
-        book.content = result['content']
+        book.content = result['content']  # Mantener para compatibilidad
+        book.content_html = result['content']  # El contenido ya viene en HTML estructurado
         book.thinking_content = result.get('thinking', '')
         
         # Actualizar estadísticas de tokens usando el método que calcula costos

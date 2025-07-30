@@ -1,0 +1,1494 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary-color: #1e293b;
+        --secondary-color: #0f172a;
+        --accent-color: #3b82f6;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --error-color: #ef4444;
+        --neutral-50: #f8fafc;
+        --neutral-100: #f1f5f9;
+        --neutral-200: #e2e8f0;
+        --neutral-300: #cbd5e1;
+        --neutral-400: #94a3b8;
+        --neutral-500: #64748b;
+        --neutral-600: #475569;
+        --neutral-700: #334155;
+        --neutral-800: #1e293b;
+        --neutral-900: #0f172a;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, var(--neutral-50) 0%, var(--neutral-100) 100%);
+        min-height: 100vh;
+    }
+
+    .professional-formatter {
+        padding: 2rem 0;
+        min-height: 100vh;
+    }
+
+    /* Header Section */
+    .formatter-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .formatter-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .header-title {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+    }
+
+    .header-subtitle {
+        font-size: 1.25rem;
+        opacity: 0.9;
+        text-align: center;
+        font-weight: 300;
+    }
+
+    /* Main Layout */
+    .formatter-main {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 3rem;
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .content-area {
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+    }
+
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /* Tab System */
+    .tab-navigation {
+        display: flex;
+        background: var(--neutral-100);
+        border-radius: 12px 12px 0 0;
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .tab-button {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        color: var(--neutral-600);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .tab-button.active {
+        background: white;
+        color: var(--accent-color);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .tab-button:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--neutral-700);
+    }
+
+    .tab-content {
+        display: none;
+        padding: 2rem;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Platform Selection */
+    .platform-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .platform-card {
+        background: white;
+        border: 2px solid var(--neutral-200);
+        border-radius: 12px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .platform-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .platform-card:hover {
+        border-color: var(--accent-color);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .platform-card:hover::before,
+    .platform-card.selected::before {
+        transform: scaleX(1);
+    }
+
+    .platform-card.selected {
+        border-color: var(--accent-color);
+        background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+    }
+
+    .platform-icon {
+        font-size: 2.5rem;
+        color: var(--accent-color);
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .platform-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--neutral-800);
+        margin-bottom: 0.5rem;
+    }
+
+    .platform-description {
+        color: var(--neutral-600);
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+
+    /* Formatting Controls */
+    .control-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+    }
+
+    .control-section h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--neutral-800);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .control-section h3 i {
+        color: var(--accent-color);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: var(--neutral-700);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .form-control {
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--neutral-200);
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1rem;
+        padding-right: 3rem;
+    }
+
+    .checkbox-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background: var(--neutral-50);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+        background: var(--neutral-100);
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 1.25rem;
+        height: 1.25rem;
+        accent-color: var(--accent-color);
+        cursor: pointer;
+    }
+
+    .checkbox-item label {
+        font-weight: 500;
+        color: var(--neutral-700);
+        cursor: pointer;
+        flex: 1;
+    }
+
+    /* Range Inputs */
+    .range-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .range-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+        color: var(--neutral-700);
+    }
+
+    .range-value {
+        background: var(--accent-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .range-input {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 8px;
+        border-radius: 4px;
+        background: var(--neutral-200);
+        outline: none;
+        transition: all 0.2s ease;
+    }
+
+    .range-input::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--accent-color);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .range-input::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+    }
+
+    .range-input::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--accent-color);
+        cursor: pointer;
+        border: none;
+    }
+
+    /* Quality Score */
+    .quality-score {
+        background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .quality-score::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 2px,
+            rgba(255, 255, 255, 0.05) 2px,
+            rgba(255, 255, 255, 0.05) 4px
+        );
+        animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%) translateY(-100%); }
+        100% { transform: translateX(100%) translateY(100%); }
+    }
+
+    .score-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+    }
+
+    .score-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .score-breakdown {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .score-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+
+    .score-item-label {
+        font-size: 0.875rem;
+        opacity: 0.8;
+        margin-bottom: 0.5rem;
+    }
+
+    .score-item-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    /* Statistics Panel */
+    .stats-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: var(--shadow);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 1.5rem;
+        background: var(--neutral-50);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .stat-item:hover {
+        background: var(--neutral-100);
+        transform: translateY(-2px);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--neutral-600);
+        font-weight: 500;
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        height: 800px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .preview-header {
+        background: var(--neutral-800);
+        color: white;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: between;
+        align-items: center;
+    }
+
+    .preview-title {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .preview-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .preview-btn {
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 6px;
+        color: white;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .preview-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .preview-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
+        background: #fafafa;
+        font-family: 'Crimson Pro', Georgia, serif;
+        line-height: 1.6;
+    }
+
+    /* Action Buttons */
+    .action-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: var(--shadow);
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--accent-color) 0%, #2563eb 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        text-decoration: none;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: var(--neutral-700);
+        padding: 1rem 2rem;
+        border: 2px solid var(--neutral-200);
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        text-decoration: none;
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+        text-decoration: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .formatter-main {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        .sidebar {
+            order: -1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .formatter-main {
+            padding: 0 1rem;
+        }
+        
+        .header-title {
+            font-size: 2rem;
+        }
+        
+        .platform-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-bar {
+            flex-direction: column;
+        }
+    }
+
+    /* Loading States */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 1rem;
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+    }
+
+    .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid var(--neutral-200);
+        border-top: 4px solid var(--accent-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        color: var(--neutral-600);
+        font-weight: 500;
+    }
+
+    /* Tooltips */
+    .tooltip {
+        position: relative;
+        cursor: help;
+    }
+
+    .tooltip::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--neutral-800);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 1000;
+    }
+
+    .tooltip:hover::after {
+        opacity: 1;
+    }
+
+    /* Notifications */
+    .notification {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        background: white;
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        z-index: 2000;
+        max-width: 400px;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    }
+
+    .notification.show {
+        transform: translateX(0);
+    }
+
+    .notification.success {
+        border-left: 4px solid var(--success-color);
+    }
+
+    .notification.error {
+        border-left: 4px solid var(--error-color);
+    }
+
+    .notification.warning {
+        border-left: 4px solid var(--warning-color);
+    }
+
+    .notification-icon {
+        font-size: 1.25rem;
+    }
+
+    .notification.success .notification-icon {
+        color: var(--success-color);
+    }
+
+    .notification.error .notification-icon {
+        color: var(--error-color);
+    }
+
+    .notification.warning .notification-icon {
+        color: var(--warning-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="professional-formatter">
+    <!-- Header -->
+    <div class="formatter-header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i class="fas fa-magic"></i>
+                    Formateo Profesional
+                </h1>
+                <p class="header-subtitle">
+                    Transforma tu libro en un ebook comercial de calidad editorial
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="formatter-main">
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-button active" data-tab="platforms">
+                    <i class="fas fa-store"></i>
+                    Plataformas
+                </button>
+                <button class="tab-button" data-tab="format">
+                    <i class="fas fa-cogs"></i>
+                    Formato
+                </button>
+                <button class="tab-button" data-tab="style">
+                    <i class="fas fa-palette"></i>
+                    Estilo
+                </button>
+                <button class="tab-button" data-tab="preview">
+                    <i class="fas fa-eye"></i>
+                    Vista Previa
+                </button>
+            </div>
+
+            <!-- Tab: Platforms -->
+            <div class="tab-content active" id="platformsTab">
+                <h2>Selecciona tu plataforma de distribución</h2>
+                <p class="text-muted mb-4">Cada plataforma tiene requisitos específicos para optimizar la experiencia de lectura.</p>
+                
+                <div class="platform-grid" id="platformGrid">
+                    <div class="platform-card" data-platform="universal">
+                        <i class="fas fa-globe platform-icon"></i>
+                        <div class="platform-name">Universal</div>
+                        <div class="platform-description">
+                            Formato estándar compatible con la mayoría de plataformas y dispositivos de lectura.
+                        </div>
+                    </div>
+                    
+                    <div class="platform-card" data-platform="amazon_kdp">
+                        <i class="fab fa-amazon platform-icon"></i>
+                        <div class="platform-name">Amazon KDP</div>
+                        <div class="platform-description">
+                            Optimizado para Kindle Direct Publishing con soporte completo para dispositivos Kindle.
+                        </div>
+                    </div>
+                    
+                    <div class="platform-card" data-platform="google_play_books">
+                        <i class="fab fa-google-play platform-icon"></i>
+                        <div class="platform-name">Google Play Books</div>
+                        <div class="platform-description">
+                            Formato optimizado para la biblioteca digital de Google con características interactivas.
+                        </div>
+                    </div>
+                    
+                    <div class="platform-card" data-platform="apple_books">
+                        <i class="fab fa-apple platform-icon"></i>
+                        <div class="platform-name">Apple Books</div>
+                        <div class="platform-description">
+                            Diseñado para el ecosistema Apple con soporte para características avanzadas de iBooks.
+                        </div>
+                    </div>
+                    
+                    <div class="platform-card" data-platform="kobo">
+                        <i class="fas fa-book-reader platform-icon"></i>
+                        <div class="platform-name">Kobo</div>
+                        <div class="platform-description">
+                            Compatible con la plataforma Kobo y dispositivos de lectura Kobo.
+                        </div>
+                    </div>
+                    
+                    <div class="platform-card" data-platform="smashwords">
+                        <i class="fas fa-feather-alt platform-icon"></i>
+                        <div class="platform-name">Smashwords</div>
+                        <div class="platform-description">
+                            Optimizado para distribución independiente a través de Smashwords.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Format -->
+            <div class="tab-content" id="formatTab">
+                <form id="professionalFormattingForm">
+                    <!-- Book Structure -->
+                    <div class="control-section">
+                        <h3><i class="fas fa-book-open"></i>Estructura del Libro</h3>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_cover_page" name="include_cover_page" checked>
+                                <label for="include_cover_page">Página de Portada</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_title_page" name="include_title_page" checked>
+                                <label for="include_title_page">Página de Título</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_copyright_page" name="include_copyright_page" checked>
+                                <label for="include_copyright_page">Página de Derechos</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_table_of_contents" name="include_table_of_contents" checked>
+                                <label for="include_table_of_contents">Tabla de Contenidos</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_dedication" name="include_dedication">
+                                <label for="include_dedication">Dedicatoria</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_acknowledgments" name="include_acknowledgments">
+                                <label for="include_acknowledgments">Agradecimientos</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_prologue" name="include_prologue">
+                                <label for="include_prologue">Prólogo</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_epilogue" name="include_epilogue">  
+                                <label for="include_epilogue">Epílogo</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_about_author" name="include_about_author" checked>
+                                <label for="include_about_author">Acerca del Autor</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_index" name="include_index">
+                                <label for="include_index">Índice Temático</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Typography -->
+                    <div class="control-section">
+                        <h3><i class="fas fa-font"></i>Tipografía</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Familia de Fuente</label>
+                                <select class="form-control form-select" id="font_family" name="font_family">
+                                    <option value="Crimson Pro">Crimson Pro (Recomendado)</option>
+                                    <option value="Times New Roman" selected>Times New Roman</option>
+                                    <option value="Georgia">Georgia</option>
+                                    <option value="Palatino">Palatino</option>
+                                    <option value="Book Antiqua">Book Antiqua</option>
+                                    <option value="Inter">Inter (Sans-serif)</option>
+                                    <option value="Helvetica">Helvetica</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="range-group">
+                                    <div class="range-label">
+                                        <span>Tamaño de Fuente</span>
+                                        <span class="range-value" id="font_size_display">12pt</span>
+                                    </div>
+                                    <input type="range" class="range-input" id="font_size_body" name="font_size_body" 
+                                           min="9" max="16" value="12" step="1">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="range-group">
+                                    <div class="range-label">
+                                        <span>Espaciado de Línea</span>
+                                        <span class="range-value" id="line_spacing_display">1.5</span>
+                                    </div>
+                                    <input type="range" class="range-input" id="line_spacing" name="line_spacing" 
+                                           min="1.0" max="2.5" value="1.5" step="0.1">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="range-group">
+                                    <div class="range-label">
+                                        <span>Espaciado de Párrafo</span>
+                                        <span class="range-value" id="paragraph_spacing_display">6pt</span>
+                                    </div>
+                                    <input type="range" class="range-input" id="paragraph_spacing" name="paragraph_spacing" 
+                                           min="0" max="12" value="6" step="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Commercial Features -->
+                    <div class="control-section">
+                        <h3><i class="fas fa-star"></i>Características Comerciales</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">ISBN (Opcional)</label>
+                                <input type="text" class="form-control" id="include_isbn" name="include_isbn" 
+                                       placeholder="978-0-123456-78-9">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Tema Visual</label>
+                                <select class="form-control form-select" id="theme" name="theme">
+                                    <option value="classic" selected>Clásico</option>
+                                    <option value="modern">Moderno</option>
+                                    <option value="minimal">Minimalista</option>
+                                    <option value="academic">Académico</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="enable_toc_navigation" name="enable_toc_navigation" checked>
+                                <label for="enable_toc_navigation">Navegación TOC</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="enable_index_generation" name="enable_index_generation" checked>
+                                <label for="enable_index_generation">Índice Automático</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="enable_bookmarks" name="enable_bookmarks" checked>
+                                <label for="enable_bookmarks">Marcadores</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="enable_search" name="enable_search" checked>
+                                <label for="enable_search">Búsqueda</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="optimize_file_size" name="optimize_file_size" checked>
+                                <label for="optimize_file_size">Optimizar Tamaño</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include_publisher_info" name="include_publisher_info" checked>
+                                <label for="include_publisher_info">Info Editorial</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab: Style -->
+            <div class="tab-content" id="styleTab">
+                <div class="control-section">
+                    <h3><i class="fas fa-magic"></i>Estilo Profesional</h3>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="use_drop_caps" name="use_drop_caps">
+                            <label for="use_drop_caps">Capitulares (Drop Caps)</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="use_chapter_breaks" name="use_chapter_breaks" checked>
+                            <label for="use_chapter_breaks">Saltos de Capítulo</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="use_headers_footers" name="use_headers_footers" checked>
+                            <label for="use_headers_footers">Encab./Pies de Página</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="use_professional_typography" name="use_professional_typography" checked>
+                            <label for="use_professional_typography">Tipografía Profesional</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="highlight_expressions" name="highlight_expressions" checked>
+                            <label for="highlight_expressions">Resaltar Expresiones</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="emphasize_translations" name="emphasize_translations" checked>
+                            <label for="emphasize_translations">Enfatizar Traducciones</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Preview -->
+            <div class="tab-content" id="previewTab">
+                <div class="preview-panel">
+                    <div class="preview-header">
+                        <div class="preview-title">
+                            <i class="fas fa-eye"></i>
+                            Vista Previa del Libro
+                        </div>
+                        <div class="preview-actions">
+                            <button class="preview-btn" onclick="updatePreview()">
+                                <i class="fas fa-sync-alt"></i>
+                                Actualizar
+                            </button>
+                            <button class="preview-btn" onclick="fullscreenPreview()">
+                                <i class="fas fa-expand"></i>
+                                Pantalla Completa
+                            </button>
+                        </div>
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <div class="loading-overlay">
+                            <div class="loading-spinner"></div>
+                            <div class="loading-text">Generando vista previa...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Quality Score -->
+            <div class="quality-score" id="qualityScore">
+                <div class="score-label">Calidad Comercial</div>
+                <div class="score-circle" id="scoreCircle">
+                    85
+                </div>
+                <div class="score-breakdown">
+                    <div class="score-item">
+                        <div class="score-item-label">Estructura</div>
+                        <div class="score-item-value" id="structureScore">20/25</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-item-label">Formato</div>
+                        <div class="score-item-value" id="formatScore">22/25</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-item-label">Navegación</div>
+                        <div class="score-item-value" id="navigationScore">18/25</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-item-label">Comercial</div>
+                        <div class="score-item-value" id="commercialScore">25/25</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-panel">
+                <h3>Estadísticas del Libro</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="chaptersCount">{{ preview_data.statistics.chapters or 0 }}</div>
+                        <div class="stat-label">Capítulos</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="pagesCount">{{ preview_data.estimated_pages or 150 }}</div>
+                        <div class="stat-label">Páginas Est.</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="wordsCount">{{ "{:,}".format(preview_data.statistics.words_estimated or 25000) }}</div>
+                        <div class="stat-label">Palabras</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="elementsCount">{{ preview_data.statistics.total_elements or 100 }}</div>
+                        <div class="stat-label">Elementos</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-bar">
+                <button class="btn-primary" onclick="generateProfessionalFormat()">
+                    <i class="fas fa-magic"></i>
+                    Generar Formato
+                </button>
+                <a href="{{ url_for('books.view_book', book_id=book.id) }}" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver al Libro
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class ProfessionalFormatter {
+    constructor() {
+        this.selectedPlatform = 'universal';
+        this.currentQuality = 85;
+        this.bookId = {{ book.id }};
+        
+        this.init();
+    }
+    
+    init() {
+        this.initTabs();
+        this.initPlatformSelection();
+        this.initFormControls();
+        this.initRangeInputs();
+        this.loadInitialPreview();
+    }
+    
+    initTabs() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+                
+                // Update buttons
+                tabButtons.forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update content
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === targetTab + 'Tab') {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+    }
+    
+    initPlatformSelection() {
+        const platformCards = document.querySelectorAll('.platform-card');
+        
+        platformCards.forEach(card => {
+            card.addEventListener('click', () => {
+                platformCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                this.selectedPlatform = card.dataset.platform;
+                this.updateQualityScore();
+            });
+        });
+        
+        // Select default platform
+        document.querySelector('[data-platform="universal"]').classList.add('selected');
+    }
+    
+    initFormControls() {
+        const form = document.getElementById('professionalFormattingForm');
+        if (form) {
+            form.addEventListener('change', () => {
+                this.updateQualityScore();
+            });
+        }
+    }
+    
+    initRangeInputs() {
+        const ranges = document.querySelectorAll('.range-input');
+        ranges.forEach(range => {
+            range.addEventListener('input', () => {
+                const displayId = range.id + '_display';
+                const display = document.getElementById(displayId);
+                if (display) {
+                    let value = range.value;
+                    if (range.id === 'font_size_body') {
+                        value += 'pt';
+                    } else if (range.id === 'paragraph_spacing') {
+                        value += 'pt';
+                    }
+                    display.textContent = value;
+                }
+            });
+            
+            // Trigger initial update
+            range.dispatchEvent(new Event('input'));
+        });
+    }
+    
+    updateQualityScore() {
+        // Simulate quality calculation
+        let score = 60; // Base score
+        
+        // Platform bonus
+        if (this.selectedPlatform !== 'universal') score += 5;
+        
+        // Structure elements
+        const structureElements = [
+            'include_cover_page',
+            'include_title_page', 
+            'include_copyright_page',
+            'include_table_of_contents'
+        ];
+        
+        structureElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element && element.checked) score += 3;
+        });
+        
+        // Professional features
+        const professionalElements = [
+            'use_professional_typography',
+            'enable_toc_navigation',
+            'enable_index_generation',
+            'optimize_file_size'
+        ];
+        
+        professionalElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element && element.checked) score += 2;
+        });
+        
+        // Font size bonus
+        const fontSize = document.getElementById('font_size_body');
+        if (fontSize && parseInt(fontSize.value) >= 11) score += 3;
+        
+        // Line spacing bonus  
+        const lineSpacing = document.getElementById('line_spacing');
+        if (lineSpacing && parseFloat(lineSpacing.value) >= 1.4) score += 2;
+        
+        score = Math.min(100, score);
+        this.currentQuality = score;
+        
+        // Update UI
+        this.updateQualityDisplay(score);
+    }
+    
+    updateQualityDisplay(score) {
+        const scoreCircle = document.getElementById('scoreCircle');
+        const qualityScore = document.getElementById('qualityScore');
+        
+        if (scoreCircle) {
+            scoreCircle.textContent = score;
+        }
+        
+        // Update color based on score
+        if (qualityScore) {
+            qualityScore.className = 'quality-score';
+            if (score >= 90) {
+                qualityScore.style.background = 'linear-gradient(135deg, var(--success-color) 0%, #059669 100%)';
+            } else if (score >= 75) {
+                qualityScore.style.background = 'linear-gradient(135deg, var(--accent-color) 0%, #2563eb 100%)';
+            } else if (score >= 60) {
+                qualityScore.style.background = 'linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%)';
+            } else {
+                qualityScore.style.background = 'linear-gradient(135deg, var(--error-color) 0%, #dc2626 100%)';
+            }
+        }
+        
+        // Update breakdown scores (simplified)
+        const breakdown = {
+            structure: Math.floor(score * 0.25),
+            format: Math.floor(score * 0.25), 
+            navigation: Math.floor(score * 0.25),
+            commercial: Math.floor(score * 0.25)
+        };
+        
+        if (document.getElementById('structureScore')) {
+            document.getElementById('structureScore').textContent = `${breakdown.structure}/25`;
+        }
+        if (document.getElementById('formatScore')) {
+            document.getElementById('formatScore').textContent = `${breakdown.format}/25`;
+        }
+        if (document.getElementById('navigationScore')) {
+            document.getElementById('navigationScore').textContent = `${breakdown.navigation}/25`;
+        }
+        if (document.getElementById('commercialScore')) {
+            document.getElementById('commercialScore').textContent = `${breakdown.commercial}/25`;
+        }
+    }
+    
+    loadInitialPreview() {
+        // Simulate loading preview
+        setTimeout(() => {
+            this.updatePreview();
+        }, 1000);
+    }
+    
+    updatePreview() {
+        const previewContent = document.getElementById('previewContent');
+        if (!previewContent) return;
+        
+        // Show loading
+        previewContent.innerHTML = `
+            <div class="loading-overlay">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Actualizando vista previa...</div>
+            </div>
+        `;
+        
+        // Load real formatted content
+        setTimeout(() => {
+            const formattedContent = `{{ formatted_content|safe }}`;
+            
+            if (formattedContent && formattedContent.trim() !== '') {
+                // Show real formatted content with professional styling
+                previewContent.innerHTML = `
+                    <div class="ebook-body">
+                        <div class="ebook-container">
+                            ${formattedContent}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Fallback to basic content if formatted content is not available
+                previewContent.innerHTML = `
+                    <div class="ebook-body">
+                        <div class="ebook-container">
+                            <div class="ebook-book-title">{{ book.title }}</div>
+                            <div class="ebook-paragraph">
+                                Contenido del libro se está procesando para generar el formato profesional.
+                                El formateo completo estará disponible una vez que se complete el procesamiento.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }, 800);
+    }
+    
+    generateProfessionalFormat() {
+        this.showNotification('Generando formato profesional...', 'info');
+        
+        // Collect form data
+        const formData = this.collectFormData();
+        
+        // Send to backend
+        fetch(`/books/book/${this.bookId}/professional-format`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                platform: this.selectedPlatform,
+                options: formData
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.showNotification('¡Formato profesional generado exitosamente!', 'success');
+                setTimeout(() => {
+                    window.location.href = `/books/book/${this.bookId}`;
+                }, 2000);
+            } else {
+                this.showNotification('Error al generar formato: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            this.showNotification('Error de conexión al generar formato', 'error');
+        });
+    }
+    
+    collectFormData() {  
+        const form = document.getElementById('professionalFormattingForm');
+        const formData = new FormData(form);
+        const data = {};
+        
+        // Convert FormData to object
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        
+        // Handle checkboxes
+        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            data[checkbox.name] = checkbox.checked;
+        });
+        
+        return data;
+    }
+    
+    showNotification(message, type = 'info') {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+        
+        const icons = {
+            success: 'fas fa-check-circle',
+            error: 'fas fa-exclamation-circle', 
+            warning: 'fas fa-exclamation-triangle',
+            info: 'fas fa-info-circle'
+        };
+        
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <i class="${icons[type]} notification-icon"></i>
+            <div class="notification-message">${message}</div>
+        `;
+        
+        container.appendChild(notification);
+        
+        // Show notification
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                container.removeChild(notification);
+            }, 300);
+        }, 5000);
+    }
+}
+
+// Global functions
+function updatePreview() {
+    window.formatter.updatePreview();
+}
+
+function fullscreenPreview() {
+    const previewPanel = document.querySelector('.preview-panel');
+    if (previewPanel.requestFullscreen) {
+        previewPanel.requestFullscreen();
+    }
+}
+
+function generateProfessionalFormat() {
+    window.formatter.generateProfessionalFormat();
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.formatter = new ProfessionalFormatter();
+});
+</script>
+{% endblock %}

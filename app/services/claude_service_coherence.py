@@ -189,7 +189,7 @@ class BookCoherenceManager:
     def calculate_chunk_page_distribution(self, structured_chapters: List[Dict[str, Any]], target_pages: int) -> List[Dict[str, Any]]:
         """Calcula distribución de páginas por chunk manteniendo coherencia"""
         
-        max_chapters_per_chunk = 4   # 🚀 OPTIMIZADO: Control preciso de páginas (3-4 capítulos por chunk)
+        max_chapters_per_chunk = 2   # 🚀 OPTIMIZADO: Control preciso de páginas (2-3 capítulos por chunk para 5 chunks)
         chunks = []
         
         for i in range(0, len(structured_chapters), max_chapters_per_chunk):

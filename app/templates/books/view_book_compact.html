@@ -1408,6 +1408,9 @@
                     <button class="action-btn secondary" onclick="showBookConfiguration()">
                         ⚙️ Configuración
                     </button>
+                    <button class="action-btn secondary" onclick="openFormattingViewer()">
+                        🎨 Formateo Profesional
+                    </button>
                 </div>
             </div>
             
@@ -1428,7 +1431,7 @@
                     <p><strong>Páginas:</strong> {{ display_pages or book.final_pages or 0 }}</p>
                     <p><strong>Palabras:</strong> {{ "{:,}".format(display_words) if display_words else (book.final_words or 0) }}</p>
                     <p><strong>Formato:</strong> {{ book.format_size or 'A4' }}</p>
-                    <p><strong>Estado:</strong> {% if book.status.value == 'completed' %}✅ Completado{% else %}⏳ En proceso{% endif %}</p>
+                    <p><strong>Estado:</strong> {% if book.status.value == 'COMPLETED' %}✅ Completado{% else %}⏳ En proceso{% endif %}</p>
                     
                     {% if book.key_topics %}
                     <h4 style="margin-top: 25px; margin-bottom: 12px; color: #374151;">Descripción</h4>
@@ -1678,7 +1681,8 @@
                     continue;
                 }
                 
-                if (line.startsWith('#')) {
+                // Handle both Markdown headers (#) and HTML headers (<h1>, <h2>)
+                if (line.startsWith('#') || line.match(/^<h[1-6]>/i)) {
                     if (currentSection.trim()) {
                         sections.push({ type: 'paragraph', content: currentSection.trim() });
                         currentSection = '';
@@ -1689,16 +1693,47 @@
                         inList = false;
                     }
                     
-                    const level = line.match(/^#+/)[0].length;
-                    let title = line.replace(/^#+\s*/, '').trim();
+                    let level, title;
                     
-                    // Clean up title - remove trailing colon and extra spaces
+                    if (line.startsWith('#')) {
+                        // Markdown format: # Title
+                        level = line.match(/^#+/)[0].length;
+                        title = line.replace(/^#+\s*/, '').trim();
+                    } else {
+                        // HTML format: <h1>Title</h1> or <h1>Title with HTML tags</h1>
+                        const htmlMatch = line.match(/^<h([1-6])[^>]*>(.*?)<\/h[1-6]>/i);
+                        if (htmlMatch) {
+                            level = parseInt(htmlMatch[1]);
+                            title = htmlMatch[2].replace(/<[^>]*>/g, '').trim(); // Remove any HTML tags from title
+                        } else {
+                            // Handle self-closing or malformed HTML headers
+                            const openMatch = line.match(/^<h([1-6])[^>]*>(.*)/i);
+                            if (openMatch) {
+                                level = parseInt(openMatch[1]);
+                                title = openMatch[2].replace(/<[^>]*>/g, '').trim();
+                            } else {
+                                continue; // Skip malformed lines
+                            }
+                        }
+                    }
+                    
+                    // Clean up title - remove trailing colon, asterisks, and extra spaces
                     title = title.replace(/:\s*$/, '').trim();
+                    title = title.replace(/\*\*/g, '').trim(); // Remove markdown bold formatting
                     
                     sections.push({ type: `h${level}`, content: title });
                     
-                    // Add to TOC if it's level 1 (chapters) or level 2 (sections)
-                    if ((level === 1 || level === 2) && title.length > 0) {
+                    // Add to TOC if it's level 1 (chapters) or level 2 (sections)  
+                    // Filter out CHUNK titles and main book title from appearing in TOC
+                    const isChunkTitle = title.toUpperCase().includes('CHUNK');
+                    const isBookTitle = bookData.title && (
+                        title.toUpperCase().includes(bookData.title.toUpperCase()) ||
+                        bookData.title.toUpperCase().includes(title.toUpperCase()) ||
+                        title.toUpperCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '') === 
+                        bookData.title.toUpperCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '')
+                    );
+                    
+                    if ((level === 1 || level === 2) && title.length > 0 && !isChunkTitle && !isBookTitle) {
                         toc.push({
                             level: level,
                             title: title,
@@ -2965,6 +3000,38 @@
                 </div>
                 ` : ''}
             `;
+        }
+
+        // === FORMATTING VIEWER FUNCTION ===
+        
+        function openFormattingViewer() {
+            // Redirect to the formatting viewer page
+            console.log('Opening formatting viewer for book ID:', bookData.id);
+            console.log('Book status:', bookData.status);
+            console.log('Current URL:', window.location.href);
+            
+            // Store debug info in sessionStorage to persist across page loads
+            sessionStorage.setItem('formatting_debug', JSON.stringify({
+                bookId: bookData.id,
+                bookStatus: bookData.status,
+                timestamp: new Date().toISOString(),
+                fromUrl: window.location.href
+            }));
+            
+            // Check if bookData exists and has ID
+            if (!bookData || !bookData.id) {
+                console.error('Book data not available');
+                alert('Error: Información del libro no disponible');
+                return;
+            }
+            
+            const targetUrl = `/books/book/${bookData.id}/formatting-viewer`;
+            console.log('Navigating to:', targetUrl);
+            
+            // Add a small delay to see the logs
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 100);
         }
     </script>
 </body>
