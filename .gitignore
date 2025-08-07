@@ -211,4 +211,4 @@ yarn-error.log*
 .flask_session/
 migrations/versions/
 *.pid
-*.sock
+*.sockvenv_professional/
