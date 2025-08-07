@@ -57,20 +57,9 @@ class BookCacheService:
             'title': book.title,
             'status': book.status.value,
             'created_at': book.created_at.isoformat(),
-            'progress': BookCacheService._calculate_progress(book)
+            'progress': book.progress  # Use BookGeneration's own progress calculation
         } for book in books]
     
-    @staticmethod
-    def _calculate_progress(book) -> int:
-        """Calcula progreso de generación de libro."""
-        if book.status.value == 'COMPLETED':
-            return 100
-        elif book.status.value == 'PROCESSING':
-            return 50  # Estimación básica
-        elif book.status.value == 'QUEUED':
-            return 10
-        else:
-            return 0
     
     @staticmethod
     def invalidate_book_cache(book_id: int):

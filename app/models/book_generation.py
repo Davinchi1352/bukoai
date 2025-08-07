@@ -154,15 +154,6 @@ class BookGeneration(BaseModel):
         """Verifica si está siendo procesado"""
         return self.status == BookStatus.PROCESSING
     
-    @property
-    def is_queued(self) -> bool:
-        """Verifica si está en cola"""
-        return self.status == BookStatus.QUEUED
-    
-    @property
-    def is_architecture_review(self) -> bool:
-        """Verifica si está esperando revisión de arquitectura"""
-        return self.status == BookStatus.ARCHITECTURE_REVIEW
     
     @property
     def has_architecture(self) -> bool:
@@ -201,53 +192,8 @@ class BookGeneration(BaseModel):
             return list(self.file_paths.keys())
         return []
     
-    def start_processing(self) -> None:
-        """Marca el libro como en procesamiento"""
-        self.status = BookStatus.PROCESSING
-        self.started_at = datetime.now(timezone.utc)
-        db.session.commit()
     
-    def mark_completed(self, content: str, final_stats: Dict[str, Any]) -> None:
-        """Marca el libro como completado"""
-        self.status = BookStatus.COMPLETED
-        self.content = content  # Mantener para compatibilidad
-        self.content_html = content  # El contenido ya viene en HTML estructurado
-        self.completed_at = datetime.now(timezone.utc)
-        
-        # Actualizar estadísticas finales
-        if final_stats:
-            self.final_pages = final_stats.get("estimated_pages")
-            self.final_words = final_stats.get("estimated_words")
-            self.streaming_stats = final_stats
-            
-            # Actualizar número real de capítulos si está disponible
-            if final_stats.get("chapters"):
-                self.chapter_count = final_stats.get("chapters")
-        
-        db.session.commit()
     
-    def mark_failed(self, error_message: str) -> None:
-        """Marca el libro como fallido"""
-        self.status = BookStatus.FAILED
-        self.error_message = error_message
-        self.completed_at = datetime.utcnow()
-        db.session.commit()
-    
-    def retry_generation(self) -> None:
-        """Reintenta la generación"""
-        if self.can_retry:
-            self.retry_count += 1
-            self.status = BookStatus.QUEUED
-            self.error_message = None
-            self.started_at = None
-            self.completed_at = None
-            db.session.commit()
-    
-    def cancel_generation(self) -> None:
-        """Cancela la generación"""
-        self.status = BookStatus.CANCELLED
-        self.completed_at = datetime.utcnow()
-        db.session.commit()
     
     def mark_architecture_review(self, architecture: Dict[str, Any]) -> None:
         """Marca el libro como esperando revisión de arquitectura"""
@@ -300,48 +246,6 @@ class BookGeneration(BaseModel):
         
         db.session.commit()
     
-    def get_regeneration_stats(self) -> Dict[str, Any]:
-        """Obtiene estadísticas de regeneración para análisis"""
-        return {
-            "regeneration_count": self.regeneration_count,
-            "has_regenerations": self.regeneration_count > 0,
-            "last_feedback_what": self.regeneration_feedback_what,
-            "last_feedback_how": self.regeneration_feedback_how,
-            "regeneration_history_count": len(self.regeneration_history) if self.regeneration_history else 0,
-            "most_common_feedback_themes": self._analyze_feedback_themes() if self.regeneration_history else []
-        }
-    
-    def _analyze_feedback_themes(self) -> List[str]:
-        """Analiza los temas más comunes en el feedback de regeneración"""
-        if not self.regeneration_history:
-            return []
-        
-        # Palabras clave comunes en feedback de arquitectura
-        themes_keywords = {
-            "characters": ["personaje", "character", "protagonista", "mentor"],
-            "structure": ["estructura", "structure", "capítulo", "chapter", "organización"],
-            "content": ["contenido", "content", "tema", "topic", "información"],
-            "tone": ["tono", "tone", "estilo", "style", "enfoque", "approach"],
-            "length": ["largo", "length", "páginas", "pages", "extenso", "corto"]
-        }
-        
-        feedback_texts = []
-        for entry in self.regeneration_history:
-            feedback_texts.extend([entry.get("feedback_what", ""), entry.get("feedback_how", "")])
-        
-        combined_feedback = " ".join(feedback_texts).lower()
-        
-        themes_found = []
-        for theme, keywords in themes_keywords.items():
-            if any(keyword in combined_feedback for keyword in keywords):
-                themes_found.append(theme)
-        
-        return themes_found[:3]  # Retornar máximo 3 temas principales
-    
-    def update_queue_position(self, position: int) -> None:
-        """Actualiza la posición en cola"""
-        self.queue_position = position
-        db.session.commit()
     
     def update_tokens(self, prompt_tokens: int, completion_tokens: int, thinking_tokens: int = 0) -> None:
         """Actualiza las métricas de tokens ACUMULANDO todas las fases (arquitectura + regeneración + generación)"""
@@ -357,11 +261,6 @@ class BookGeneration(BaseModel):
         thinking_cost = (self.thinking_tokens / 1000) * 0.015
         self.estimated_cost = round(input_cost + output_cost + thinking_cost, 4)
         
-        db.session.commit()
-    
-    def update_file_paths(self, file_paths: Dict[str, str]) -> None:
-        """Actualiza las rutas de archivos generados"""
-        self.file_paths = file_paths
         db.session.commit()
     
     def get_file_path(self, format_type: str) -> Optional[str]:
@@ -447,82 +346,13 @@ class BookGeneration(BaseModel):
         })
         return base_dict
     
-    @classmethod
-    def get_by_user(cls, user_id: int) -> List['BookGeneration']:
-        """Retorna libros de un usuario"""
-        return cls.query.filter_by(user_id=user_id).order_by(cls.created_at.desc()).all()
     
     @classmethod
     def find_by_uuid(cls, uuid_str: str) -> Optional['BookGeneration']:
         """Busca un libro por UUID"""
         return cls.query.filter_by(uuid=uuid_str).first()
     
-    @classmethod
-    def get_queued_books(cls) -> List['BookGeneration']:
-        """Retorna libros en cola ordenados por prioridad"""
-        return cls.query.filter_by(status=BookStatus.QUEUED).order_by(
-            cls.priority.desc(), cls.created_at.asc()
-        ).all()
     
-    @classmethod
-    def get_processing_books(cls) -> List['BookGeneration']:
-        """Retorna libros en procesamiento"""
-        return cls.query.filter_by(status=BookStatus.PROCESSING).all()
-    
-    @classmethod
-    def get_completed_books(cls) -> List['BookGeneration']:
-        """Retorna libros completados"""
-        return cls.query.filter_by(status=BookStatus.COMPLETED).all()
-    
-    @classmethod
-    def get_failed_books(cls) -> List['BookGeneration']:
-        """Retorna libros fallidos"""
-        return cls.query.filter_by(status=BookStatus.FAILED).all()
-    
-    @classmethod
-    def get_architecture_review_books(cls) -> List['BookGeneration']:
-        """Retorna libros esperando revisión de arquitectura"""
-        return cls.query.filter_by(status=BookStatus.ARCHITECTURE_REVIEW).all()
-    
-    @classmethod
-    def get_statistics(cls) -> Dict[str, Any]:
-        """Retorna estadísticas globales"""
-        total = cls.query.count()
-        completed = cls.query.filter_by(status=BookStatus.COMPLETED).count()
-        failed = cls.query.filter_by(status=BookStatus.FAILED).count()
-        processing = cls.query.filter_by(status=BookStatus.PROCESSING).count()
-        queued = cls.query.filter_by(status=BookStatus.QUEUED).count()
-        architecture_review = cls.query.filter_by(status=BookStatus.ARCHITECTURE_REVIEW).count()
-        
-        return {
-            "total_books": total,
-            "completed_books": completed,
-            "failed_books": failed,
-            "processing_books": processing,
-            "queued_books": queued,
-            "architecture_review_books": architecture_review,
-            "success_rate": (completed / total * 100) if total > 0 else 0,
-            "average_processing_time": cls._calculate_average_processing_time(),
-        }
-    
-    @classmethod
-    def _calculate_average_processing_time(cls) -> Optional[float]:
-        """Calcula el tiempo promedio de procesamiento"""
-        completed_books = cls.query.filter(
-            cls.status == BookStatus.COMPLETED,
-            cls.started_at.isnot(None),
-            cls.completed_at.isnot(None)
-        ).all()
-        
-        if not completed_books:
-            return None
-        
-        total_time = sum(
-            (book.completed_at - book.started_at).total_seconds()
-            for book in completed_books
-        )
-        
-        return total_time / len(completed_books)
     
     def get_cover_gradient(self) -> str:
         """Genera un gradiente de color para la portada basado en el género"""
@@ -542,17 +372,6 @@ class BookGeneration(BaseModel):
         }
         return gradients.get(self.genre, 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)')
     
-    def get_estimated_pages(self) -> int:
-        """Retorna el número estimado de páginas"""
-        if self.final_pages:
-            return self.final_pages
-        
-        # Estimación basada en palabras (250 palabras por página)
-        if self.final_words:
-            return max(1, self.final_words // 250)
-        
-        # Estimación basada en capítulos (15 páginas por capítulo)
-        return self.chapter_count * 15
     
     def get_word_count(self) -> int:
         """Retorna el número de palabras"""
@@ -566,23 +385,6 @@ class BookGeneration(BaseModel):
         # Estimación basada en capítulos (3000 palabras por capítulo)
         return self.chapter_count * 3000
     
-    def get_chapter_count(self) -> int:
-        """Retorna el número de capítulos"""
-        if self.content_data and isinstance(self.content_data, dict):
-            chapters = self.content_data.get('chapters', [])
-            if chapters:
-                return len(chapters)
-        
-        return self.chapter_count or 10
-    
-    def get_reading_time(self) -> int:
-        """Retorna el tiempo de lectura en minutos"""
-        if self.estimated_reading_time:
-            return self.estimated_reading_time
-        
-        # Estimación basada en palabras (200 palabras por minuto)
-        word_count = self.get_word_count()
-        return max(1, word_count // 200)
     
     @property
     def content_data(self) -> Optional[Dict[str, Any]]:

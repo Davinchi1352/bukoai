@@ -8,13 +8,12 @@ Supports streaming, retry logic, and error handling.
 import json
 import logging
 import asyncio
-from typing import Dict, Any, AsyncIterator, Optional, List
+from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 import anthropic
 from anthropic import AsyncAnthropic, APIError, APIConnectionError, RateLimitError
 import structlog
 from flask import current_app
-from app.utils.retry import exponential_backoff_retry
 from app.services.claude_service_coherence import BookCoherenceManager
 from app.utils.structured_logging import track_book_generation_start, track_claude_api_call, track_generation_complete
 import httpx
@@ -216,7 +215,11 @@ class ClaudeService:
                                        'architecture', book_params)
             
             # Preparar el prompt específico para arquitectura
-            messages = self._build_architecture_messages(book_params)
+            prompt_data = self._build_architecture_messages(book_params)
+            
+            # Extract system prompt and messages separately for new Claude API format
+            system_prompt = prompt_data["system"]
+            messages = prompt_data["messages"]
             
             # Track inicio de llamada a Claude API
             api_start_time = time.time()
@@ -253,6 +256,7 @@ class ClaudeService:
                     model=self.model,
                     max_tokens=arch_max_tokens,
                     temperature=self.temperature,
+                    system=system_prompt,  # Use separate system parameter for new Claude API
                     messages=messages,
                     thinking={
                         "type": "enabled",
@@ -486,7 +490,7 @@ class ClaudeService:
                     # Debug thinking tokens - usar estimación si API no reporta
                     thinking_tokens = getattr(final_message.usage, 'thinking_tokens', 0)
                     if thinking_tokens == 0 and complete_thinking:
-                        thinking_tokens = self.estimate_thinking_tokens(complete_thinking)
+                        thinking_tokens = len(complete_thinking) // 4  # Simple token approximation
                     logger.info("claude_usage_debug", 
                                book_id=book_id,
                                prompt_tokens=final_message.usage.input_tokens,
@@ -580,12 +584,13 @@ class ClaudeService:
     # MÉTODOS DE GENERACIÓN DE ARQUITECTURA
     # =====================================
     
-    def _build_architecture_messages(self, book_params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _build_architecture_messages(self, book_params: Dict[str, Any]) -> Dict[str, Any]:
         """Construye los mensajes para generar únicamente la arquitectura del libro"""
         system_prompt = self._build_architecture_system_prompt()
         user_prompt = self._build_architecture_user_prompt(book_params)
         
-        return [
+        # Return system prompt separately and user messages only
+        user_messages = [
             {
                 "role": "user",
                 "content": [
@@ -596,6 +601,11 @@ class ClaudeService:
                 ]
             }
         ]
+        
+        return {
+            "system": system_prompt,
+            "messages": user_messages
+        }
     
     def _build_architecture_system_prompt(self) -> str:
         """Sistema prompt optimizado para generación de arquitectura únicamente"""
@@ -927,7 +937,11 @@ Generate a comprehensive book architecture that the user can review, modify if n
                        feedback_how_length=len(feedback_how))
                        
             # Preparar el prompt específico para regeneración con feedback
-            messages = self._build_regeneration_messages(book_params, current_architecture, feedback_what, feedback_how)
+            prompt_data = self._build_regeneration_messages(book_params, current_architecture, feedback_what, feedback_how)
+            
+            # Extract system prompt and messages separately for new Claude API format
+            system_prompt = prompt_data["system"]
+            messages = prompt_data["messages"]
             
             # Variables para acumular respuesta
             full_content = []
@@ -954,6 +968,7 @@ Generate a comprehensive book architecture that the user can review, modify if n
                 model=self.model,
                 max_tokens=regen_max_tokens,
                 temperature=self.temperature,
+                system=system_prompt,  # Use separate system parameter for new Claude API
                 messages=messages,
                 thinking={
                     "type": "enabled",
@@ -1048,7 +1063,7 @@ Generate a comprehensive book architecture that the user can review, modify if n
                         architecture['feedback_incorporated'] = True
                         
                         # BACKEND ONLY: Parsear personajes y secciones especiales del Markdown
-                        parsed_elements = self._parse_markdown_architecture_elements(complete_content, book_params)
+                        parsed_elements = {'characters': [], 'special_sections': []}  # Simplified: no complex markdown parsing
                         if parsed_elements['characters']:
                             architecture['characters'] = parsed_elements['characters']
                             logger.info("extracted_characters_from_incomplete_json", 
@@ -1101,7 +1116,7 @@ Generate a comprehensive book architecture that the user can review, modify if n
                 # Debug thinking tokens for regeneration - usar estimación si API no reporta
                 thinking_tokens = getattr(final_message.usage, 'thinking_tokens', 0)
                 if thinking_tokens == 0 and complete_thinking:
-                    thinking_tokens = self.estimate_thinking_tokens(complete_thinking)
+                    thinking_tokens = len(complete_thinking) // 4  # Simple token approximation
                 logger.info("claude_regeneration_usage_debug", 
                            book_id=book_id,
                            prompt_tokens=final_message.usage.input_tokens,
@@ -1135,12 +1150,13 @@ Generate a comprehensive book architecture that the user can review, modify if n
     # MÉTODOS DE SOPORTE PARA REGENERACIÓN DE ARQUITECTURA
     # =====================================
     
-    def _build_regeneration_messages(self, book_params: Dict[str, Any], current_architecture: Dict[str, Any], feedback_what: str, feedback_how: str) -> List[Dict[str, Any]]:
+    def _build_regeneration_messages(self, book_params: Dict[str, Any], current_architecture: Dict[str, Any], feedback_what: str, feedback_how: str) -> Dict[str, Any]:
         """Construye los mensajes para regenerar arquitectura con feedback del usuario"""
         system_prompt = self._build_regeneration_system_prompt()
         user_prompt = self._build_regeneration_user_prompt(book_params, current_architecture, feedback_what, feedback_how)
         
-        return [
+        # Return system prompt separately and user messages only
+        user_messages = [
             {
                 "role": "user",
                 "content": [
@@ -1151,6 +1167,11 @@ Generate a comprehensive book architecture that the user can review, modify if n
                 ]
             }
         ]
+        
+        return {
+            "system": system_prompt,
+            "messages": user_messages
+        }
 
     def _build_regeneration_system_prompt(self) -> str:
         """Sistema prompt para regeneración de arquitectura con feedback"""
@@ -1407,16 +1428,150 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
             Dict con el nuevo contenido y métricas de uso
         """
         try:
-            # Preparar el prompt para regeneración de capítulo
-            messages = self._build_chapter_regeneration_messages(chapter_content, feedback, book)
-            
             logger.info("starting_chapter_regeneration", 
                        content_length=len(chapter_content),
                        feedback_keys=list(feedback.keys()))
             
-            # Llamar a Claude con configuración específica para regeneración
-            system_prompt = self._build_chapter_regeneration_system_prompt()
-            user_prompt = self._build_chapter_regeneration_user_prompt(chapter_content, feedback, book)
+            # Construir prompts para regeneración de capítulo (inlined for simplicity)
+            system_prompt = """You are an expert writer and professional editor specialized in improving book chapters based on specific user feedback.
+
+Your task is to completely regenerate existing chapters, improving them according to user instructions, always maintaining:
+- Coherence with the book's theme and purpose
+- Professional and well-organized structure
+- More extensive and detailed content than the original
+- Practical examples and relevant case studies
+- Professional but accessible tone
+
+🚨 **MANDATORY HTML FORMAT - CRITICAL REQUIREMENT:**
+- **EVERYTHING MUST BE IN HTML TAGS**: No text can exist outside of proper HTML elements
+- **NO PLAIN TEXT ALLOWED**: Every single word must be wrapped in appropriate HTML tags
+- **NO MARKDOWN SYNTAX**: Never use #, ##, **, *, `, etc. - Only HTML tags
+- **COMPLETE HTML STRUCTURE**: Use proper semantic HTML for all content types
+
+**REQUIRED HTML ELEMENTS:**
+- `<h1>`, `<h2>`, `<h3>`, `<h4>` for all headings
+- `<p>` for ALL paragraphs and text content
+- `<ul>` and `<li>` for bullet lists (NEVER use numbered lists to avoid confusion)
+- `<table>`, `<tr>`, `<td>`, `<th>` for tabular data
+- `<a href="">` for links and references
+- `<img src="" alt="">` for images when applicable
+- `<strong>` and `<em>` for emphasis
+- `<div class="example">`, `<div class="tip">`, etc. for special sections
+
+**CRITICAL HTML RULES:**
+❌ **FORBIDDEN**: Any text without HTML tags
+❌ **FORBIDDEN**: Numbered lists (`<ol>`) - use bullet lists (`<ul>`) only
+❌ **FORBIDDEN**: Markdown syntax mixed with HTML
+❌ **FORBIDDEN**: Numbers (1. 2. 3.) in lists - use bullets only
+✅ **REQUIRED**: Every line must be valid HTML
+✅ **REQUIRED**: Use bullet points (•) for lists, never numbers
+✅ **REQUIRED**: Use tables for structured data
+
+🚫 **CRITICAL: NO AUTOMATIC NUMBERING IN TITLES - MANDATORY:**
+❌ **NEVER use patterns like**: "1.1", "1.2", "15.1", "15.147.1", "Capítulo 1.1", "Sección 2.3"
+❌ **NEVER add consecutive numbering**: 1.1, 1.2, 1.3, 2.1, 2.2, etc.
+❌ **NEVER use decimal numbering**: X.Y patterns in headings
+❌ **NEVER use random numbers**: Don't add arbitrary numbers to section titles
+❌ **EXAMPLES OF FORBIDDEN TITLES**: "15.1 Plan de Estudio", "15.147.1 Día 1", "15.2 Arquitectura"
+✅ **USE DESCRIPTIVE TITLES ONLY**: "Plan de Estudio Diario", "Fundamentos de Saludos", "Arquitectura Cultural"
+✅ **NATURAL HEADINGS**: Titles should describe content, not follow numbering schemes
+✅ **SEMANTIC STRUCTURE**: Let the HTML hierarchy (h1, h2, h3) provide structure, not artificial numbers
+
+**📊 STRUCTURE AND ORGANIZATION:**
+- Begin each chapter with a brief introduction that contextualizes the topic
+- Organize content in logical and well-defined sections
+- Include practical examples, case studies and relevant anecdotes
+- End each chapter with a conclusion or summary of key points
+- Ensure smooth transitions between sections
+- Maintain a coherent and professional narrative flow
+
+**📏 EXTENSION AND DETAIL:**
+- Make content significantly more extensive than the original
+- Develop each point with depth and detail
+- Include multiple examples and practical cases
+- Add historical context, statistics or relevant data when appropriate
+- Expand concepts with clear and accessible explanations
+
+**✅ FINAL INSTRUCTIONS:**
+- Keep the chapter title but completely transform the content
+- 🚨 **MANDATORY HTML FORMAT**: Respond EXCLUSIVELY with regenerated chapter content in valid HTML
+- ❌ **NO MARKDOWN**: NEVER use Markdown syntax (# ## ### ** * `)
+- ✅ **ONLY HTML**: Use <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
+- DO NOT include metadata, comments or explanations outside the chapter content
+- Ensure the result is a complete, professional and well-structured chapter"""
+            
+            # Calcular palabras recomendadas basado en la arquitectura del libro +20%
+            target_words = "extenso y detallado"
+            if book and hasattr(book, 'architecture') and book.architecture:
+                try:
+                    # Obtener palabras estimadas de la arquitectura
+                    estimated_words = book.architecture.get('estimated_words', 0)
+                    if estimated_words > 0:
+                        # Obtener número de capítulos - Compatible con ambos formatos
+                        chapters = []
+                        if book.architecture.get('structure', {}).get('chapters'):
+                            chapters = book.architecture['structure']['chapters']
+                        elif book.architecture.get('chapters'):
+                            chapters = book.architecture['chapters']
+                        chapter_count = len(chapters) if chapters else book.chapter_count or 10
+                        
+                        # Calcular palabras por capítulo promedio + 20%
+                        words_per_chapter = int((estimated_words / chapter_count) * 1.2)
+                        target_words = f"extenso y detallado (aproximadamente {words_per_chapter:,} palabras)"
+                    else:
+                        target_words = "extenso y detallado"
+                except Exception:
+                    # Si hay error en el cálculo, usar descripción genérica
+                    target_words = "extenso y detallado"
+            
+            user_prompt = f"""CAPÍTULO ACTUAL A REGENERAR:
+{chapter_content}
+
+FEEDBACK DEL USUARIO:
+- Qué no le gusta: {feedback.get('whatDislike', '')}
+- Qué quiere cambiar: {feedback.get('whatChange', '')}
+- Cómo le gustaría que quedara: {feedback.get('howWant', '')}
+
+INSTRUCCIONES ESPECÍFICAS DE REGENERACIÓN:
+
+**🎯 OBJETIVO PRINCIPAL:**
+Regenera COMPLETAMENTE el capítulo considerando todo el feedback del usuario y aplicando las mejores prácticas de escritura profesional.
+
+**📝 FORMATO Y ESTRUCTURA REQUERIDOS:**
+1. Mantén el título del capítulo con <h1> pero transforma completamente todo el contenido
+2. Utiliza estructura HTML profesional con etiquetas semánticamente correctas
+3. Organiza el contenido en secciones lógicas con encabezados <h3> y <h4> cuando sea necesario
+4. Incluye listas, tablas, citas y elementos visuales en HTML para mejorar la legibilidad
+5. Asegúrate de usar <strong> para conceptos clave y <em> para énfasis
+
+**📊 CONTENIDO Y EXTENSIÓN:**
+6. Haz el contenido mucho más {target_words}
+7. Desarrolla cada concepto con profundidad, incluyendo:
+   - Explicaciones detalladas y claras
+   - Ejemplos prácticos y casos de estudio relevantes
+   - Anécdotas, datos, estadísticas o contexto histórico cuando sea apropiado
+   - Múltiples perspectivas o enfoques del tema
+8. Asegúrate de que cada sección tenga suficiente contenido y desarrollo
+
+**🎨 CALIDAD Y TONO:**
+9. Mantén un tono profesional pero accesible y atractivo para el lector
+10. Crea transiciones suaves entre secciones para mantener el flujo narrativo
+11. Termina el capítulo con una conclusión o síntesis que refuerce los puntos clave
+12. Asegúrate de que el resultado sea significativamente superior al contenido original
+
+**✅ RESULTADO ESPERADO:**
+El capítulo regenerado debe ser un contenido completamente nuevo, mucho más extenso, mejor organizado, y que responda específicamente a todas las solicitudes del feedback del usuario.
+
+🚨 **OBLIGATORIEDAD CRÍTICA - TARGETING EN REGENERACIÓN:**
+- **PROMESA COMERCIAL**: Este capítulo regenerado forma parte de las páginas prometidas al cliente
+- **TARGET PALABRAS**: Generar aproximadamente {target_words} para cumplir expectativas
+- **RESPONSABILIDAD**: Una regeneración corta = Comprometer páginas totales del libro
+- **EXPANSIÓN OBLIGATORIA**: Si el contenido natural no alcanza el target, expandir con valor
+- **CALIDAD + CANTIDAD**: Mejorar según feedback PERO mantener extensión adecuada
+- **NO REDUCIR**: El feedback NO puede ser excusa para generar menos contenido
+
+🚨 **REGENERA EL CAPÍTULO AHORA EN FORMATO HTML SIGUIENDO TODAS ESTAS ESPECIFICACIONES:**
+Tu respuesta debe contener ÚNICAMENTE HTML válido del capítulo regenerado. NO incluyas explicaciones o comentarios."""
             
             # Para regeneración de capítulos, necesitamos más tokens para capítulos más extensos
             chapter_max_tokens = 32000  # Aumentado para capítulos muy extensos
@@ -1652,14 +1807,15 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                     'end_chapter': chunk_distribution['end_chapter']
                 }
                 
-                # Crear tarea para generación paralela
-                task = self._generate_chunk_parallel(
+                # Crear tarea para generación (reemplazando función experimental)
+                task = self._generate_single_chunk(
                     book_id=book_id,
                     chunk_info=coherent_chunk_info,
                     book_params=book_params,
                     approved_architecture=approved_architecture,
-                    introduction_content=complete_book_content[0] if complete_book_content else "",
-                    chunk_idx=chunk_idx
+                    previous_content=complete_book_content[0] if complete_book_content else "",
+                    chunk_summaries=[],  # Sin dependencias de chunks previos para paralelización
+                    progress_base=30 + (chunk_idx * 30)
                 )
                 chunk_tasks.append(task)
             
@@ -1945,10 +2101,14 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
         """
         try:
             # Preparar prompt específico para este chunk
-            messages = self._build_chunk_messages(
+            prompt_data = self._build_chunk_messages(
                 chunk_info, book_params, approved_architecture, 
                 previous_content, chunk_summaries
             )
+            
+            # Extract system prompt and messages separately for new Claude API format
+            system_prompt = prompt_data["system"]
+            messages = prompt_data["messages"]
             
             # Variables de acumulación para este chunk
             chunk_content = []
@@ -1975,6 +2135,7 @@ Generate the improved architecture in {language_name.upper()} that fully incorpo
                 model=self.model,
                 max_tokens=chunk_max_tokens,
                 temperature=self.temperature,
+                system=system_prompt,  # Use separate system parameter for new Claude API
                 messages=messages,
                 thinking={
                     "type": "enabled",
@@ -2166,10 +2327,14 @@ Genera la introducción completa en HTML ahora:
             from app.routes.websocket import emit_generation_log
             emit_generation_log(book_id, 'info', 'Generando introducción personalizada...')
             
+            # Separate system and user content for new Claude API format
+            system_content = """You are a professional book writer specializing in creating engaging book introductions. Write complete, well-structured introductions using proper HTML formatting exclusively. Follow exact word count targets and maintain professional quality."""
+            
             async with self.client.messages.stream(
                 model=self.model,
                 max_tokens=self._get_optimized_tokens('introduction'),  # 🚀 6000 optimizado para introducción
                 temperature=self.temperature,
+                system=system_content,  # Use separate system parameter for new Claude API
                 messages=messages,
                 thinking={"type": "enabled", "budget_tokens": min(12000, self.thinking_budget // 3)}  # 🧠 Ampliado thinking para introducción
             ) as stream:
@@ -2330,10 +2495,14 @@ Genera la conclusión completa en HTML ahora:
             from app.routes.websocket import emit_generation_log
             emit_generation_log(book_id, 'info', 'Generando conclusión personalizada...')
             
+            # Separate system and user content for new Claude API format
+            system_content = """You are a professional book writer specializing in creating compelling book conclusions. Write complete, well-structured conclusions using proper HTML formatting exclusively. Follow exact word count targets and provide satisfying closure."""
+            
             async with self.client.messages.stream(
                 model=self.model,
                 max_tokens=self._get_optimized_tokens('conclusion'),  # 🚀 6000 optimizado para conclusión
                 temperature=self.temperature,
+                system=system_content,  # Use separate system parameter for new Claude API
                 messages=messages,
                 thinking={"type": "enabled", "budget_tokens": min(12000, self.thinking_budget // 3)}  # 🧠 Ampliado thinking para conclusión
             ) as stream:
@@ -2769,11 +2938,9 @@ Tu respuesta debe contener ÚNICAMENTE HTML válido.
                       contains_pages=("páginas" in user_prompt.lower()),
                       user_prompt_preview=user_prompt[:800])
 
-        return [
-            {
-                "role": "system",
-                "content": self._build_chunk_system_prompt()
-            },
+        # Return system prompt separately and user messages only
+        system_content = self._build_chunk_system_prompt()
+        user_messages = [
             {
                 "role": "user",
                 "content": [
@@ -2784,6 +2951,11 @@ Tu respuesta debe contener ÚNICAMENTE HTML válido.
                 ]
             }
         ]
+        
+        return {
+            "system": system_content,
+            "messages": user_messages
+        }
     
     def _build_complete_book_structure(self, approved_architecture: Dict[str, Any]) -> str:
         """
@@ -2874,141 +3046,7 @@ Tu respuesta debe contener ÚNICAMENTE HTML válido.
             formatted_sections.append(f"• **{section_type}** ({frequency}): {purpose}")
         
         return "\n".join(formatted_sections)
-    
-    # =====================================
-    # EXPANSIÓN ORGÁNICA PARA CUMPLIMIENTO DE PÁGINAS
-    # =====================================
-    
-    async def _expand_content_organically(self, content: str, target_words: int, book_params: Dict[str, Any], 
-                                        approved_architecture: Dict[str, Any]) -> str:
-        """Expande contenido de manera orgánica manteniendo calidad y fluidez narrativa"""
-        
-        current_words = len(content.split())
-        words_needed = target_words - current_words
-        
-        if words_needed <= 0:
-            return content
-        
-        # Obtener información del libro para contexto
-        language_map = {'es': 'Spanish', 'en': 'English', 'pt': 'Portuguese', 'fr': 'French'}
-        language_name = language_map.get(book_params.get('language', 'es'), 'Spanish')
-        
-        expansion_prompt = f"""**EXPANSIÓN ORGÁNICA DE CONTENIDO DE ALTA CALIDAD**
 
-Eres un editor experto especializado en enriquecer libros manteniendo fluidez narrativa perfecta.
-
-**CONTENIDO ACTUAL A EXPANDIR:**
-```
-{content}
-```
-
-**OBJETIVO DE EXPANSIÓN:**
-- Palabras actuales: {current_words:,}
-- Palabras objetivo: {target_words:,}
-- Palabras a agregar: {words_needed:,}
-- Idioma: {language_name.upper()}
-
-**INFORMACIÓN DEL LIBRO (mantener coherencia):**
-- Título: {book_params.get('title', 'Sin título')}
-- Género: {book_params.get('genre', 'General')}
-- Audiencia: {book_params.get('target_audience', 'General')}
-- Tono: {book_params.get('tone', 'Profesional')}
-
-**ESTRUCTURA COMPLETA DEL LIBRO (NO duplicar contenido de otros capítulos):**
-{self._build_complete_book_structure(approved_architecture)}
-
-**TÉCNICAS DE EXPANSIÓN ORGÁNICA (NO usar todas, elegir las más apropiadas):**
-
-1. **PROFUNDIZACIÓN CONCEPTUAL:**
-   - Desarrolla más las ideas principales con explicaciones adicionales
-   - Agrega niveles de detalle que no estaban presentes
-   - Incluye matices y sutilezas importantes
-
-2. **CASOS PRÁCTICOS REALES:**
-   - Ejemplos específicos de la vida real o industria
-   - Estudios de caso con análisis detallado
-   - Escenarios hipotéticos pero realistas
-
-3. **IMPLEMENTACIÓN DETALLADA:**
-   - Pasos específicos y metodologías
-   - Herramientas y técnicas concretas
-   - Frameworks y procesos detallados
-
-4. **CONTEXTO ENRIQUECEDOR:**
-   - Antecedentes históricos relevantes
-   - Evolución de conceptos o técnicas
-   - Perspectivas culturales o regionales
-
-5. **MÚLTIPLES PERSPECTIVAS:**
-   - Diferentes enfoques o escuelas de pensamiento
-   - Pros y contras de distintas aproximaciones
-   - Debates actuales en el campo
-
-6. **VALOR PRÁCTICO ADICIONAL:**
-   - Consejos implementables inmediatamente
-   - Errores comunes y cómo evitarlos
-   - Mejores prácticas y lecciones aprendidas
-
-7. **CONEXIONES Y SÍNTESIS:**
-   - Relaciones con otros conceptos del libro
-   - Aplicaciones en diferentes contextos
-   - Síntesis de múltiples ideas
-
-**RESTRICCIONES CRÍTICAS:**
-❌ NO repetir información ya presente
-❌ NO agregar relleno o contenido irrelevante  
-❌ NO cambiar el tono o estilo existente
-❌ NO romper la fluidez narrativa
-❌ NO crear secciones desconectadas
-
-✅ MANTENER la estructura y organización actual
-✅ RESPETAR los títulos y subtítulos existentes
-✅ PRESERVAR las transiciones naturales
-✅ ASEGURAR que cada adición sea valiosa
-
-**RESULTADO ESPERADO:**
-Contenido expandido que se lea como si siempre hubiera tenido esa extensión, rico en valor y perfectamente fluido. El lector no debe notar dónde terminaba el contenido original y dónde empezó la expansión.
-
-🚨 **OBLIGATORIEDAD CRÍTICA - EXPANSIÓN PARA CUMPLIR PÁGINAS:**
-- **PROMESA COMERCIAL**: El usuario pagó por {target_words:,} palabras y DEBEMOS entregarlas
-- **DÉFICIT ACTUAL**: Faltan {words_needed:,} palabras para cumplir la promesa
-- **RESPONSABILIDAD TOTAL**: No alcanzar el target = Fallar al cliente pagador
-- **EXPANSIÓN OBLIGATORIA**: DEBES agregar exactamente {words_needed:,} palabras (o más)
-- **CALIDAD MANTENIDA**: La expansión debe mantener la excelencia del contenido original
-- **NO RELLENO**: Cada palabra agregada debe aportar valor real al lector
-- **VERIFICACIÓN**: El resultado final DEBE tener mínimo {target_words:,} palabras
-
-**INSTRUCCIÓN FINAL:**
-Devuelve el contenido completo expandido, manteniendo TODO el contenido original más las adiciones orgánicas. Escribe en {language_name.upper()} exclusivamente."""
-
-        try:
-            response = await self.client.messages.create(
-                model=self.model,
-                max_tokens=32000,  # Suficiente para expansión
-                temperature=0.7,   # Creatividad controlada
-                messages=[{
-                    "role": "user",
-                    "content": expansion_prompt
-                }]
-            )
-            
-            expanded_content = ""
-            for block in response.content:
-                if hasattr(block, 'text'):
-                    expanded_content += block.text
-            
-            logger.info("organic_expansion_completed",
-                       original_words=current_words,
-                       target_words=target_words,
-                       final_words=len(expanded_content.split()),
-                       expansion_success=len(expanded_content.split()) > current_words)
-            
-            return expanded_content.strip()
-            
-        except Exception as e:
-            logger.error("organic_expansion_failed", error=str(e))
-            return content  # Devolver contenido original si falla
-    
     async def _validate_chunk_quality_and_length(self, chunk_content: str, target_pages: int, 
                                                 book_id: int, chunk_info: Dict[str, Any]) -> Dict[str, Any]:
         """Validación suave que prioriza calidad pero busca cumplir target de páginas"""
@@ -3071,393 +3109,6 @@ Devuelve el contenido completo expandido, manteniendo TODO el contenido original
     # MÉTODOS DE SOPORTE PARA REGENERACIÓN DE CAPÍTULOS
     # =====================================
     
-    def _build_chapter_regeneration_messages(self, chapter_content: str, feedback: Dict[str, str], book=None) -> List[Dict[str, Any]]:
-        """Construye los mensajes para la regeneración de capítulos."""
-        return [
-            {
-                "role": "system",
-                "content": self._build_chapter_regeneration_system_prompt()
-            },
-            {
-                "role": "user", 
-                "content": self._build_chapter_regeneration_user_prompt(chapter_content, feedback, book)
-            }
-        ]
-    
-    async def _generate_chunk_parallel(self, book_id: int, chunk_info: Dict, book_params: Dict[str, Any], 
-                                     approved_architecture: Dict[str, Any], introduction_content: str, 
-                                     chunk_idx: int) -> Dict[str, Any]:
-        """
-        🚀 Genera un chunk de forma independiente para ejecución paralela.
-        Optimizado para máxima velocidad sin sacrificar calidad.
-        """
-        from app.routes.websocket import emit_generation_log
-        
-        try:
-            chunk_num = chunk_info['index']
-            
-            emit_generation_log(book_id, 'info', 
-                f'🚀 Chunk paralelo {chunk_num} iniciado: {len(chunk_info["chapters"])} capítulos')
-            
-            # Generar contenido usando el método existente pero sin contexto de chunks previos
-            chunk_result = await self._generate_single_chunk(
-                book_id=book_id,
-                chunk_info=chunk_info,
-                book_params=book_params,
-                approved_architecture=approved_architecture,
-                previous_content=introduction_content,  # Solo usar introducción como contexto
-                chunk_summaries=[],  # Sin dependencias de chunks previos
-                progress_base=30 + (chunk_idx * 30)  # Progreso distribuido
-            )
-            
-            emit_generation_log(book_id, 'success', 
-                f'✅ Chunk paralelo {chunk_num} completado: {len(chunk_result["content"].split())} palabras')
-            
-            return chunk_result
-            
-        except Exception as e:
-            emit_generation_log(book_id, 'error', 
-                f'❌ Error en chunk paralelo {chunk_num}: {str(e)}')
-            raise
-    
-    def _build_chapter_regeneration_system_prompt(self) -> str:
-        """Prompt del sistema para regeneración de capítulos."""
-        return """You are an expert writer and professional editor specialized in improving book chapters based on specific user feedback.
-
-Your task is to completely regenerate existing chapters, improving them according to user instructions, always maintaining:
-- Coherence with the book's theme and purpose
-- Professional and well-organized structure
-- More extensive and detailed content than the original
-- Practical examples and relevant case studies
-- Professional but accessible tone
-
-🚨 **MANDATORY HTML FORMAT - CRITICAL REQUIREMENT:**
-- **EVERYTHING MUST BE IN HTML TAGS**: No text can exist outside of proper HTML elements
-- **NO PLAIN TEXT ALLOWED**: Every single word must be wrapped in appropriate HTML tags
-- **NO MARKDOWN SYNTAX**: Never use #, ##, **, *, `, etc. - Only HTML tags
-- **COMPLETE HTML STRUCTURE**: Use proper semantic HTML for all content types
-
-**REQUIRED HTML ELEMENTS:**
-- `<h1>`, `<h2>`, `<h3>`, `<h4>` for all headings
-- `<p>` for ALL paragraphs and text content
-- `<ul>` and `<li>` for bullet lists (NEVER use numbered lists to avoid confusion)
-- `<table>`, `<tr>`, `<td>`, `<th>` for tabular data
-- `<a href="">` for links and references
-- `<img src="" alt="">` for images when applicable
-- `<strong>` and `<em>` for emphasis
-- `<div class="example">`, `<div class="tip">`, etc. for special sections
-
-**CRITICAL HTML RULES:**
-❌ **FORBIDDEN**: Any text without HTML tags
-❌ **FORBIDDEN**: Numbered lists (`<ol>`) - use bullet lists (`<ul>`) only
-❌ **FORBIDDEN**: Markdown syntax mixed with HTML
-❌ **FORBIDDEN**: Numbers (1. 2. 3.) in lists - use bullets only
-✅ **REQUIRED**: Every line must be valid HTML
-✅ **REQUIRED**: Use bullet points (•) for lists, never numbers
-✅ **REQUIRED**: Use tables for structured data
-
-🚫 **CRITICAL: NO AUTOMATIC NUMBERING IN TITLES - MANDATORY:**
-❌ **NEVER use patterns like**: "1.1", "1.2", "15.1", "15.147.1", "Capítulo 1.1", "Sección 2.3"
-❌ **NEVER add consecutive numbering**: 1.1, 1.2, 1.3, 2.1, 2.2, etc.
-❌ **NEVER use decimal numbering**: X.Y patterns in headings
-❌ **NEVER use random numbers**: Don't add arbitrary numbers to section titles
-❌ **EXAMPLES OF FORBIDDEN TITLES**: "15.1 Plan de Estudio", "15.147.1 Día 1", "15.2 Arquitectura"
-✅ **USE DESCRIPTIVE TITLES ONLY**: "Plan de Estudio Diario", "Fundamentos de Saludos", "Arquitectura Cultural"
-✅ **NATURAL HEADINGS**: Titles should describe content, not follow numbering schemes
-✅ **SEMANTIC STRUCTURE**: Let the HTML hierarchy (h1, h2, h3) provide structure, not artificial numbers
-
-**📊 STRUCTURE AND ORGANIZATION:**
-- Begin each chapter with a brief introduction that contextualizes the topic
-- Organize content in logical and well-defined sections
-- Include practical examples, case studies and relevant anecdotes
-- End each chapter with a conclusion or summary of key points
-- Ensure smooth transitions between sections
-- Maintain a coherent and professional narrative flow
-
-**📏 EXTENSION AND DETAIL:**
-- Make content significantly more extensive than the original
-- Develop each point with depth and detail
-- Include multiple examples and practical cases
-- Add historical context, statistics or relevant data when appropriate
-- Expand concepts with clear and accessible explanations
-
-**✅ FINAL INSTRUCTIONS:**
-- Keep the chapter title but completely transform the content
-- 🚨 **MANDATORY HTML FORMAT**: Respond EXCLUSIVELY with regenerated chapter content in valid HTML
-- ❌ **NO MARKDOWN**: NEVER use Markdown syntax (# ## ### ** * `)
-- ✅ **ONLY HTML**: Use <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
-- DO NOT include metadata, comments or explanations outside the chapter content
-- Ensure the result is a complete, professional and well-structured chapter"""
-    
-    def _build_chapter_regeneration_user_prompt(self, chapter_content: str, feedback: Dict[str, str], book=None) -> str:
-        """Prompt del usuario para regeneración de capítulos."""
-        
-        # Calcular palabras recomendadas basado en la arquitectura del libro +20%
-        target_words = "extenso y detallado"
-        if book and hasattr(book, 'architecture') and book.architecture:
-            try:
-                # Obtener palabras estimadas de la arquitectura
-                estimated_words = book.architecture.get('estimated_words', 0)
-                if estimated_words > 0:
-                    # Obtener número de capítulos - Compatible con ambos formatos
-                    chapters = []
-                    if book.architecture.get('structure', {}).get('chapters'):
-                        chapters = book.architecture['structure']['chapters']
-                    elif book.architecture.get('chapters'):
-                        chapters = book.architecture['chapters']
-                    chapter_count = len(chapters) if chapters else book.chapter_count or 10
-                    
-                    # Calcular palabras por capítulo promedio + 20%
-                    words_per_chapter = int((estimated_words / chapter_count) * 1.2)
-                    target_words = f"extenso y detallado (aproximadamente {words_per_chapter:,} palabras)"
-                else:
-                    target_words = "extenso y detallado"
-            except Exception:
-                # Si hay error en el cálculo, usar descripción genérica
-                target_words = "extenso y detallado"
-        
-        return f"""CAPÍTULO ACTUAL A REGENERAR:
-{chapter_content}
-
-FEEDBACK DEL USUARIO:
-- Qué no le gusta: {feedback.get('whatDislike', '')}
-- Qué quiere cambiar: {feedback.get('whatChange', '')}
-- Cómo le gustaría que quedara: {feedback.get('howWant', '')}
-
-INSTRUCCIONES ESPECÍFICAS DE REGENERACIÓN:
-
-**🎯 OBJETIVO PRINCIPAL:**
-Regenera COMPLETAMENTE el capítulo considerando todo el feedback del usuario y aplicando las mejores prácticas de escritura profesional.
-
-**📝 FORMATO Y ESTRUCTURA REQUERIDOS:**
-1. Mantén el título del capítulo con <h1> pero transforma completamente todo el contenido
-2. Utiliza estructura HTML profesional con etiquetas semánticamente correctas
-3. Organiza el contenido en secciones lógicas con encabezados <h3> y <h4> cuando sea necesario
-4. Incluye listas, tablas, citas y elementos visuales en HTML para mejorar la legibilidad
-5. Asegúrate de usar <strong> para conceptos clave y <em> para énfasis
-
-**📊 CONTENIDO Y EXTENSIÓN:**
-6. Haz el contenido mucho más {target_words}
-7. Desarrolla cada concepto con profundidad, incluyendo:
-   - Explicaciones detalladas y claras
-   - Ejemplos prácticos y casos de estudio relevantes
-   - Anécdotas, datos, estadísticas o contexto histórico cuando sea apropiado
-   - Múltiples perspectivas o enfoques del tema
-8. Asegúrate de que cada sección tenga suficiente contenido y desarrollo
-
-**🎨 CALIDAD Y TONO:**
-9. Mantén un tono profesional pero accesible y atractivo para el lector
-10. Crea transiciones suaves entre secciones para mantener el flujo narrativo
-11. Termina el capítulo con una conclusión o síntesis que refuerce los puntos clave
-12. Asegúrate de que el resultado sea significativamente superior al contenido original
-
-**✅ RESULTADO ESPERADO:**
-El capítulo regenerado debe ser un contenido completamente nuevo, mucho más extenso, mejor organizado, y que responda específicamente a todas las solicitudes del feedback del usuario.
-
-🚨 **OBLIGATORIEDAD CRÍTICA - TARGETING EN REGENERACIÓN:**
-- **PROMESA COMERCIAL**: Este capítulo regenerado forma parte de las páginas prometidas al cliente
-- **TARGET PALABRAS**: Generar aproximadamente {target_words} para cumplir expectativas
-- **RESPONSABILIDAD**: Una regeneración corta = Comprometer páginas totales del libro
-- **EXPANSIÓN OBLIGATORIA**: Si el contenido natural no alcanza el target, expandir con valor
-- **CALIDAD + CANTIDAD**: Mejorar según feedback PERO mantener extensión adecuada
-- **NO REDUCIR**: El feedback NO puede ser excusa para generar menos contenido
-
-🚨 **REGENERA EL CAPÍTULO AHORA EN FORMATO HTML SIGUIENDO TODAS ESTAS ESPECIFICACIONES:**
-Tu respuesta debe contener ÚNICAMENTE HTML válido del capítulo regenerado. NO incluyas explicaciones o comentarios."""
-
-    def _parse_markdown_architecture_elements(self, markdown_content: str, book_params: Dict[str, Any]) -> Dict[str, List[Dict[str, str]]]:
-        """
-        Parsea personajes y secciones especiales del contenido Markdown de regeneración.
-        Solo para backend - no afecta frontend existente.
-        """
-        import re
-        
-        characters = []
-        special_sections = []
-        
-        # Parsear personajes - NUEVO FORMATO INLINE (prioridad)
-        # Buscar patrones como: **Personaje principal**: *Ana Rodríguez*, estudiante de intercambio
-        inline_character_patterns = [
-            r'\*\*Personaje principal\*\*:\s*\*([^*]+)\*,?\s*(.*?)(?=\n|$)',
-            r'\*\*Personaje secundario\*\*:\s*\*([^*]+)\*,?\s*(.*?)(?=\n|$)', 
-            r'\*\*Protagonista\*\*:\s*\*([^*]+)\*,?\s*(.*?)(?=\n|$)',
-            r'\*\*Narrador\*\*:\s*\*([^*]+)\*,?\s*(.*?)(?=\n|$)'
-        ]
-        
-        for pattern in inline_character_patterns:
-            inline_matches = re.finditer(pattern, markdown_content, re.MULTILINE | re.IGNORECASE)
-            for match in inline_matches:
-                name = match.group(1).strip()
-                description = match.group(2).strip()
-                
-                # Extraer rol del tipo de personaje del pattern
-                role = "Personaje Principal"
-                if "secundario" in pattern.lower():
-                    role = "Personaje Secundario"
-                elif "protagonista" in pattern.lower():
-                    role = "Protagonista"
-                elif "narrador" in pattern.lower():
-                    role = "Narrador"
-                
-                if name and len(name) > 1:
-                    characters.append({
-                        "name": name,
-                        "role": role,
-                        "description": description or f"Personaje en {book_params.get('title', 'el libro')}"
-                    })
-        
-        # Parsear personajes - FORMATO TRADICIONAL (para compatibilidad)
-        # Solo si no encontramos personajes en formato inline
-        if not characters:
-            character_section_patterns = [
-                r'### \*\*PERSONAJES RECURRENTES\*\*.*?\n(.*?)(?=\n### |\n## |\n# |$)',
-                r'## \*\*👥 PERSONAJES GUÍA DEL LIBRO\*\*.*?\n(.*?)(?=\n## |\n# |$)',
-                r'## 🎭 PERSONAJES.*?\n(.*?)(?=\n## |\n# |$)',
-                r'## PERSONAJES.*?\n(.*?)(?=\n## |\n# |$)',
-                r'# PERSONAJES.*?\n(.*?)(?=\n## |\n# |$)'
-            ]
-            
-            for pattern in character_section_patterns:
-                character_match = re.search(pattern, markdown_content, re.DOTALL | re.IGNORECASE)
-                if character_match:
-                    character_content = character_match.group(1)
-                    
-                    # Extraer personajes individuales (formato: ### **🎓 Herr Professor Schmidt**)
-                    character_blocks = re.findall(r'### \*\*(.+?)\*\*.*?\n(.*?)(?=\n### |\n## |\n# |$)', character_content, re.DOTALL)
-                    
-                    for char_name_line, char_details in character_blocks:
-                        # Limpiar nombre (remover emojis y formateo)
-                        name_match = re.search(r'(?:[🎓💼🎒🌍]\s*)?(.+?)$', char_name_line.strip())
-                        name = name_match.group(1).strip() if name_match else char_name_line.strip()
-                        
-                        # Extraer rol de la línea con *El Académico Tradicional*
-                        role_match = re.search(r'>\s*\*([^*]+)\*', char_details)
-                        role = role_match.group(1).strip() if role_match else "Personaje Principal"
-                        
-                        # Extraer descripción de las líneas de rol o bullets
-                        desc_lines = []
-                        for line in char_details.split('\n'):
-                            line = line.strip()
-                            if line.startswith('- **Rol:**'):
-                                bullet_match = re.search(r'- \*\*Rol:\*\*\s*(.*)', line)
-                                if bullet_match:
-                                    desc_lines.append(bullet_match.group(1))
-                            elif line.startswith('- **Especialidad:**'):
-                                bullet_match = re.search(r'- \*\*Especialidad:\*\*\s*(.*)', line)
-                                if bullet_match:
-                                    desc_lines.append(bullet_match.group(1))
-                            elif line.startswith('- **Estilo:**'):
-                                bullet_match = re.search(r'- \*\*Estilo:\*\*\s*(.*)', line)
-                                if bullet_match:
-                                    desc_lines.append(bullet_match.group(1))
-                        
-                        description = '. '.join(desc_lines) if desc_lines else f"Personaje guía especializado en {book_params.get('title', 'el libro')}"
-                        
-                        if name and len(name) > 1:  # Validar que tiene contenido válido
-                            characters.append({
-                                "name": name,
-                                "role": role,
-                                "description": description
-                            })
-                    
-                    break  # Solo procesar la primera sección de personajes encontrada
-        
-        # Parsear secciones especiales - NUEVO FORMATO BULLET POINTS (prioridad)
-        # Buscar patrones como: - **Secciones especiales**: seguido de bullet points con emojis
-        bullet_special_pattern = r'- \*\*Secciones especiales\*\*:?\s*\n((?:\s*- [📝💡🎯⚡🔍📚][^\n]*\n?)+)'
-        bullet_match = re.search(bullet_special_pattern, markdown_content, re.MULTILINE | re.IGNORECASE)
-        
-        if bullet_match:
-            bullet_content = bullet_match.group(1)
-            # Extraer cada bullet point con emoji (con espacios opcionales al inicio)
-            bullet_sections = re.findall(r'\s*- ([📝💡🎯⚡🔍📚])\s*\*\*([^*]+)\*\*:?\s*(.*?)(?=\n|$)', bullet_content, re.MULTILINE)
-            
-            for emoji, section_name, section_desc in bullet_sections:
-                section_type = section_name.strip()
-                description = section_desc.strip()
-                
-                # Valores por defecto basados en el emoji y tipo
-                frequency = "Según sea necesario"
-                purpose = description or f"Elemento especial que mejora la experiencia de lectura en {book_params.get('title', 'el libro')}"
-                
-                # Ajustar frecuencia según el tipo detectado
-                if "ejercicio" in section_type.lower() or "práctica" in section_type.lower():
-                    frequency = "2-3 por capítulo"
-                elif "vocabulario" in section_type.lower() or "glosario" in section_type.lower():
-                    frequency = "1 por capítulo"
-                elif "consejo" in section_type.lower() or "tip" in section_type.lower():
-                    frequency = "2-3 por capítulo"
-                elif "cultural" in section_type.lower() or "contexto" in section_type.lower():
-                    frequency = "1-2 por capítulo"
-                
-                if section_type and len(section_type) > 1:
-                    special_sections.append({
-                        "type": section_type,
-                        "frequency": frequency,
-                        "purpose": purpose
-                    })
-        
-        # Parsear secciones especiales - FORMATO TRADICIONAL (para compatibilidad)
-        # Solo si no encontramos secciones en formato bullet points
-        if not special_sections:
-            special_section_patterns = [
-                r'## \*\*🔧 SECCIONES ESPECIALES EXTRAÍBLES\*\*.*?\n(.*?)(?=\n## |\n# |$)',
-                r'## 🔧 SECCIONES.*?\n(.*?)(?=\n## |\n# |$)',
-                r'## SECCIONES ESPECIALES.*?\n(.*?)(?=\n## |\n# |$)',
-                r'# SECCIONES ESPECIALES.*?\n(.*?)(?=\n## |\n# |$)'
-            ]
-            
-            for pattern in special_section_patterns:
-                section_match = re.search(pattern, markdown_content, re.DOTALL | re.IGNORECASE)
-                if section_match:
-                    section_content = section_match.group(1)
-                    
-                    # Extraer secciones individuales (formato: ### **💡 CONSEJO DEL EXPERTO**)
-                    section_blocks = re.findall(r'### \*\*(.+?)\*\*.*?\n(.*?)(?=\n### |\n## |\n# |$)', section_content, re.DOTALL)
-                    
-                    for section_type_line, section_details in section_blocks:
-                        # Limpiar tipo de sección (remover emojis)
-                        type_match = re.search(r'(?:[💡🎯📝⚡🔍📚]\s*)?(.+?)$', section_type_line.strip())
-                        section_type = type_match.group(1).strip() if type_match else section_type_line.strip()
-                        
-                        # Valores por defecto basados en el tipo de sección
-                        frequency = "Según sea necesario"
-                        purpose = f"Elemento especial que mejora la experiencia de lectura en {book_params.get('title', 'el libro')}"
-                        
-                        # Intentar extraer información específica de los bloques de código markdown
-                        if "CONSEJO DEL EXPERTO" in section_type:
-                            frequency = "2-3 por capítulo"
-                            purpose = "Consejos prácticos y profesionales de expertos para mejorar el dominio del alemán"
-                        elif "ENFOQUE PRÁCTICO" in section_type:
-                            frequency = "1 por capítulo"
-                            purpose = "Aplicaciones prácticas de las expresiones en situaciones reales específicas"
-                        elif "EJERCICIO RÁPIDO" in section_type:
-                            frequency = "2-3 por capítulo"
-                            purpose = "Actividades interactivas para practicar y consolidar las expresiones aprendidas"
-                        elif "EXPRESIÓN DEL DÍA" in section_type:
-                            frequency = "1 por capítulo"
-                            purpose = "Destacar una expresión especialmente útil con explicación detallada y contexto cultural"
-                        elif "ANÁLISIS CULTURAL" in section_type:
-                            frequency = "1-2 por capítulo"
-                            purpose = "Explicaciones del contexto cultural alemán para usar las expresiones apropiadamente"
-                        elif "VOCABULARIO CLAVE" in section_type:
-                            frequency = "1 por capítulo"
-                            purpose = "Tablas organizadas con vocabulario esencial relacionado con las expresiones del capítulo"
-                        
-                        if section_type and len(section_type) > 1:  # Validar contenido válido
-                            special_sections.append({
-                                "type": section_type,
-                                "frequency": frequency,
-                                "purpose": purpose
-                            })
-                    
-                    break  # Solo procesar la primera sección especial encontrada
-        
-        return {
-            "personajes": characters,
-            "secciones_especiales": special_sections
-        }
-
     def estimate_thinking_tokens(self, thinking_content) -> int:
         """
         Estima el número de thinking tokens basado en el contenido de thinking.
