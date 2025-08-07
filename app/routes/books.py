@@ -1408,101 +1408,111 @@ def professional_format(book_id):
 @bp.route('/book/<int:book_id>/formatting-preview', methods=['POST'])
 @login_required
 def formatting_preview(book_id):
-    """Genera vista previa con opciones de formateo personalizadas."""
+    """Genera vista previa dinámica con opciones de formateo profesional."""
     try:
+        logger.info(f"Generando vista previa dinámica para libro {book_id}, usuario {current_user.id}")
+        
         # Obtener el libro
         book = BookGeneration.query.filter_by(
             id=book_id, 
             user_id=current_user.id
         ).first_or_404()
         
+        # Verificar que el libro esté completado
+        if book.status != BookStatus.COMPLETED:
+            return jsonify({'success': False, 'error': 'El libro debe estar completado'}), 400
+        
         # Obtener opciones de formateo del request
         form_data = request.get_json() or request.form.to_dict()
+        logger.info(f"Opciones de formateo recibidas: {form_data}")
         
-        # Importar servicios
-        from app.services.book_formatting_service import (
-            BookFormattingService, 
-            FormattingOptions, 
-            FormattingPlatform
+        # Usar el servicio de formateo profesional
+        from app.services.professional_formatting_service import (
+            ProfessionalFormattingService, 
+            ProfessionalFormattingOptions
         )
         
-        # Crear opciones de formateo personalizadas
-        platform = FormattingPlatform(form_data.get('platform', 'universal'))
+        formatting_service = ProfessionalFormattingService()
         
-        custom_options = FormattingOptions(
-            platform=platform,
+        # Construir opciones profesionales desde los datos del formulario
+        professional_options = ProfessionalFormattingOptions(
+            # Estructura del libro
             include_cover_page=form_data.get('include_cover_page', True),
             include_title_page=form_data.get('include_title_page', True),
             include_copyright_page=form_data.get('include_copyright_page', True),
+            include_table_of_contents=form_data.get('include_table_of_contents', True),
             include_dedication=form_data.get('include_dedication', False),
             include_acknowledgments=form_data.get('include_acknowledgments', False),
-            include_prologue=form_data.get('include_prologue', True),
-            include_table_of_contents=form_data.get('include_table_of_contents', True),
-            include_introduction=form_data.get('include_introduction', True),
+            include_prologue=form_data.get('include_prologue', False),
             include_epilogue=form_data.get('include_epilogue', False),
             include_about_author=form_data.get('include_about_author', True),
-            include_bibliography=form_data.get('include_bibliography', False),
             include_index=form_data.get('include_index', False),
             
-            # Opciones de formato
-            font_family=form_data.get('font_family', 'Times New Roman'),
+            # Tipografía
+            font_family=form_data.get('font_family', 'Crimson Pro'),
             font_size_body=int(form_data.get('font_size_body', 12)),
             line_spacing=float(form_data.get('line_spacing', 1.5)),
             paragraph_spacing=float(form_data.get('paragraph_spacing', 6.0)),
-            first_line_indent=float(form_data.get('first_line_indent', 12.0)),
             
-            # Opciones de elementos especiales
-            highlight_expressions=form_data.get('highlight_expressions', True),
-            show_phonetic_pronunciation=form_data.get('show_phonetic_pronunciation', True),
-            emphasize_translations=form_data.get('emphasize_translations', True),
-            number_chapters=form_data.get('number_chapters', True),
-            number_sections=form_data.get('number_sections', False),
-            
-            # Opciones de estilo profesional
+            # Opciones avanzadas
+            use_professional_typography=form_data.get('use_professional_typography', True),
             use_drop_caps=form_data.get('use_drop_caps', False),
             use_chapter_breaks=form_data.get('use_chapter_breaks', True),
-            use_headers_footers=form_data.get('use_headers_footers', True),
-            use_professional_typography=form_data.get('use_professional_typography', True),
         )
         
-        # Inicializar servicio y procesar
-        formatting_service = BookFormattingService()
-        book_structure = formatting_service.analyze_content_structure(book.content or "")
-        book_structure.title = book.title
-        book_structure.author = "Buko AI Editorial"
+        # Generar contenido formateado para vista previa
+        formatting_result = formatting_service.format_for_commercial_distribution(book, professional_options)
         
-        # Generar elementos profesionales
-        formatted_structure = formatting_service.generate_professional_elements(
-            book_structure, custom_options
-        )
-        
-        # Obtener datos de vista previa
-        preview_data = formatting_service.get_formatting_preview_data(
-            formatted_structure, custom_options
-        )
-        
-        # Verificar que los datos sean serializables
-        try:
-            import json
-            json.dumps(preview_data)  # Test serialization
-        except (TypeError, ValueError) as serialize_error:
-            logger.error(f"Error de serialización JSON: {str(serialize_error)}")
-            # Datos de fallback mínimos
-            preview_data = {
-                'book_info': {
-                    'title': book.title,
-                    'platform': custom_options.platform.value,
-                    'total_elements': 0
-                },
-                'formatting_options': {'platform': custom_options.platform.value},
-                'elements_sample': [],
-                'formatting_quality_score': {'overall_score': 0}
-            }
+        # Obtener una muestra del contenido HTML formateado para la vista previa
+        preview_html = ""
+        if formatting_result and 'formatted_content' in formatting_result:
+            # Tomar una muestra del contenido (primeros 5000 caracteres)
+            full_content = formatting_result['formatted_content']
+            
+            # Buscar elementos específicos para mostrar en la preview
+            preview_elements = []
+            
+            # Si incluye dedicatoria, mostrarla
+            if professional_options.include_dedication and 'data-page-type="dedication"' in full_content:
+                import re
+                dedication_match = re.search(r'<[^>]*data-page-type="dedication"[^>]*>.*?</[^>]*>', full_content, re.DOTALL)
+                if dedication_match:
+                    preview_elements.append(dedication_match.group(0))
+            
+            # Si incluye prólogo, mostrar parte
+            if professional_options.include_prologue and 'data-page-type="prologue"' in full_content:
+                prologue_match = re.search(r'<[^>]*data-page-type="prologue"[^>]*>.*?</[^>]*>', full_content, re.DOTALL)
+                if prologue_match:
+                    prologue_content = prologue_match.group(0)[:1000] + "..."
+                    preview_elements.append(prologue_content)
+            
+            # Mostrar algo del contenido principal
+            content_sample = full_content[:3000] + "..." if len(full_content) > 3000 else full_content
+            preview_elements.append(content_sample)
+            
+            preview_html = '<div class="ebook-preview-content">' + ''.join(preview_elements) + '</div>'
+        else:
+            # Fallback preview
+            preview_html = f'''
+            <div class="ebook-preview-content">
+                <div class="ebook-title" style="font-family: {professional_options.font_family}; font-size: {professional_options.font_size_body + 6}pt; text-align: center; margin-bottom: 20px;">
+                    {book.title}
+                </div>
+                {('<div class="dedication-preview" style="font-style: italic; text-align: center; margin: 20px 0;">Dedicatoria incluida</div>' if professional_options.include_dedication else '')}
+                {('<div class="prologue-preview" style="margin: 20px 0;"><strong>Prólogo:</strong> Contenido contextual generado dinámicamente</div>' if professional_options.include_prologue else '')}
+                <div class="content-preview" style="font-family: {professional_options.font_family}; font-size: {professional_options.font_size_body}pt; line-height: {professional_options.line_spacing};">
+                    Vista previa del contenido formateado con las opciones seleccionadas...
+                </div>
+                {('<div class="epilogue-preview" style="margin: 20px 0;"><strong>Epílogo:</strong> Reflexiones finales contextuales</div>' if professional_options.include_epilogue else '')}
+            </div>
+            '''
         
         return jsonify({
             "success": True,
-            "preview_data": preview_data
+            "preview_html": preview_html,
+            "quality_score": formatting_result.get('quality_analysis', {}).get('percentage', 0) if formatting_result else 0
         })
+        
         
     except Exception as e:
         logger.error(f"Error generando vista previa de formateo: {str(e)}")

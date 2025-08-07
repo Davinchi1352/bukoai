@@ -1353,34 +1353,61 @@ class ProfessionalFormatter {
             </div>
         `;
         
-        // Load real formatted content
-        setTimeout(() => {
-            const formattedContent = `{{ formatted_content|safe }}`;
-            
-            if (formattedContent && formattedContent.trim() !== '') {
-                // Show real formatted content with professional styling
+        // Collect current form data
+        const formData = this.collectFormData();
+        
+        // Make AJAX call to get dynamic preview
+        fetch(`/books/book/{{ book.id }}/formatting-preview`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCSRFToken()
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show dynamically generated preview
                 previewContent.innerHTML = `
                     <div class="ebook-body">
                         <div class="ebook-container">
-                            ${formattedContent}
+                            ${data.preview_html}
                         </div>
                     </div>
                 `;
+                
+                // Update quality score if available
+                if (data.quality_score && this.qualityScoreElement) {
+                    this.qualityScoreElement.textContent = data.quality_score;
+                }
             } else {
-                // Fallback to basic content if formatted content is not available
-                previewContent.innerHTML = `
-                    <div class="ebook-body">
-                        <div class="ebook-container">
-                            <div class="ebook-book-title">{{ book.title }}</div>
-                            <div class="ebook-paragraph">
-                                Contenido del libro se está procesando para generar el formato profesional.
-                                El formateo completo estará disponible una vez que se complete el procesamiento.
-                            </div>
+                throw new Error(data.error || 'Error generando vista previa');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating preview:', error);
+            // Fallback to static preview
+            previewContent.innerHTML = `
+                <div class="ebook-body">
+                    <div class="ebook-container">
+                        <div class="ebook-book-title">{{ book.title }}</div>
+                        <div class="ebook-paragraph">
+                            Error generando vista previa dinámica. 
+                            Las configuraciones se aplicarán al generar el formato final.
+                        </div>
+                        <div class="ebook-error" style="color: #e74c3c; font-size: 0.9em; margin-top: 10px;">
+                            ${error.message}
                         </div>
                     </div>
-                `;
-            }
-        }, 800);
+                </div>
+            `;
+        });
+    }
+    
+    getCSRFToken() {
+        const csrfElement = document.querySelector('meta[name=csrf-token]');
+        return csrfElement ? csrfElement.getAttribute('content') : '';
     }
     
     generateProfessionalFormat() {

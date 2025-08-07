@@ -61,9 +61,9 @@ class BookGeneration(BaseModel):
     # Parámetros completos (JSON)
     parameters = Column(JSON, nullable=True)
     
-    # Contenido generado
-    content = Column(Text, nullable=True)
-    content_html = Column(Text, nullable=True)  # Contenido en HTML estructurado para formateo profesional
+    # Contenido generado (ambos campos contienen HTML puro)
+    content = Column(Text, nullable=True)  # Contenido HTML original generado por Claude AI
+    content_html = Column(Text, nullable=True)  # Contenido HTML con formateo profesional aplicado
     thinking_content = Column(Text, nullable=True)
     thinking_length = Column(Integer, default=0, nullable=False)
     
@@ -209,14 +209,8 @@ class BookGeneration(BaseModel):
         self.architecture_approved_at = datetime.now(timezone.utc)
         self.status = BookStatus.QUEUED  # Volver a cola para generación completa
         
-        # Convertir contenido markdown existente a HTML si existe
-        if self.content and not self.content_html:
-            from app.services.markdown_to_html_service import convert_markdown_to_content_html
-            try:
-                self.content_html = convert_markdown_to_content_html(self.content)
-            except Exception as e:
-                # Log error pero no fallar la aprobación
-                print(f"Error converting markdown to HTML: {e}")
+        # Nota: Ambos campos (content y content_html) ya contienen HTML puro generado por Claude AI
+        # No es necesaria conversión adicional ya que Claude genera HTML estructurado directamente
         
         db.session.commit()
     

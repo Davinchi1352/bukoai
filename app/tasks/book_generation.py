@@ -380,9 +380,9 @@ def _generate_book_task_impl(self, book_id):
         if emit_book_progress_update:
             emit_book_progress_update(book_id, progress_data)
         
-        # Actualizar libro con el contenido generado
-        book.content = result['content']  # Mantener para compatibilidad
-        book.content_html = result['content']  # El contenido ya viene en HTML estructurado
+        # Actualizar libro con el contenido generado (ambos reciben HTML puro idéntico)
+        book.content = result['content']  # HTML original de Claude AI (versión respaldo)
+        book.content_html = result['content']  # HTML original (será procesado para formateo profesional)
         book.thinking_content = result.get('thinking', '')
         
         # Actualizar estadísticas de tokens usando el método que calcula costos

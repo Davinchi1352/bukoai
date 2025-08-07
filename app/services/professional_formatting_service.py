@@ -5,6 +5,7 @@ Servicio avanzado de formateo profesional para ebooks comerciales.
 
 import re
 import json
+import os
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -13,7 +14,20 @@ import uuid
 from datetime import datetime
 
 from .book_formatting_service import FormattingPlatform, FormattingOptions, PlatformSpecifications
-from .markdown_to_html_service import MarkdownToHTMLConverter, BookStructure, HTMLElement
+
+# SWITCH DE COMPATIBILIDAD SEGURO - MIGRACIÓN GRADUAL
+# Variable de entorno para alternar entre parsers durante transición
+USE_NEW_HTML_PARSER = os.getenv('USE_NEW_HTML_PARSER', 'true').lower() == 'true'
+
+if USE_NEW_HTML_PARSER:
+    # Usar nuevo parser HTML (desarrollado para esta refactorización)
+    from .html_structure_service import HTMLStructureParser as HTMLConverter
+    from .html_shared_classes import BookStructure, HTMLElement  # Mantener clases compartidas
+    print("🔄 ProfessionalFormattingService usando NUEVO HTMLStructureParser")
+else:
+    # Usar parser original markdown (comportamiento actual)
+    from .html_shared_classes import MarkdownToHTMLConverter as HTMLConverter, BookStructure, HTMLElement
+    print("📜 ProfessionalFormattingService usando MarkdownToHTMLConverter ORIGINAL")
 
 
 @dataclass
@@ -366,7 +380,8 @@ class ProfessionalFormattingService:
     def __init__(self):
         self.quality_analyzer = EbookQualityAnalyzer()
         self.platform_specs = PlatformSpecifications()
-        self.html_converter = MarkdownToHTMLConverter()
+        # Usar parser según variable de entorno (switch seguro)
+        self.html_converter = HTMLConverter()
     
     def format_for_commercial_distribution(self, book: Any,
                                           options: ProfessionalFormattingOptions) -> Dict[str, Any]:
@@ -377,12 +392,23 @@ class ProfessionalFormattingService:
         
         # Si es markdown, convertir a HTML
         if not book.content_html and book.content:
-            book_structure = self.html_converter.convert(
-                book.content,
-                book.title,
-                book.user.full_name if hasattr(book, 'user') and book.user else "",
-                book.language
-            )
+            # Usar método correcto según parser activo
+            if USE_NEW_HTML_PARSER:
+                # Nuevo parser usa parse() 
+                book_structure = self.html_converter.parse(
+                    book.content,
+                    book.title,
+                    book.user.full_name if hasattr(book, 'user') and book.user else "",
+                    book.language
+                )
+            else:
+                # Parser original usa convert()
+                book_structure = self.html_converter.convert(
+                    book.content,
+                    book.title,
+                    book.user.full_name if hasattr(book, 'user') and book.user else "",
+                    book.language
+                )
         else:
             # Parsear HTML existente
             book_structure = self._parse_html_content(content, book)
@@ -449,7 +475,7 @@ class ProfessionalFormattingService:
     
     def _soup_to_html_element(self, soup_element) -> Optional[HTMLElement]:
         """Convierte un elemento BeautifulSoup a HTMLElement."""
-        from ..services.markdown_to_html_service import HTMLElementType
+        from ..services.html_shared_classes import HTMLElementType
         
         # Mapeo robusto de tags a tipos
         tag_type_map = {
@@ -531,6 +557,21 @@ class ProfessionalFormattingService:
             copyright_page = self._create_extended_copyright_page(book_structure, options, book)
             new_elements.append(copyright_page)
         
+        # Dedicatoria
+        if options.include_dedication:
+            dedication_page = self._create_dedication_page(book_structure, options, book)
+            new_elements.append(dedication_page)
+        
+        # Agradecimientos
+        if options.include_acknowledgments:
+            acknowledgments_page = self._create_acknowledgments_page(book_structure, options, book)
+            new_elements.append(acknowledgments_page)
+        
+        # Prólogo
+        if options.include_prologue:
+            prologue_page = self._create_prologue_page(book_structure, options, book)
+            new_elements.append(prologue_page)
+        
         # ISBN y datos de catalogación
         if options.include_isbn:
             catalog_page = self._create_cataloging_page(options.include_isbn, book)
@@ -541,8 +582,24 @@ class ProfessionalFormattingService:
             marketing_pages = self._create_marketing_pages(book)
             new_elements.extend(marketing_pages)
         
-        # Insertar al inicio
+        # Insertar elementos al inicio
         book_structure.elements = new_elements + book_structure.elements
+        
+        # Agregar elementos al final del libro
+        end_elements = []
+        
+        # Epílogo (al final)
+        if options.include_epilogue:
+            epilogue_page = self._create_epilogue_page(book_structure, options, book)
+            end_elements.append(epilogue_page)
+        
+        # Acerca del autor (al final)
+        if options.include_about_author:
+            about_author_page = self._create_about_author_page(book_structure, options, book)
+            end_elements.append(about_author_page)
+        
+        # Agregar elementos finales
+        book_structure.elements.extend(end_elements)
         
         return book_structure
     
@@ -564,16 +621,76 @@ class ProfessionalFormattingService:
                            options: ProfessionalFormattingOptions) -> None:
         """Optimiza la tipografía para lectura profesional."""
         
-        # Aplicar kerning y ligaduras
+        # Definir tipos de elementos que reciben formateo tipográfico
+        typography_elements = [
+            'paragraph', 'chapter-title', 'section', 'subsection', 
+            'book-title', 'chapter', 'div', 'blockquote'
+        ]
+        
+        # Estilos profesionales base
+        professional_styles = {
+            'text-rendering': 'optimizeLegibility',
+            'font-feature-settings': "'kern' 1, 'liga' 1",
+            '-webkit-font-smoothing': 'antialiased',
+            '-moz-osx-font-smoothing': 'grayscale'
+        }
+        
+        # Aplicar tipografía profesional a todos los elementos relevantes
         for element in book_structure.elements:
-            if element and element.type.value in ['paragraph', 'chapter-title', 'section']:
-                element.attributes['style'] = (
-                    f"font-family: {options.font_family}; "
-                    f"font-size: {options.font_size_body}pt; "
-                    f"line-height: {options.line_spacing}; "
-                    f"text-rendering: optimizeLegibility; "
-                    f"font-feature-settings: 'kern' 1, 'liga' 1;"
-                )
+            if not element:
+                continue
+                
+            should_format = (
+                element.type.value in typography_elements or
+                element.attributes.get('data-page-type') in [
+                    'dedication', 'acknowledgments', 'prologue', 
+                    'epilogue', 'about-author', 'title', 'copyright'
+                ]
+            )
+            
+            if should_format:
+                # Preservar estilos existentes
+                existing_style = element.attributes.get('style', '')
+                
+                # Crear diccionario de estilos desde string existente
+                existing_styles = {}
+                if existing_style:
+                    for style_item in existing_style.split(';'):
+                        if ':' in style_item:
+                            key, value = style_item.split(':', 1)
+                            existing_styles[key.strip()] = value.strip()
+                
+                # Determinar tamaño de fuente apropiado por tipo de elemento
+                if 'title' in element.type.value.lower():
+                    font_size = min(options.font_size_body + 8, 24)  # Títulos más grandes
+                elif element.attributes.get('data-page-type') in ['dedication', 'acknowledgments', 'prologue', 'epilogue']:
+                    font_size = options.font_size_body + 1  # Ligeramente más grande para páginas especiales
+                else:
+                    font_size = options.font_size_body
+                
+                # Aplicar nuevos estilos (preservando existentes)
+                new_styles = {
+                    'font-family': options.font_family,
+                    'font-size': f'{font_size}pt',
+                    'line-height': str(options.line_spacing),
+                    **professional_styles
+                }
+                
+                # Si hay espaciado de párrafo configurado, aplicarlo a párrafos
+                if hasattr(options, 'paragraph_spacing') and element.type.value == 'paragraph':
+                    new_styles['margin-bottom'] = f'{options.paragraph_spacing}pt'
+                
+                # Combinar estilos existentes con nuevos (nuevos tienen prioridad)
+                final_styles = {**existing_styles, **new_styles}
+                
+                # Convertir diccionario de estilos a string CSS
+                style_string = '; '.join([f'{key}: {value}' for key, value in final_styles.items()])
+                element.attributes['style'] = style_string
+                
+                # Agregar clase para estilos profesionales si no existe
+                current_class = element.attributes.get('class', '')
+                if 'professional-typography' not in current_class:
+                    element.attributes['class'] = f"{current_class} professional-typography".strip()
     
     def _enhance_navigation(self, book_structure: BookStructure) -> None:
         """Mejora la navegación del ebook."""
@@ -645,7 +762,7 @@ class ProfessionalFormattingService:
                                       options: ProfessionalFormattingOptions,
                                       book: Any) -> HTMLElement:
         """Crea una página de título profesional."""
-        from ..services.markdown_to_html_service import HTMLElement, HTMLElementType
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
         
         content = f"""
         <div class="title-page-content">
@@ -675,7 +792,7 @@ class ProfessionalFormattingService:
                                       options: ProfessionalFormattingOptions,
                                       book: Any) -> HTMLElement:
         """Crea una página de copyright extendida."""
-        from ..services.markdown_to_html_service import HTMLElement, HTMLElementType
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
         
         isbn = options.include_isbn or "[ISBN pendiente]"
         
@@ -726,7 +843,7 @@ class ProfessionalFormattingService:
     
     def _create_cataloging_page(self, isbn: str, book: Any) -> HTMLElement:
         """Crea página de catalogación bibliográfica."""
-        from ..services.markdown_to_html_service import HTMLElement, HTMLElementType
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
         
         content = f"""
         <div class="cataloging-data">
@@ -762,7 +879,7 @@ class ProfessionalFormattingService:
     
     def _create_marketing_pages(self, book: Any) -> List[HTMLElement]:
         """Crea páginas de marketing (otros libros, biografía extendida, etc)."""
-        from ..services.markdown_to_html_service import HTMLElement, HTMLElementType
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
         
         pages = []
         
@@ -892,3 +1009,322 @@ class ProfessionalFormattingService:
         if options.include_about_author: additional_pages += 1
         
         return base_pages + additional_pages
+    
+    def _create_dedication_page(self, book_structure: BookStructure,
+                              options: ProfessionalFormattingOptions,
+                              book: Any) -> HTMLElement:
+        """Crea una página de dedicatoria profesional."""
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
+        
+        content = """
+        <div class="dedication-content">
+            <h2 class="dedication-title">DEDICATORIA</h2>
+            <div class="dedication-divider"></div>
+            <div class="dedication-text">
+                <p>Este libro está dedicado a todos aquellos estudiantes apasionados por el alemán 
+                que buscan perfeccionar su comunicación y alcanzar la fluidez natural en el idioma.</p>
+                
+                <p>A los profesores y educadores que inspiran el amor por las lenguas extranjeras.</p>
+                
+                <p>Y especialmente a quienes creen que el aprendizaje nunca termina y que cada 
+                palabra nueva es una puerta hacia nuevas oportunidades.</p>
+            </div>
+        </div>
+        """
+        
+        return HTMLElement(
+            id="dedication-page",
+            type=HTMLElementType.PARAGRAPH,
+            content=content,
+            attributes={
+                'class': 'dedication-page professional',
+                'data-page-type': 'dedication'
+            },
+            children=[],
+            metadata={'generated': True, 'optional_element': True}
+        )
+    
+    def _create_acknowledgments_page(self, book_structure: BookStructure,
+                                  options: ProfessionalFormattingOptions,
+                                  book: Any) -> HTMLElement:
+        """Crea una página de agradecimientos profesional."""
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
+        
+        content = """
+        <div class="acknowledgments-content">
+            <h2 class="acknowledgments-title">AGRADECIMIENTOS</h2>
+            <div class="acknowledgments-divider"></div>
+            <div class="acknowledgments-text">
+                <p>Queremos expresar nuestro más sincero agradecimiento a todas las personas e 
+                instituciones que hicieron posible la creación de este libro.</p>
+                
+                <p><strong>A los expertos en lingüística alemana</strong> cuyas investigaciones 
+                y publicaciones académicas han proporcionado la base teórica sólida para esta obra.</p>
+                
+                <p><strong>A los profesores nativos de alemán</strong> que han validado la 
+                autenticidad y uso correcto de cada una de las 500 expresiones incluidas.</p>
+                
+                <p><strong>A la comunidad de estudiantes de alemán</strong> que con sus preguntas 
+                y comentarios han ayudado a identificar las áreas más importantes para el aprendizaje.</p>
+                
+                <p><strong>Al equipo de desarrollo de Buko AI</strong> por crear la tecnología 
+                innovadora que permite generar contenido educativo de alta calidad.</p>
+                
+                <p>Sin su colaboración y apoyo, este proyecto no habría sido posible.</p>
+                
+                <p class="acknowledgments-signature">
+                    <em>El equipo editorial</em><br>
+                    <em>Buko AI</em>
+                </p>
+            </div>
+        </div>
+        """
+        
+        return HTMLElement(
+            id="acknowledgments-page",
+            type=HTMLElementType.PARAGRAPH,
+            content=content,
+            attributes={
+                'class': 'acknowledgments-page professional',
+                'data-page-type': 'acknowledgments'
+            },
+            children=[],
+            metadata={'generated': True, 'optional_element': True}
+        )
+    
+    def _create_prologue_page(self, book_structure: BookStructure,
+                            options: ProfessionalFormattingOptions,
+                            book: Any) -> HTMLElement:
+        """Crea un prólogo profesional dinámico según el tema del libro."""
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
+        
+        # Prólogo dinámico basado en el título y género del libro
+        title = book_structure.title or book.title or "este libro"
+        genre = book.genre if hasattr(book, 'genre') else "educativo"
+        
+        # Generar prólogo contextual
+        if "alemán" in title.lower():
+            content = f"""
+            <div class="prologue-content">
+                <h2 class="prologue-title">PRÓLOGO</h2>
+                <div class="prologue-divider"></div>
+                <div class="prologue-text">
+                    <p>"{title}" representa una aproximación innovadora al aprendizaje del alemán, diseñada 
+                    específicamente para hispanohablantes que buscan dominar las expresiones idiomáticas 
+                    fundamentales para una comunicación natural y efectiva en alemán.</p>
+
+                    <p>Los "Redemittel" son mucho más que simples frases hechas; son las herramientas 
+                    lingüísticas que permiten a los hablantes nativos expresar ideas complejas de manera 
+                    concisa y culturalmente apropiada. Para los estudiantes de alemán como lengua extranjera, 
+                    dominar estos elementos representa la diferencia entre una comunicación funcional y 
+                    una comunicación verdaderamente fluida.</p>
+
+                    <p>En estas páginas encontrarás expresiones cuidadosamente seleccionadas, organizadas 
+                    de manera progresiva y acompañadas de explicaciones detalladas que incluyen pronunciación 
+                    fonética, traducciones múltiples y contextos de uso específicos.</p>
+
+                    <p>La metodología empleada en este libro combina principios de lingüística aplicada 
+                    con técnicas de memorización probadas, creando un sistema de aprendizaje que permite 
+                    la adquisición eficiente y la retención a largo plazo de estas estructuras 
+                    lingüísticas esenciales.</p>
+
+                    <p>Esperamos que este recurso se convierta en tu compañero indispensable en el 
+                    fascinante viaje hacia el dominio del alemán.</p>
+
+                    <p class="prologue-closing"><em>¡Viel Erfolg beim Lernen!</em></p>
+                    
+                    <p class="prologue-signature">
+                        <strong>El equipo editorial</strong><br>
+                        <em>Buko AI</em>
+                    </p>
+                </div>
+            </div>
+            """
+        else:
+            content = f"""
+            <div class="prologue-content">
+                <h2 class="prologue-title">PRÓLOGO</h2>
+                <div class="prologue-divider"></div>
+                <div class="prologue-text">
+                    <p>"{title}" es el resultado de un cuidadoso proceso de investigación y compilación, 
+                    diseñado para ofrecer a los lectores una experiencia de aprendizaje enriquecedora 
+                    y práctica.</p>
+
+                    <p>En el mundo del conocimiento {genre}, la información debe ser no solo precisa, 
+                    sino también accesible y aplicable en situaciones reales. Este libro ha sido 
+                    estructurado con esa filosofía en mente.</p>
+
+                    <p>Cada capítulo ha sido desarrollado siguiendo principios pedagógicos sólidos, 
+                    combinando teoría fundamentada con ejemplos prácticos que facilitan la comprensión 
+                    y retención del contenido.</p>
+
+                    <p>Esperamos que este libro se convierta en una herramienta valiosa en tu camino 
+                    hacia el dominio del tema, proporcionando las bases sólidas necesarias para 
+                    un aprendizaje exitoso.</p>
+                    
+                    <p class="prologue-signature">
+                        <strong>Los autores</strong><br>
+                        <em>Buko AI Editorial</em>
+                    </p>
+                </div>
+            </div>
+            """
+        
+        return HTMLElement(
+            id="prologue-page",
+            type=HTMLElementType.PARAGRAPH,
+            content=content,
+            attributes={
+                'class': 'prologue-page professional',
+                'data-page-type': 'prologue'
+            },
+            children=[],
+            metadata={'generated': True, 'optional_element': True, 'dynamic_content': True}
+        )
+    
+    def _create_epilogue_page(self, book_structure: BookStructure,
+                            options: ProfessionalFormattingOptions,
+                            book: Any) -> HTMLElement:
+        """Crea un epílogo profesional dinámico."""
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
+        
+        # Epílogo dinámico basado en el contenido del libro
+        title = book_structure.title or book.title or "este libro"
+        
+        if "alemán" in title.lower():
+            content = """
+            <div class="epilogue-content">
+                <h2 class="epilogue-title">EPÍLOGO</h2>
+                <div class="epilogue-divider"></div>
+                <div class="epilogue-text">
+                    <p>Has completado un viaje extraordinario a través de expresiones fundamentales 
+                    del alemán. Este recorrido te ha llevado desde los fundamentos básicos hasta 
+                    las estructuras más sofisticadas utilizadas en contextos profesionales y académicos.</p>
+
+                    <p>La maestría en el uso de estas expresiones no termina con la lectura de este libro. 
+                    El dominio real viene con la práctica constante, la exposición al alemán auténtico 
+                    y la aplicación consciente de estos elementos en situaciones reales de comunicación.</p>
+
+                    <p>Te animamos a continuar expandiendo tu repertorio, manteniéndote siempre atento 
+                    a las nuevas expresiones que encuentres en tu interacción con el alemán contemporáneo. 
+                    Recuerda que el idioma es un organismo vivo que evoluciona constantemente.</p>
+
+                    <p>El camino hacia la fluidez es gradual pero gratificante. Cada expresión que 
+                    domines te acerca más a una comunicación natural y auténtica en alemán.</p>
+
+                    <p class="epilogue-closing"><strong>¡Herzlichen Glückwunsch!</strong> 
+                    Has dado un paso significativo hacia la fluidez en alemán.</p>
+                    
+                    <p class="epilogue-signature">
+                        <em>Que este conocimiento te abra nuevas puertas de oportunidad.</em><br>
+                        <strong>Buko AI Editorial</strong>
+                    </p>
+                </div>
+            </div>
+            """
+        else:
+            content = f"""
+            <div class="epilogue-content">
+                <h2 class="epilogue-title">EPÍLOGO</h2>
+                <div class="epilogue-divider"></div>
+                <div class="epilogue-text">
+                    <p>Al llegar al final de "{title}", esperamos haber cumplido nuestro objetivo 
+                    de proporcionarte conocimientos valiosos y herramientas prácticas para tu crecimiento personal y profesional.</p>
+
+                    <p>El aprendizaje es un proceso continuo que no termina con la última página de un libro. 
+                    Los conceptos y principios que has explorado aquí son el fundamento sobre el cual 
+                    puedes construir un conocimiento más profundo y especializado.</p>
+
+                    <p>Te animamos a poner en práctica lo aprendido, a cuestionarlo, a expandirlo y 
+                    a compartirlo con otros. El conocimiento cobra vida cuando se aplica y se transmite.</p>
+
+                    <p>Gracias por acompañarnos en este viaje de descubrimiento. Esperamos haber 
+                    contribuido de manera positiva a tu desarrollo y crecimiento.</p>
+                    
+                    <p class="epilogue-signature">
+                        <strong>Con nuestros mejores deseos para tu éxito futuro</strong><br>
+                        <em>El equipo de Buko AI</em>
+                    </p>
+                </div>
+            </div>
+            """
+        
+        return HTMLElement(
+            id="epilogue-page",
+            type=HTMLElementType.PARAGRAPH,
+            content=content,
+            attributes={
+                'class': 'epilogue-page professional',
+                'data-page-type': 'epilogue'
+            },
+            children=[],
+            metadata={'generated': True, 'optional_element': True}
+        )
+    
+    def _create_about_author_page(self, book_structure: BookStructure,
+                                options: ProfessionalFormattingOptions,
+                                book: Any) -> HTMLElement:
+        """Crea una página 'Acerca del Autor' profesional."""
+        from ..services.html_shared_classes import HTMLElement, HTMLElementType
+        
+        # Obtener información del autor
+        author_name = book_structure.author or (book.user.full_name if hasattr(book, 'user') and book.user else 'Autor')
+        
+        content = f"""
+        <div class="about-author-content">
+            <h2 class="about-author-title">ACERCA DEL AUTOR</h2>
+            <div class="about-author-divider"></div>
+            <div class="about-author-text">
+                <div class="author-bio">
+                    <p><strong>{author_name}</strong> es un autor dedicado a la creación de contenido 
+                    educativo de alta calidad, especializado en el desarrollo de materiales de 
+                    aprendizaje innovadores y efectivos.</p>
+                    
+                    <p>Con la ayuda de tecnología de inteligencia artificial avanzada, ha logrado 
+                    producir obras que combinan rigor académico con accesibilidad, haciendo que 
+                    el conocimiento complejo sea comprensible y aplicable para lectores de todos 
+                    los niveles.</p>
+                    
+                    <p>Su enfoque pedagógico se centra en la creación de experiencias de aprendizaje 
+                    estructuradas y progresivas, donde cada elemento está cuidadosamente diseñado 
+                    para facilitar la comprensión y retención del contenido.</p>
+                    
+                    <p>La misión del autor es democratizar el acceso al conocimiento de calidad, 
+                    utilizando las últimas innovaciones tecnológicas para crear recursos educativos 
+                    que realmente marquen la diferencia en la vida de los estudiantes.</p>
+                </div>
+                
+                <div class="author-works">
+                    <h3>Otros trabajos del autor</h3>
+                    <p>Explore más contenido educativo innovador en nuestra plataforma digital, 
+                    donde encontrará una amplia gama de recursos de aprendizaje diseñados con 
+                    los más altos estándares de calidad pedagógica.</p>
+                </div>
+                
+                <div class="author-contact">
+                    <h3>Contacto</h3>
+                    <p>Para más información sobre este y otros trabajos, visite:</p>
+                    <p><strong>www.buko-ai.com</strong></p>
+                    <p>Email: contacto@buko-ai.com</p>
+                </div>
+                
+                <div class="author-acknowledgment">
+                    <p><em>"El conocimiento es la herramienta más poderosa para transformar vidas. 
+                    Mi compromiso es hacerlo accesible para todos."</em></p>
+                    <p class="signature">— {author_name}</p>
+                </div>
+            </div>
+        </div>
+        """
+        
+        return HTMLElement(
+            id="about-author-page",
+            type=HTMLElementType.PARAGRAPH,
+            content=content,
+            attributes={
+                'class': 'about-author-page professional',
+                'data-page-type': 'about-author'
+            },
+            children=[],
+            metadata={'generated': True, 'optional_element': True}
+        )

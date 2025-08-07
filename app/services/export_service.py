@@ -47,7 +47,7 @@ except ImportError:
 try:
     from .professional_formatting_service import ProfessionalFormattingService, ProfessionalFormattingOptions
     from .book_formatting_service import FormattingPlatform, FormattingOptions
-    from .markdown_to_html_service import BookStructure
+    from .html_shared_classes import BookStructure
     PROFESSIONAL_FORMATTING_AVAILABLE = True
 except ImportError:
     PROFESSIONAL_FORMATTING_AVAILABLE = False

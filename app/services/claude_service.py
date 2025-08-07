@@ -69,7 +69,7 @@ class ClaudeService:
         # 🚀 MAX_TOKENS OPTIMIZADOS: Eficiencia máxima SIN comprometer páginas
         self.max_tokens_config = {
             'architecture': 12000,      # 🚀 Reducido de 16K→12K - Arquitectura eficiente
-            'chunk_main': 32000,        # 🚀 Aumentado de 28K→32K - Chunks MÁS GRANDES = menos llamadas
+            'chunk_main': 40000,        # 🚀 Aumentado de 32K→40K - Buffer ampliado para evitar truncamiento
             'introduction': 6000,       # 🚀 Reducido de 8K→6K - Introducciones eficientes
             'conclusion': 6000,         # 🚀 Reducido de 8K→6K - Conclusiones eficientes  
             'continuation': 20000,      # 🚀 Aumentado de 16K→20K - Continuaciones más sustanciales
@@ -81,7 +81,7 @@ class ClaudeService:
         
         # Multi-chunk configuration OPTIMIZADO para CONTROL DE PÁGINAS + CALIDAD
         self.chunk_overlap = 500  # Tokens de overlap entre chunks para continuidad
-        self.max_chunks = 5       # 🚀 OPTIMIZADO: 5 chunks para mejor control de páginas por capítulo
+        self.max_chunks = 7       # 🚀 OPTIMIZADO: 7 chunks (+2) para evitar truncamiento y mejor distribución
         
         # Timeouts generosos para contenidos extensos de alta calidad
         self.architecture_timeout = 2400  # 40 minutos para arquitectura (contenidos extensos)
