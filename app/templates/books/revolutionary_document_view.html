@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ book.title }} - Documento Editorial Profesional</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* === ESTILOS DEL VISOR REVOLUCIONARIO === */
+        :root {
+            --primary-color: #1a202c;
+            --secondary-color: #2d3748;
+            --accent-color: #3182ce;
+            --success-color: #38a169;
+            --bg-viewer: #f7fafc;
+            --shadow-elegant: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-viewer);
+            color: var(--primary-color);
+            line-height: 1.6;
+        }
+
+        /* === TOOLBAR REVOLUCIONARIO === */
+        .revolutionary-toolbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-elegant);
+        }
+
+        .toolbar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .document-title-area {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .document-icon {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-size: 1.25rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .document-meta {
+            flex: 1;
+        }
+
+        .document-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .document-subtitle {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+
+        .toolbar-btn.primary {
+            background: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .toolbar-btn.primary:hover {
+            background: #2f855a;
+            border-color: #2f855a;
+        }
+
+        /* === INFORMACIÓN DEL DOCUMENTO === */
+        .document-info-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 0;
+        }
+
+        .info-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            text-align: center;
+            padding: 0.5rem 1rem;
+        }
+
+        .info-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            display: block;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        /* === CONTENEDOR DEL DOCUMENTO === */
+        .document-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* === VISOR DEL DOCUMENTO === */
+        .document-viewer {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-elegant);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .document-viewer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+            z-index: 1;
+        }
+
+        /* === DOCUMENTO REVOLUCIONARIO === */
+        .revolutionary-document {
+            padding: 3rem;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: white;
+            position: relative;
+        }
+
+        /* Scrollbar personalizado */
+        .revolutionary-document::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .revolutionary-document::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .revolutionary-document::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 4px;
+        }
+
+        .revolutionary-document::-webkit-scrollbar-thumb:hover {
+            background: #2c5282;
+        }
+
+        /* === CONTROLES DE ZOOM === */
+        .zoom-controls {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 25px;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+
+        .zoom-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .zoom-level {
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* === ACCIONES RÁPIDAS === */
+        .quick-actions {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: var(--accent-color);
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            background: #2c5282;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .action-btn.secondary {
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid #e2e8f0;
+        }
+
+        .action-btn.secondary:hover {
+            background: var(--bg-viewer);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* === INDICADOR DE CALIDAD === */
+        .quality-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--success-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            .toolbar-content {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .document-title-area {
+                justify-content: center;
+                text-align: center;
+            }
+
+            .toolbar-actions {
+                justify-content: center;
+            }
+
+            .info-content {
+                gap: 2rem;
+            }
+
+            .document-container {
+                padding: 0 1rem;
+            }
+
+            .revolutionary-document {
+                padding: 2rem 1.5rem;
+                max-height: 70vh;
+            }
+
+            .zoom-controls {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .action-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+
+        /* === ANIMACIONES === */
+        .document-viewer {
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toolbar-btn, .action-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* === INDICADOR DE PROGRESO DE LECTURA === */
+        .reading-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+            z-index: 1001;
+            transition: width 0.3s ease;
+        }
+
+        /* === PRINT STYLES === */
+        @media print {
+            .revolutionary-toolbar,
+            .document-info-bar,
+            .zoom-controls,
+            .quick-actions,
+            .quality-indicator {
+                display: none !important;
+            }
+
+            .document-container {
+                margin: 0;
+                padding: 0;
+                max-width: none;
+            }
+
+            .document-viewer {
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            .revolutionary-document {
+                padding: 0;
+                max-height: none;
+                overflow: visible;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Indicador de progreso de lectura -->
+    <div class="reading-progress" id="readingProgress"></div>
+
+    <!-- Toolbar Revolucionario -->
+    <div class="revolutionary-toolbar">
+        <div class="toolbar-content">
+            <div class="document-title-area">
+                <div class="document-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="document-meta">
+                    <div class="document-title">{{ book.title }}</div>
+                    <div class="document-subtitle">
+                        Documento Editorial Profesional
+                        {% if book.user and book.user.full_name %}
+                            • {{ book.user.full_name }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="toolbar-actions">
+                <button class="toolbar-btn" onclick="toggleFullscreen()">
+                    <i class="fas fa-expand"></i>
+                    Pantalla Completa
+                </button>
+                <button class="toolbar-btn" onclick="downloadPDF()">
+                    <i class="fas fa-download"></i>
+                    Descargar PDF
+                </button>
+                <a href="{{ url_for('books.formatting_viewer', book_id=book.id) }}" class="toolbar-btn">
+                    <i class="fas fa-cogs"></i>
+                    Configurar
+                </a>
+                <a href="{{ url_for('books.view_book', book_id=book.id) }}" class="toolbar-btn primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Documento -->
+    <div class="document-info-bar">
+        <div class="info-content">
+            <div class="info-item">
+                <span class="info-value">{{ document_info.pages_estimated }}</span>
+                <span class="info-label">Páginas</span>
+            </div>
+            <div class="info-item">
+                <span class="info-value">{{ "{:,}".format(document_info.word_count) }}</span>
+                <span class="info-label">Palabras</span>
+            </div>
+            <div class="info-item">
+                <span class="info-value">{{ document_info.chapters }}</span>
+                <span class="info-label">Capítulos</span>
+            </div>
+            <div class="info-item">
+                <span class="info-value">{{ document_info.format_quality }}</span>
+                <span class="info-label">Calidad</span>
+            </div>
+            <div class="info-item">
+                <span class="info-value">
+                    {% if ready_for_pdf %}
+                        <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                    {% else %}
+                        <i class="fas fa-exclamation-circle" style="color: #f56565;"></i>
+                    {% endif %}
+                </span>
+                <span class="info-label">Estado PDF</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor del Documento -->
+    <div class="document-container">
+        <div class="document-viewer" id="documentViewer">
+            <!-- Indicador de Calidad -->
+            <div class="quality-indicator">
+                <i class="fas fa-star"></i>
+                Editorial
+            </div>
+
+            <!-- Documento Revolucionario -->
+            <div class="revolutionary-document" id="revolutionaryDocument">
+                {{ document_html|safe }}
+            </div>
+
+            <!-- Controles de Zoom -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomOut()">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <span class="zoom-level" id="zoomLevel">100%</span>
+                <button class="zoom-btn" onclick="zoomIn()">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="zoom-btn" onclick="resetZoom()">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="quick-actions">
+                <button class="action-btn" onclick="printDocument()">
+                    <i class="fas fa-print"></i>
+                    Imprimir Documento
+                </button>
+                <button class="action-btn" onclick="downloadHTML()">
+                    <i class="fas fa-code"></i>
+                    Descargar HTML
+                </button>
+                <button class="action-btn secondary" onclick="shareDocument()">
+                    <i class="fas fa-share-alt"></i>
+                    Compartir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RevolutionaryDocumentViewer {
+            constructor() {
+                this.currentZoom = 1.0;
+                this.fullscreenMode = false;
+                this.init();
+            }
+
+            init() {
+                this.setupReadingProgress();
+                this.setupKeyboardShortcuts();
+                this.setupAutoSave();
+            }
+
+            setupReadingProgress() {
+                const progressBar = document.getElementById('readingProgress');
+                const documentElement = document.getElementById('revolutionaryDocument');
+
+                documentElement.addEventListener('scroll', () => {
+                    const scrollTop = documentElement.scrollTop;
+                    const scrollHeight = documentElement.scrollHeight - documentElement.clientHeight;
+                    const scrollPercent = (scrollTop / scrollHeight) * 100;
+                    progressBar.style.width = Math.min(100, Math.max(0, scrollPercent)) + '%';
+                });
+            }
+
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch(e.key) {
+                            case 'p':
+                                e.preventDefault();
+                                this.printDocument();
+                                break;
+                            case 's':
+                                e.preventDefault();
+                                this.downloadHTML();
+                                break;
+                            case 'f':
+                                e.preventDefault();
+                                this.toggleFullscreen();
+                                break;
+                            case '=':
+                            case '+':
+                                e.preventDefault();
+                                this.zoomIn();
+                                break;
+                            case '-':
+                                e.preventDefault();
+                                this.zoomOut();
+                                break;
+                            case '0':
+                                e.preventDefault();
+                                this.resetZoom();
+                                break;
+                        }
+                    }
+                });
+            }
+
+            setupAutoSave() {
+                // Auto-guardar estado de zoom y posición
+                const documentElement = document.getElementById('revolutionaryDocument');
+                
+                // Restaurar zoom guardado
+                const savedZoom = localStorage.getItem('doc-zoom-{{ book.id }}');
+                if (savedZoom) {
+                    this.currentZoom = parseFloat(savedZoom);
+                    this.updateZoom();
+                }
+
+                // Guardar zoom al cambiar
+                setInterval(() => {
+                    localStorage.setItem('doc-zoom-{{ book.id }}', this.currentZoom.toString());
+                }, 5000);
+            }
+
+            zoomIn() {
+                this.currentZoom = Math.min(3.0, this.currentZoom + 0.1);
+                this.updateZoom();
+            }
+
+            zoomOut() {
+                this.currentZoom = Math.max(0.5, this.currentZoom - 0.1);
+                this.updateZoom();
+            }
+
+            resetZoom() {
+                this.currentZoom = 1.0;
+                this.updateZoom();
+            }
+
+            updateZoom() {
+                const documentElement = document.getElementById('revolutionaryDocument');
+                documentElement.style.transform = `scale(${this.currentZoom})`;
+                documentElement.style.transformOrigin = 'top left';
+                
+                const zoomLevelElement = document.getElementById('zoomLevel');
+                zoomLevelElement.textContent = Math.round(this.currentZoom * 100) + '%';
+            }
+
+            toggleFullscreen() {
+                const viewer = document.getElementById('documentViewer');
+                
+                if (!this.fullscreenMode) {
+                    if (viewer.requestFullscreen) {
+                        viewer.requestFullscreen();
+                    } else if (viewer.webkitRequestFullscreen) {
+                        viewer.webkitRequestFullscreen();
+                    } else if (viewer.msRequestFullscreen) {
+                        viewer.msRequestFullscreen();
+                    }
+                    this.fullscreenMode = true;
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                    this.fullscreenMode = false;
+                }
+            }
+
+            printDocument() {
+                window.print();
+            }
+
+            downloadPDF() {
+                // Generar PDF desde el navegador
+                window.print();
+            }
+
+            downloadHTML() {
+                const documentContent = `{{ document_html|safe|replace("'", "\\'") }}`;
+                const blob = new Blob([documentContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '{{ book.title }}_profesional.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            shareDocument() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: '{{ book.title }}',
+                        text: 'Documento editorial profesional generado con Buko AI',
+                        url: window.location.href
+                    });
+                } else {
+                    // Fallback: copiar URL al portapapeles
+                    navigator.clipboard.writeText(window.location.href).then(() => {
+                        alert('URL copiada al portapapeles');
+                    });
+                }
+            }
+        }
+
+        // Funciones globales
+        function zoomIn() { window.docViewer.zoomIn(); }
+        function zoomOut() { window.docViewer.zoomOut(); }
+        function resetZoom() { window.docViewer.resetZoom(); }
+        function toggleFullscreen() { window.docViewer.toggleFullscreen(); }
+        function printDocument() { window.docViewer.printDocument(); }
+        function downloadPDF() { window.docViewer.downloadPDF(); }
+        function downloadHTML() { window.docViewer.downloadHTML(); }
+        function shareDocument() { window.docViewer.shareDocument(); }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            window.docViewer = new RevolutionaryDocumentViewer();
+            
+            // Mostrar notificación de carga completa
+            setTimeout(() => {
+                console.log('🚀 Documento Revolucionario cargado completamente');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

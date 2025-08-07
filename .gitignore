@@ -127,6 +127,7 @@ celerybeat.pid
 .venv
 env/
 venv/
+venv_professional/  # Entorno virtual para exportación profesional (WeasyPrint)
 ENV/
 env.bak/
 venv.bak/

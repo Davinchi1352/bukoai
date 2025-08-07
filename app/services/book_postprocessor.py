@@ -24,7 +24,7 @@ class BookPostProcessor:
     
     def process_book_content(self, content: str, book_title: str) -> str:
         """
-        Procesa el contenido completo del libro aplicando todas las optimizaciones.
+        Procesa el contenido completo del libro aplicando optimizaciones SIN renumeración automática.
         
         Args:
             content: Contenido HTML del libro
@@ -42,16 +42,16 @@ class BookPostProcessor:
             # 2. Eliminar repeticiones del títulos del libro
             cleaned_content = self._remove_duplicate_book_title(cleaned_content, book_title)
             
-            # 3. Renumerar encabezados automáticamente
-            renumbered_content = self._renumber_headings(cleaned_content)
+            # 3. DESACTIVADO: No renumerar encabezados automáticamente - mantener títulos descriptivos de Claude
+            # renumbered_content = self._renumber_headings(cleaned_content)
             
-            # 4. Optimizar formato HTML
-            optimized_content = self._optimize_html_format(renumbered_content)
+            # 4. Optimizar formato HTML (sin renumeración)
+            optimized_content = self._optimize_html_format(cleaned_content)
             
             logger.info("book_postprocessor_completed", 
                        original_length=len(content),
                        processed_length=len(optimized_content),
-                       chapters_numbered=self.chapter_counter)
+                       numbering_disabled=True)
             
             return optimized_content
             
@@ -203,8 +203,10 @@ class BookPostProcessor:
     def get_processing_stats(self) -> Dict[str, Any]:
         """Retorna estadísticas del procesamiento."""
         return {
-            'chapters_numbered': self.chapter_counter,
-            'sections_per_chapter': dict(self.section_counters),
-            'total_sections': sum(self.section_counters.values()),
-            'subsections_per_chapter': dict(self.subsection_counters)
+            'chapters_numbered': 0,  # Desactivado
+            'sections_per_chapter': {},  # Desactivado
+            'total_sections': 0,  # Desactivado
+            'subsections_per_chapter': {},  # Desactivado
+            'numbering_disabled': True,
+            'description': 'Mantener títulos descriptivos de Claude AI'
         }

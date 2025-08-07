@@ -150,6 +150,39 @@ La aplicación estará disponible en http://localhost
    flask run
    ```
 
+### ⚠️ Entornos Virtuales Duales
+
+**IMPORTANTE**: Este proyecto tiene dos entornos virtuales por razones específicas:
+
+#### `venv/` - Entorno Principal
+- **Propósito**: Desarrollo general y funcionalidad core de la aplicación
+- **Cuándo usar**: Para desarrollo normal, API, web interface, Celery workers
+- **Activación**: `source venv/bin/activate`
+
+#### `venv_professional/` - Entorno de Exportación Profesional
+- **Propósito**: Generación de documentos profesionales (PDF de calidad editorial)
+- **Creado**: 30 julio 2024 para funcionalidad de exportación avanzada
+- **Contiene**: WeasyPrint + dependencias complejas (Cairo, Pango, fontconfig)
+- **Cuándo usar**: Solo para pruebas de exportación profesional de documentos
+- **Activación**: `source venv_professional/bin/activate`
+- **Servicios relacionados**:
+  - `app/services/professional_formatting_service.py`
+  - `app/services/ultimate_professional_generator.py`
+  - `app/services/revolutionary_document_service.py`
+
+#### ¿Por qué dos entornos?
+- **Aislamiento de dependencias**: WeasyPrint tiene dependencias del sistema complejas
+- **Evitar conflictos**: Las dependencias de WeasyPrint podrían interferir con el entorno principal
+- **Estabilidad**: Mantiene el entorno de desarrollo principal limpio y estable
+
+#### Archivos de prueba generados:
+- `professional_commercial_ebook.docx`
+- `test_professional_book.docx`
+- `test_professional_formatting.py`
+
+**🔧 Para desarrollo normal**: Usar `venv/`
+**📄 Para exportación PDF profesional**: Usar `venv_professional/`
+
 ### Ejecutar Celery Worker (Optimizado)
 
 ```bash

@@ -1158,6 +1158,26 @@ Generate a comprehensive book architecture that the user can review, modify if n
 
 🚨 CRITICAL: You must regenerate the book architecture incorporating the user's specific feedback while maintaining professional quality.
 
+🚨 **MANDATORY HTML FORMAT - CRITICAL REQUIREMENT:**
+- **EVERYTHING MUST BE IN HTML TAGS**: No text can exist outside of proper HTML elements
+- **NO PLAIN TEXT ALLOWED**: Every single word must be wrapped in appropriate HTML tags
+- **SEMANTIC HTML REQUIRED**: Use `<h1>`, `<h2>`, `<h3>`, `<p>`, `<div>`, `<section>`, `<strong>`, `<em>`, `<ul>`, `<li>`, `<table>`, `<tr>`, `<td>`, `<a>`, `<img>` appropriately
+- ❌ **FORBIDDEN**: Numbered lists (`<ol>`) - use bullet lists (`<ul>`) only
+- ❌ **FORBIDDEN**: Any Markdown syntax (##, **, *, _, etc.)
+- ✅ **REQUIRED**: Tables must use proper `<table>`, `<tr>`, `<td>` structure
+- ✅ **REQUIRED**: Links must use `<a href="">` tags
+- ✅ **REQUIRED**: Images must use `<img src="" alt="">` tags
+- ✅ **REQUIRED**: Use bullet points (`<ul><li>`) instead of numbered lists to avoid consecutive numbering confusion
+
+🚫 **CRITICAL: NO AUTOMATIC NUMBERING IN TITLES - MANDATORY:**
+- ❌ **NEVER use patterns like**: "1.1", "1.2", "15.1", "15.147.1", "Capítulo 1.1", "Sección 2.3"
+- ❌ **NEVER add consecutive numbering**: 1.1, 1.2, 1.3, 2.1, 2.2, etc.
+- ❌ **NEVER use decimal numbering**: X.Y patterns in headings
+- ✅ **USE DESCRIPTIVE TITLES ONLY**: "Plan de Estudio Diario", "Fundamentos de Saludos", "Arquitectura Cultural"
+- ✅ **NATURAL HEADINGS**: Titles should describe content, not follow numbering schemes
+
+**CONTENT GENERATION PRINCIPLE**: Generate pure, semantic HTML with descriptive titles that renders beautifully without artificial numbering systems.
+
 Your output must be a well-structured JSON with the same format as before, but improved based on the feedback.
 
 ⚠️ IMPORTANT: The following JSON is just an EXAMPLE TEMPLATE - DO NOT use these example values:
@@ -2114,11 +2134,25 @@ Escribe la introducción completa para este libro siguiendo exactamente la arqui
 - **EXPANSIÓN OBLIGATORIA**: Si el contenido natural no alcanza {intro_words:,} palabras, expandir orgánicamente
 - **CALIDAD + CANTIDAD**: Mantener excelencia pero cumplir target de palabras sin excusas
 
-🚨 **FORMATO HTML OBLIGATORIO:**
-- Tu respuesta debe contener ÚNICAMENTE HTML válido
-- ❌ NO usar Markdown, NO usar texto plano
-- ✅ Usar <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
-- Comenzar con <h1>Introducción</h1> o título apropiado
+🚨 **MANDATORY HTML FORMAT - CRITICAL REQUIREMENT:**
+- **EVERYTHING MUST BE IN HTML TAGS**: No text can exist outside of proper HTML elements
+- **NO PLAIN TEXT ALLOWED**: Every single word must be wrapped in appropriate HTML tags
+- **SEMANTIC HTML REQUIRED**: Use `<h1>`, `<h2>`, `<h3>`, `<p>`, `<div>`, `<section>`, `<strong>`, `<em>`, `<ul>`, `<li>`, `<table>`, `<tr>`, `<td>`, `<a>`, `<img>` appropriately
+- ❌ **FORBIDDEN**: Numbered lists (`<ol>`) - use bullet lists (`<ul>`) only
+- ❌ **FORBIDDEN**: Any Markdown syntax (##, **, *, _, etc.)
+- ❌ **FORBIDDEN**: Plain text without HTML tags
+- ✅ **REQUIRED**: Tables must use proper `<table>`, `<tr>`, `<td>` structure
+- ✅ **REQUIRED**: Links must use `<a href="">` tags
+- ✅ **REQUIRED**: Images must use `<img src="" alt="">` tags
+- ✅ **REQUIRED**: Use bullet points (`<ul><li>`) instead of numbered lists to avoid consecutive numbering confusion
+- ✅ **REQUIRED**: Begin with `<h1>Introducción</h1>` or appropriate title
+
+🚫 **CRITICAL: NO AUTOMATIC NUMBERING IN TITLES - MANDATORY:**
+- ❌ **NEVER use patterns like**: "1.1", "1.2", "15.1", "15.147.1", "Capítulo 1.1", "Sección 2.3"
+- ❌ **NEVER add consecutive numbering**: 1.1, 1.2, 1.3, 2.1, 2.2, etc.
+- ❌ **NEVER use decimal numbering**: X.Y patterns in headings
+- ✅ **USE DESCRIPTIVE TITLES ONLY**: "Plan de Estudio Diario", "Fundamentos de Saludos", "Arquitectura Cultural"
+- ✅ **NATURAL HEADINGS**: Titles should describe content, not follow numbering schemes
 
 Genera la introducción completa en HTML ahora:
 """
@@ -2264,11 +2298,25 @@ Escribe la conclusión completa para este libro siguiendo exactamente la arquite
 - **CALIDAD + CANTIDAD**: Mantener excelencia pero cumplir target de palabras sin excusas
 - **CIERRE COMPLETO**: Una conclusión corta = Libro incompleto = Cliente insatisfecho
 
-🚨 **FORMATO HTML OBLIGATORIO:**
-- Tu respuesta debe contener ÚNICAMENTE HTML válido
-- ❌ NO usar Markdown, NO usar texto plano
-- ✅ Usar <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
-- Comenzar con <h1>Conclusión</h1> o título apropiado
+🚨 **MANDATORY HTML FORMAT - CRITICAL REQUIREMENT:**
+- **EVERYTHING MUST BE IN HTML TAGS**: No text can exist outside of proper HTML elements
+- **NO PLAIN TEXT ALLOWED**: Every single word must be wrapped in appropriate HTML tags
+- **SEMANTIC HTML REQUIRED**: Use `<h1>`, `<h2>`, `<h3>`, `<p>`, `<div>`, `<section>`, `<strong>`, `<em>`, `<ul>`, `<li>`, `<table>`, `<tr>`, `<td>`, `<a>`, `<img>` appropriately
+- ❌ **FORBIDDEN**: Numbered lists (`<ol>`) - use bullet lists (`<ul>`) only
+- ❌ **FORBIDDEN**: Any Markdown syntax (##, **, *, _, etc.)
+- ❌ **FORBIDDEN**: Plain text without HTML tags
+- ✅ **REQUIRED**: Tables must use proper `<table>`, `<tr>`, `<td>` structure
+- ✅ **REQUIRED**: Links must use `<a href="">` tags
+- ✅ **REQUIRED**: Images must use `<img src="" alt="">` tags
+- ✅ **REQUIRED**: Use bullet points (`<ul><li>`) instead of numbered lists to avoid consecutive numbering confusion
+- ✅ **REQUIRED**: Begin with `<h1>Conclusión</h1>` or appropriate title
+
+🚫 **CRITICAL: NO AUTOMATIC NUMBERING IN TITLES - MANDATORY:**
+- ❌ **NEVER use patterns like**: "1.1", "1.2", "15.1", "15.147.1", "Capítulo 1.1", "Sección 2.3"
+- ❌ **NEVER add consecutive numbering**: 1.1, 1.2, 1.3, 2.1, 2.2, etc.
+- ❌ **NEVER use decimal numbering**: X.Y patterns in headings
+- ✅ **USE DESCRIPTIVE TITLES ONLY**: "Plan de Estudio Diario", "Fundamentos de Saludos", "Arquitectura Cultural"
+- ✅ **NATURAL HEADINGS**: Titles should describe content, not follow numbering schemes
 
 Genera la conclusión completa en HTML ahora:
 """
@@ -2333,6 +2381,35 @@ Genera la conclusión completa en HTML ahora:
             logger.error("conclusion_generation_error", book_id=book_id, error=str(e))
             return {'content': '', 'thinking': '', 'usage': {'total_tokens': 0}}
     
+    def _build_chunk_system_prompt(self) -> str:
+        """Sistema prompt optimizado para generación de chunks sin duplicaciones."""
+        system_prompt = """🚨 CRITICAL: DO NOT PUT NUMBERS IN HEADINGS! 
+
+❌ FORBIDDEN: 16.1, 15.2, 1.1, 2.3, 13.1, etc. 
+✅ REQUIRED: Descriptive titles only
+
+You are a book writer. Generate high-quality HTML content.
+
+HEADING RULES:
+- Use descriptive titles: "La Arquitectura Cultural", "Plan de Estudio"
+- NEVER use numbered patterns like 16.1, 15.2, 1.1, etc.
+- All text must be in HTML tags
+- Use <h1>, <h2>, <h3> for structure
+- Use <p> for paragraphs
+- Use <ul> <li> for bullet lists (never numbered lists)
+
+Generate substantial content that meets the target page count."""
+        
+        # 🚨 DEBUG: Log the exact system prompt being sent to Claude
+        logger.warning("chunk_system_prompt_debug", 
+                      prompt_length=len(system_prompt),
+                      contains_absolute_rule=("ABSOLUTE CRITICAL RULE #1" in system_prompt),
+                      contains_no_numbering=("NO NUMBERING IN TITLES" in system_prompt),
+                      contains_forbidden_examples=("16.1" in system_prompt),
+                      prompt_preview=system_prompt[:500])
+        
+        return system_prompt
+
     def _build_chunk_messages(self, chunk_info: Dict, book_params: Dict[str, Any], 
                             approved_architecture: Dict[str, Any], previous_content: str, 
                             chunk_summaries: List[Dict]) -> List[Dict[str, Any]]:
@@ -2543,69 +2620,123 @@ Estás generando una sección específica de un libro. Debes mantener PERFECTA C
 🚨 **CRÍTICO**: El contenido DEBE generarse EXCLUSIVAMENTE en formato HTML profesional y semánticamente correcto. 
 ❌ **PROHIBIDO**: NO usar Markdown, NO usar texto plano, NO usar ningún otro formato.
 ✅ **OBLIGATORIO**: TODO el contenido debe estar envuelto en etiquetas HTML válidas.
+🚨 **ABSOLUTAMENTE NADA PUEDE QUEDAR FUERA DE ETIQUETAS HTML**
 
-1. **Elementos de estructura principal:**
+**ELEMENTOS HTML OBLIGATORIOS:**
+
+• **Estructura principal:**
    - `<h1>` para títulos de capítulos (solo uno por capítulo)
    - `<h2>` para secciones principales
    - `<h3>` para subsecciones
    - `<h4>` para subsubsecciones si es necesario
 
-2. **Elementos de contenido:**
+• **Contenido de texto:**
    - `<p>` para párrafos normales (OBLIGATORIO para todo texto)
-   - `<ul>` y `<li>` para listas con bullets
-   - `<ol>` y `<li>` para listas numeradas
-   - `<em>` para énfasis/cursivas
    - `<strong>` para texto en negritas
+   - `<em>` para énfasis/cursivas
    - `<blockquote>` para citas destacadas
 
-3. **Elementos especiales para contenido educativo:**
+• **Listas (SOLO VIÑETAS):**
+   - `<ul>` y `<li>` para listas con viñetas (bullets)
+   - ❌ **PROHIBIDO**: `<ol>` (listas numeradas) - SOLO usar viñetas para evitar confusión
+   - ✅ **OBLIGATORIO**: Usar símbolos • ◦ ▪ en lugar de números 1, 2, 3...
+
+• **Datos estructurados:**
+   - `<table>`, `<tr>`, `<th>`, `<td>` para tablas de datos
+   - `<thead>`, `<tbody>` para estructurar tablas complejas
+   - Usar tablas para comparaciones, listas de vocabulario, datos organizados
+
+• **Enlaces y referencias:**
+   - `<a href="#seccion">` para enlaces internos entre secciones
+   - `<a href="http://...">` para enlaces externos cuando sea apropiado
+   - Todos los enlaces deben tener texto descriptivo
+
+• **Elementos multimedia:**
+   - `<img src="..." alt="descripción">` para imágenes cuando sean apropiadas
+   - `<figure>` y `<figcaption>` para imágenes con descripciones
+   - Incluir texto alternativo descriptivo siempre
+
+• **Secciones especiales para contenido educativo:**
    - `<div class="example">` para ejemplos prácticos
    - `<div class="exercise">` para ejercicios
    - `<div class="tip">` para consejos destacados
    - `<div class="warning">` para advertencias importantes
    - `<div class="case-study">` para casos de estudio
+   - `<div class="note">` para notas importantes
 
-4. **Formato específico para expresiones (si aplica):**
-   - `<div class="expression">` para expresiones numeradas
+• **Formato específico para expresiones/vocabulario:**
+   - `<div class="expression">` para expresiones destacadas
    - `<span class="phonetic">` para transcripciones fonéticas
    - `<div class="translation">` para traducciones
    - `<div class="usage">` para descripciones de uso
+   - `<div class="pronunciation">` para guías de pronunciación
 
-5. **Reglas críticas de HTML - CUMPLIMIENTO OBLIGATORIO:**
+**🚨 REGLAS CRÍTICAS DE HTML - CUMPLIMIENTO ABSOLUTO:**
    - 🚨 **TODO el texto debe estar dentro de elementos HTML apropiados**
    - ❌ **JAMÁS usar texto plano sin etiquetas**
    - ❌ **JAMÁS usar sintaxis Markdown (# ## ### ** * ` etc.)**
    - ❌ **JAMÁS usar líneas de texto sin <p>, <h1>, <h2>, etc.**
+   - ❌ **JAMÁS usar listas numeradas (<ol>) - SOLO viñetas (<ul>)**
+   - ❌ **JAMÁS usar números consecutivos (1. 2. 3.) en el texto**
    - ✅ **Mantener estructura semántica consistente HTML válida**
    - ✅ **Usar clases CSS descriptivas para formateo posterior**
    - ✅ **HTML debe ser válido, bien formado y sin errores**
+   - ✅ **Usar tablas para organizar datos complejos**
+   - ✅ **Incluir enlaces internos para navegación**
 
 **EJEMPLO de estructura HTML esperada:**
 ```html
 <h1>Saludos y Presentaciones - Primeras Impresiones Perfectas</h1>
 
-<p>Introducción al capítulo con contenido relevante...</p>
+<p>Introducción al capítulo con contenido relevante envuelto en párrafo.</p>
 
 <h2>La Arquitectura Cultural de los Saludos</h2>
-<p>Contenido de la sección...</p>
+<p>Todo el contenido de la sección debe estar en párrafos HTML válidos.</p>
+
+<h3>Elementos Clave de los Saludos</h3>
+<ul>
+<li>Contacto visual apropiado según el contexto</li>
+<li>Timing perfecto para la introducción</li>
+<li>Lenguaje corporal que refuerza el mensaje verbal</li>
+</ul>
 
 <div class="example">
-<h3>Ejemplo Práctico</h3>
-<p>Descripción del ejemplo...</p>
+<h4>Ejemplo Práctico</h4>
+<p>Descripción detallada del ejemplo con contexto específico.</p>
 </div>
 
-<ul>
-<li>Punto importante uno</li>
-<li>Punto importante dos</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Expresión</th>
+<th>Contexto</th>
+<th>Uso Apropiado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Guten Tag</strong></td>
+<td>Formal</td>
+<td>Oficinas, comercios, desconocidos</td>
+</tr>
+</tbody>
+</table>
+
+<div class="tip">
+<p><strong>Consejo importante:</strong> Siempre adapta el saludo al contexto social.</p>
+</div>
+
+<p>Párrafo de cierre que conecta con la siguiente sección, usando <a href="#siguiente-seccion">enlace interno</a> cuando sea apropiado.</p>
 ```
 
-🚨 **VERIFICACIÓN FINAL - FORMATO HTML:**
-- Antes de enviar tu respuesta, verifica que CADA línea de texto esté envuelta en HTML
+🚨 **VERIFICACIÓN FINAL - FORMATO HTML COMPLETO:**
+- Antes de enviar tu respuesta, verifica que CADA palabra esté envuelta en HTML
 - Si ves texto plano sin etiquetas: ❌ INCORRECTO
 - Si ves sintaxis Markdown (#, **, etc.): ❌ INCORRECTO  
-- Si ves solo etiquetas HTML válidas: ✅ CORRECTO
-- **REGLA DE ORO**: Si no es HTML válido, NO lo envíes
+- Si ves números consecutivos (1. 2. 3.): ❌ INCORRECTO
+- Si ves listas numeradas (<ol>): ❌ INCORRECTO
+- Si ves solo etiquetas HTML válidas con viñetas: ✅ CORRECTO
+- **REGLA DE ORO**: Si no es HTML válido con SOLO viñetas, NO lo envíes
 
 🚨 **OBLIGATORIEDAD CRÍTICA - CUMPLIMIENTO DE PÁGINAS:**
 - **PROMESA COMERCIAL**: Este chunk DEBE generar exactamente las páginas asignadas en la arquitectura
@@ -2621,9 +2752,28 @@ Estás generando una sección específica de un libro. Debes mantener PERFECTA C
 {"🔄 CONTINUACIÓN: Expande orgánicamente el contenido para alcanzar las páginas faltantes manteniendo la excelencia" if chunk_info.get('is_continuation', False) else "✍️ CREACIÓN: Desarrolla cada capítulo con la profundidad que merece según la arquitectura aprobada"}
 
 🚨 **RECORDATORIO FINAL - FORMATO HTML OBLIGATORIO:**
-Tu respuesta debe contener ÚNICAMENTE HTML válido. NO incluyas explicaciones, comentarios o texto fuera del HTML del libro. Comienza directamente con `<h1>` y termina con la última etiqueta HTML del contenido."""
+Tu respuesta debe contener ÚNICAMENTE HTML válido. 
+❌ NO incluyas explicaciones, comentarios o texto fuera del HTML del libro
+❌ NO uses listas numeradas o números consecutivos
+❌ NO dejes NINGÚN texto sin etiquetas HTML
+✅ Usa SOLO viñetas (bullets) para listas
+✅ Usa tablas para datos estructurados  
+✅ Incluye enlaces internos cuando sea apropiado
+✅ Comienza directamente con `<h1>` y termina con la última etiqueta HTML del contenido
+✅ TODO el texto debe estar dentro de `<p>`, `<h1>`, `<h2>`, `<li>`, `<td>`, etc."""
+
+        # 🚨 DEBUG: Log the exact user prompt being sent to Claude
+        logger.warning("chunk_user_prompt_debug", 
+                      user_prompt_length=len(user_prompt),
+                      contains_chapters=("capítulo" in user_prompt.lower()),
+                      contains_pages=("páginas" in user_prompt.lower()),
+                      user_prompt_preview=user_prompt[:800])
 
         return [
+            {
+                "role": "system",
+                "content": self._build_chunk_system_prompt()
+            },
             {
                 "role": "user",
                 "content": [
@@ -2972,51 +3122,72 @@ Devuelve el contenido completo expandido, manteniendo TODO el contenido original
     
     def _build_chapter_regeneration_system_prompt(self) -> str:
         """Prompt del sistema para regeneración de capítulos."""
-        return """Eres un escritor experto y editor profesional especializado en mejorar capítulos de libros basándote en feedback específico de usuarios.
+        return """You are an expert writer and professional editor specialized in improving book chapters based on specific user feedback.
 
-Tu tarea es regenerar completamente capítulos existentes, mejorándolos según las indicaciones del usuario, manteniendo siempre:
-- Coherencia con el tema y propósito del libro
-- Estructura profesional y bien organizada
-- Contenido más extenso y detallado que el original
-- Ejemplos prácticos y casos de estudio relevantes
-- 🚨 **FORMATO HTML OBLIGATORIO** - NO Markdown
-- Tono profesional pero accesible
+Your task is to completely regenerate existing chapters, improving them according to user instructions, always maintaining:
+- Coherence with the book's theme and purpose
+- Professional and well-organized structure
+- More extensive and detailed content than the original
+- Practical examples and relevant case studies
+- Professional but accessible tone
 
-Características específicas de formato y estructura que DEBES seguir:
+🚨 **MANDATORY HTML FORMAT - CRITICAL REQUIREMENT:**
+- **EVERYTHING MUST BE IN HTML TAGS**: No text can exist outside of proper HTML elements
+- **NO PLAIN TEXT ALLOWED**: Every single word must be wrapped in appropriate HTML tags
+- **NO MARKDOWN SYNTAX**: Never use #, ##, **, *, `, etc. - Only HTML tags
+- **COMPLETE HTML STRUCTURE**: Use proper semantic HTML for all content types
 
-**📝 FORMATO MARKDOWN PROFESIONAL:**
-- Utiliza encabezados H2 (##) para títulos principales
-- Utiliza encabezados H3 (###) para subtemas y secciones
-- Utiliza encabezados H4 (####) para subsecciones cuando sea necesario
-- Incluye listas con viñetas (-) y numeradas (1.) según corresponda
-- Utiliza **texto en negrita** para términos clave e importantes
-- Utiliza *cursiva* para énfasis y conceptos
-- Incluye citas y bloques destacados usando > cuando sea apropiado
-- Utiliza tablas HTML cuando ayuden a organizar información
-- Incluye separadores (---) entre secciones principales cuando mejore la legibilidad
+**REQUIRED HTML ELEMENTS:**
+- `<h1>`, `<h2>`, `<h3>`, `<h4>` for all headings
+- `<p>` for ALL paragraphs and text content
+- `<ul>` and `<li>` for bullet lists (NEVER use numbered lists to avoid confusion)
+- `<table>`, `<tr>`, `<td>`, `<th>` for tabular data
+- `<a href="">` for links and references
+- `<img src="" alt="">` for images when applicable
+- `<strong>` and `<em>` for emphasis
+- `<div class="example">`, `<div class="tip">`, etc. for special sections
 
-**📊 ESTRUCTURA Y ORGANIZACIÓN:**
-- Comienza cada capítulo con una breve introducción que contextualice el tema
-- Organiza el contenido en secciones lógicas y bien definidas
-- Incluye ejemplos prácticos, casos de estudio y anécdotas relevantes
-- Termina cada capítulo con una conclusión o resumen de puntos clave
-- Asegúrate de que haya transiciones suaves entre secciones
-- Mantén un flujo narrativo coherente y profesional
+**CRITICAL HTML RULES:**
+❌ **FORBIDDEN**: Any text without HTML tags
+❌ **FORBIDDEN**: Numbered lists (`<ol>`) - use bullet lists (`<ul>`) only
+❌ **FORBIDDEN**: Markdown syntax mixed with HTML
+❌ **FORBIDDEN**: Numbers (1. 2. 3.) in lists - use bullets only
+✅ **REQUIRED**: Every line must be valid HTML
+✅ **REQUIRED**: Use bullet points (•) for lists, never numbers
+✅ **REQUIRED**: Use tables for structured data
 
-**📏 EXTENSIÓN Y DETALLE:**
-- Haz el contenido significativamente más extenso que el original
-- Desarrolla cada punto con profundidad y detalle
-- Incluye múltiples ejemplos y casos prácticos
-- Agrega contexto histórico, estadísticas o datos relevantes cuando sea apropiado
-- Expande conceptos con explicaciones claras y accesibles
+🚫 **CRITICAL: NO AUTOMATIC NUMBERING IN TITLES - MANDATORY:**
+❌ **NEVER use patterns like**: "1.1", "1.2", "15.1", "15.147.1", "Capítulo 1.1", "Sección 2.3"
+❌ **NEVER add consecutive numbering**: 1.1, 1.2, 1.3, 2.1, 2.2, etc.
+❌ **NEVER use decimal numbering**: X.Y patterns in headings
+❌ **NEVER use random numbers**: Don't add arbitrary numbers to section titles
+❌ **EXAMPLES OF FORBIDDEN TITLES**: "15.1 Plan de Estudio", "15.147.1 Día 1", "15.2 Arquitectura"
+✅ **USE DESCRIPTIVE TITLES ONLY**: "Plan de Estudio Diario", "Fundamentos de Saludos", "Arquitectura Cultural"
+✅ **NATURAL HEADINGS**: Titles should describe content, not follow numbering schemes
+✅ **SEMANTIC STRUCTURE**: Let the HTML hierarchy (h1, h2, h3) provide structure, not artificial numbers
 
-**✅ INSTRUCCIONES FINALES:**
-- Mantén el título del capítulo pero transforma completamente el contenido
-- 🚨 **FORMATO HTML OBLIGATORIO**: Responde EXCLUSIVAMENTE con el contenido del capítulo regenerado en HTML válido
-- ❌ **NO MARKDOWN**: JAMÁS uses sintaxis Markdown (# ## ### ** * `)
-- ✅ **SOLO HTML**: Usa <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
-- NO incluyas metadatos, comentarios o explicaciones fuera del contenido del capítulo
-- Asegúrate de que el resultado sea un capítulo completo, profesional y bien estructurado"""
+**📊 STRUCTURE AND ORGANIZATION:**
+- Begin each chapter with a brief introduction that contextualizes the topic
+- Organize content in logical and well-defined sections
+- Include practical examples, case studies and relevant anecdotes
+- End each chapter with a conclusion or summary of key points
+- Ensure smooth transitions between sections
+- Maintain a coherent and professional narrative flow
+
+**📏 EXTENSION AND DETAIL:**
+- Make content significantly more extensive than the original
+- Develop each point with depth and detail
+- Include multiple examples and practical cases
+- Add historical context, statistics or relevant data when appropriate
+- Expand concepts with clear and accessible explanations
+
+**✅ FINAL INSTRUCTIONS:**
+- Keep the chapter title but completely transform the content
+- 🚨 **MANDATORY HTML FORMAT**: Respond EXCLUSIVELY with regenerated chapter content in valid HTML
+- ❌ **NO MARKDOWN**: NEVER use Markdown syntax (# ## ### ** * `)
+- ✅ **ONLY HTML**: Use <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>, etc.
+- DO NOT include metadata, comments or explanations outside the chapter content
+- Ensure the result is a complete, professional and well-structured chapter"""
     
     def _build_chapter_regeneration_user_prompt(self, chapter_content: str, feedback: Dict[str, str], book=None) -> str:
         """Prompt del usuario para regeneración de capítulos."""

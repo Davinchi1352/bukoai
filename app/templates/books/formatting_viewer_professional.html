@@ -1405,7 +1405,7 @@ class ProfessionalFormatter {
             if (data.success) {
                 this.showNotification('¡Formato profesional generado exitosamente!', 'success');
                 setTimeout(() => {
-                    window.location.href = `/books/book/${this.bookId}`;
+                    window.location.href = `/books/book/${this.bookId}/formatted`;
                 }, 2000);
             } else {
                 this.showNotification('Error al generar formato: ' + data.error, 'error');

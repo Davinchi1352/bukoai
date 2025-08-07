@@ -41,6 +41,11 @@ class HTMLElementType(Enum):
     INDEX_ENTRY = "index-entry"
     FOOTNOTE = "footnote"
     CROSS_REFERENCE = "cross-ref"
+    # Elementos HTML genéricos
+    DIV = "div"
+    SPAN = "span"
+    GENERIC = "generic"
+    UNKNOWN = "unknown"
 
 
 @dataclass
@@ -90,7 +95,12 @@ class HTMLElement:
             HTMLElementType.TABLE_OF_CONTENTS: "nav",
             HTMLElementType.INDEX_ENTRY: "span",
             HTMLElementType.FOOTNOTE: "aside",
-            HTMLElementType.CROSS_REFERENCE: "a"
+            HTMLElementType.CROSS_REFERENCE: "a",
+            # Elementos HTML genéricos
+            HTMLElementType.DIV: "div",
+            HTMLElementType.SPAN: "span",
+            HTMLElementType.GENERIC: "div",
+            HTMLElementType.UNKNOWN: "div"
         }
         return tag_mapping.get(self.type, "div")
     
@@ -209,14 +219,14 @@ class BookStructure:
     
     def _generate_toc_item(self, item: Dict[str, Any]) -> str:
         """Genera un elemento de la tabla de contenidos."""
-        html = f'<li><a href="#{item["id"]}">{html.escape(item["title"])}</a>'
+        html_content = f'<li><a href="#{item["id"]}">{html.escape(item["title"])}</a>'
         if item.get("children"):
-            html += '<ol class="toc-sublist">'
+            html_content += '<ol class="toc-sublist">'
             for child in item["children"]:
-                html += self._generate_toc_item(child)
-            html += '</ol>'
-        html += '</li>'
-        return html
+                html_content += self._generate_toc_item(child)
+            html_content += '</ol>'
+        html_content += '</li>'
+        return html_content
     
     def _generate_index_html(self) -> str:
         """Genera el HTML para el índice."""

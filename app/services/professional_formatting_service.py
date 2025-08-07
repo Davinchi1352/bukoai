@@ -449,18 +449,29 @@ class ProfessionalFormattingService:
     
     def _soup_to_html_element(self, soup_element) -> Optional[HTMLElement]:
         """Convierte un elemento BeautifulSoup a HTMLElement."""
-        # Mapeo de tags a tipos
+        from ..services.markdown_to_html_service import HTMLElementType
+        
+        # Mapeo robusto de tags a tipos
         tag_type_map = {
-            'h1': 'book-title',
-            'h2': 'chapter-title',
-            'h3': 'section',
-            'h4': 'subsection',
-            'p': 'paragraph',
-            'div': 'div',
-            'section': 'chapter'
+            'h1': HTMLElementType.BOOK_TITLE,
+            'h2': HTMLElementType.CHAPTER_TITLE,
+            'h3': HTMLElementType.SECTION,
+            'h4': HTMLElementType.SUBSECTION,
+            'p': HTMLElementType.PARAGRAPH,
+            'div': HTMLElementType.DIV,
+            'span': HTMLElementType.SPAN,
+            'section': HTMLElementType.CHAPTER,
+            'em': HTMLElementType.EMPHASIS,
+            'strong': HTMLElementType.STRONG,
+            'blockquote': HTMLElementType.BLOCKQUOTE,
+            'code': HTMLElementType.CODE,
+            'ul': HTMLElementType.LIST,
+            'ol': HTMLElementType.LIST,
+            'li': HTMLElementType.LIST_ITEM
         }
         
-        element_type = tag_type_map.get(soup_element.name, 'div')
+        # Usar el tipo apropiado o UNKNOWN para elementos desconocidos
+        element_type = tag_type_map.get(soup_element.name, HTMLElementType.UNKNOWN)
         
         # Extraer atributos
         attributes = {}
@@ -471,11 +482,9 @@ class ProfessionalFormattingService:
                 attributes[attr] = str(value)
         
         # Crear HTMLElement
-        from ..services.markdown_to_html_service import HTMLElementType
-        
         return HTMLElement(
             id=soup_element.get('id', f"element-{uuid.uuid4().hex[:8]}"),
-            type=HTMLElementType(element_type),
+            type=element_type,
             content=soup_element.get_text(),
             attributes=attributes,
             children=[],

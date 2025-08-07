@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ book.title }} - Documento Editorial Supremo</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* === ESTILOS SUPREMOS === */
+        :root {
+            --primary-color: #1a202c;
+            --secondary-color: #2d3748;
+            --accent-color: #3182ce;
+            --success-color: #38a169;
+            --gold-color: #d69e2e;
+            --bg-supreme: #f7fafc;
+            --shadow-supreme: 0 20px 40px -5px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-supreme) 0%, #e2e8f0 100%);
+            color: var(--primary-color);
+            line-height: 1.6;
+        }
+
+        /* === HEADER SUPREMO === */
+        .supreme-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-supreme);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .supreme-badge {
+            background: linear-gradient(135deg, var(--gold-color) 0%, #f6ad55 100%);
+            color: var(--primary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .document-title-area {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .document-icon {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .document-meta h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .document-subtitle {
+            opacity: 0.9;
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+
+        .header-btn.primary {
+            background: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .header-btn.primary:hover {
+            background: #2f855a;
+            border-color: #2f855a;
+        }
+
+        /* === BARRA DE CALIDAD SUPREMA === */
+        .quality-bar {
+            background: linear-gradient(135deg, var(--success-color) 0%, #48bb78 100%);
+            padding: 1rem 0;
+            color: white;
+        }
+
+        .quality-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .quality-item {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .quality-icon {
+            font-size: 1.5rem;
+            color: var(--gold-color);
+        }
+
+        .quality-text {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* === ESTADÍSTICAS SUPREMAS === */
+        .stats-supreme {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.5rem 0;
+        }
+
+        .stats-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+        }
+
+        .stat-supreme {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 8px;
+            background: var(--bg-supreme);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        /* === CONTENEDOR PRINCIPAL === */
+        .supreme-container {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 3rem;
+        }
+
+        /* === VISOR DEL DOCUMENTO === */
+        .document-viewer {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-supreme);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .document-viewer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--accent-color), var(--success-color), var(--gold-color));
+            z-index: 1;
+        }
+
+        .viewer-header {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .viewer-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .viewer-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .control-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #2c5282;
+            transform: translateY(-1px);
+        }
+
+        .document-content {
+            padding: 2rem;
+            max-height: 70vh;
+            overflow-y: auto;
+            font-family: 'Crimson Text', serif;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        /* === PANEL LATERAL SUPREMO === */
+        .supreme-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .download-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-supreme);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, var(--gold-color) 0%, #f6ad55 100%);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .panel-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .panel-subtitle {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .download-actions {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .download-btn {
+            background: var(--accent-color);
+            color: white;
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .download-btn:hover {
+            background: #2c5282;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .download-btn.word {
+            background: #2b579a;
+        }
+
+        .download-btn.word:hover {
+            background: #1e3a8a;
+        }
+
+        .download-btn.pdf {
+            background: #dc2626;
+        }
+
+        .download-btn.pdf:hover {
+            background: #b91c1c;
+        }
+
+        .format-info {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .format-info h4 {
+            color: var(--success-color);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .format-features {
+            list-style: none;
+            font-size: 0.85rem;
+        }
+
+        .format-features li {
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .format-features li::before {
+            content: "✓";
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        /* === INFORMACIÓN TÉCNICA === */
+        .tech-info {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-supreme);
+            padding: 1.5rem;
+        }
+
+        .tech-info h3 {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tech-list {
+            list-style: none;
+            font-size: 0.9rem;
+        }
+
+        .tech-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tech-list li:last-child {
+            border-bottom: none;
+        }
+
+        .tech-value {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 1024px) {
+            .supreme-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .supreme-sidebar {
+                order: -1;
+            }
+
+            .stats-content {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .document-title-area {
+                justify-content: center;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .quality-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .supreme-container {
+                padding: 0 1rem;
+            }
+
+            .document-content {
+                padding: 1.5rem;
+            }
+        }
+
+        /* === ANIMACIONES === */
+        .document-viewer {
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .download-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* === EFECTOS ESPECIALES === */
+        .supreme-badge {
+            animation: pulse 3s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Supremo -->
+    <div class="supreme-header">
+        <div class="header-content">
+            <div class="supreme-badge">
+                <i class="fas fa-crown"></i>
+                {{ quality_level }}
+            </div>
+            
+            <div class="document-title-area">
+                <div class="document-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="document-meta">
+                    <h1>{{ book.title }}</h1>
+                    <div class="document-subtitle">
+                        Documento Editorial Supremo
+                        {% if book.user and book.user.full_name %}
+                            • {{ book.user.full_name }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <a href="{{ url_for('books.formatting_viewer', book_id=book.id) }}" class="header-btn">
+                    <i class="fas fa-cogs"></i>
+                    Configurar
+                </a>
+                <a href="{{ url_for('books.view_book', book_id=book.id) }}" class="header-btn primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Calidad Suprema -->
+    <div class="quality-bar">
+        <div class="quality-content">
+            <div class="quality-item">
+                <i class="fas fa-medal quality-icon"></i>
+                <span class="quality-text">Calidad Editorial</span>
+            </div>
+            <div class="quality-item">
+                <i class="fas fa-file-word quality-icon"></i>
+                <span class="quality-text">Word Profesional</span>
+            </div>
+            <div class="quality-item">
+                <i class="fas fa-file-pdf quality-icon"></i>
+                <span class="quality-text">PDF Editorial</span>
+            </div>
+            <div class="quality-item">
+                <i class="fas fa-check-circle quality-icon"></i>
+                <span class="quality-text">Listo para Publicación</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Supremas -->
+    <div class="stats-supreme">
+        <div class="stats-content">
+            <div class="stat-supreme">
+                <span class="stat-value">{{ document_info.statistics.estimated_pages }}</span>
+                <span class="stat-label">Páginas</span>
+            </div>
+            <div class="stat-supreme">
+                <span class="stat-value">{{ "{:,}".format(document_info.statistics.total_words) }}</span>
+                <span class="stat-label">Palabras</span>
+            </div>
+            <div class="stat-supreme">
+                <span class="stat-value">{{ document_info.structure.chapters }}</span>
+                <span class="stat-label">Capítulos</span>
+            </div>
+            <div class="stat-supreme">
+                <span class="stat-value">{{ document_info.format_version }}</span>
+                <span class="stat-label">Versión</span>
+            </div>
+            <div class="stat-supreme">
+                <span class="stat-value">{{ document_info.statistics.readability_score }}%</span>
+                <span class="stat-label">Legibilidad</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal -->
+    <div class="supreme-container">
+        <!-- Visor del Documento -->
+        <div class="document-viewer">
+            <div class="viewer-header">
+                <div class="viewer-title">
+                    <i class="fas fa-eye"></i>
+                    Vista Previa del Documento
+                </div>
+                <div class="viewer-controls">
+                    <button class="control-btn" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="control-btn" onclick="printDocument()">
+                        <i class="fas fa-print"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="document-content" id="documentContent">
+                {{ document_html|safe }}
+            </div>
+        </div>
+
+        <!-- Panel Lateral Supremo -->
+        <div class="supreme-sidebar">
+            <!-- Panel de Descarga -->
+            <div class="download-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-download"></i> Descargar Documentos</h3>
+                    <div class="panel-subtitle">Formatos profesionales listos</div>
+                </div>
+                
+                <div class="download-actions">
+                    <a href="/download/{{ word_path.split('/')[-1] }}" class="download-btn word" download>
+                        <i class="fab fa-microsoft"></i>
+                        Descargar Word (.docx)
+                    </a>
+                    
+                    <a href="/download/{{ pdf_path.split('/')[-1] }}" class="download-btn pdf" download>
+                        <i class="fas fa-file-pdf"></i>
+                        Descargar PDF Editorial
+                    </a>
+                    
+                    <div class="format-info">
+                        <h4>Características Incluidas</h4>
+                        <ul class="format-features">
+                            <li>Tipografía profesional</li>
+                            <li>Márgenes editoriales</li>
+                            <li>Tabla de contenidos</li>
+                            <li>Página de portada</li>
+                            <li>Numeración de páginas</li>
+                            <li>Headers y footers</li>
+                            <li>Drop caps opcionales</li>
+                            <li>Justificación de texto</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Técnica -->
+            <div class="tech-info">
+                <h3>
+                    <i class="fas fa-info-circle"></i>
+                    Información Técnica
+                </h3>
+                <ul class="tech-list">
+                    <li>
+                        <span>Generador:</span>
+                        <span class="tech-value">Ultimate Professional</span>
+                    </li>
+                    <li>
+                        <span>Sesión:</span>
+                        <span class="tech-value">{{ document_info.session_id }}</span>
+                    </li>
+                    <li>
+                        <span>Fecha:</span>
+                        <span class="tech-value">{{ document_info.generation_date[:10] }}</span>
+                    </li>
+                    <li>
+                        <span>Idioma:</span>
+                        <span class="tech-value">{{ document_info.language.upper() }}</span>
+                    </li>
+                    <li>
+                        <span>Editorial:</span>
+                        <span class="tech-value">{{ document_info.publisher }}</span>
+                    </li>
+                    <li>
+                        <span>Estado:</span>
+                        <span class="tech-value" style="color: var(--success-color);">
+                            {% if ready_for_publication %}
+                                ✓ Listo
+                            {% else %}
+                                ⚠ Revisión
+                            {% endif %}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleFullscreen() {
+            const viewer = document.querySelector('.document-viewer');
+            if (!document.fullscreenElement) {
+                viewer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function printDocument() {
+            window.print();
+        }
+
+        // Animación de entrada
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mostrar notificación de éxito
+            setTimeout(() => {
+                console.log('🏆 Documento Supremo cargado completamente');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
