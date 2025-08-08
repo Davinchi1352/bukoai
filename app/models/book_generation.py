@@ -121,7 +121,7 @@ class BookGeneration(BaseModel):
     
     def _build_parameters(self) -> Dict[str, Any]:
         """Construye los parámetros completos del libro"""
-        return {
+        params = {
             "title": self.title,
             "genre": self.genre,
             "target_audience": self.target_audience,
@@ -138,6 +138,18 @@ class BookGeneration(BaseModel):
             "include_conclusion": self.include_conclusion,
             "writing_style": self.writing_style,
         }
+        
+        # 🚀 FIX: Incluir descripción desde parameters JSON si existe
+        if self.parameters and isinstance(self.parameters, dict):
+            if 'description' in self.parameters:
+                params['description'] = self.parameters['description']
+            # También incluir otros campos útiles desde parameters
+            if 'target_pages' in self.parameters:
+                params['target_pages'] = self.parameters['target_pages']
+            if 'style' in self.parameters:
+                params['style'] = self.parameters['style']
+        
+        return params
     
     @property
     def is_completed(self) -> bool:

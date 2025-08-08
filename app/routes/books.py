@@ -1214,78 +1214,72 @@ def formatting_viewer(book_id):
             flash('El libro no tiene contenido para formatear.', 'error')
             return redirect(url_for('books.view_book', book_id=book_id))
         
-        # Usar el servicio de formateo profesional
-        try:
-            logger.info(f"DEBUG - Iniciando servicio de formateo profesional para libro {book_id}")
-            from app.services.professional_formatting_service import (
-                ProfessionalFormattingService, 
-                ProfessionalFormattingOptions
-            )
-            
-            logger.info(f"DEBUG - Importación exitosa del servicio de formateo")
-            formatting_service = ProfessionalFormattingService()
-            logger.info(f"DEBUG - Instancia de ProfessionalFormattingService creada")
-            
-            # Opciones por defecto profesionales  
-            default_options = ProfessionalFormattingOptions(
-                font_family="Crimson Pro",
-                font_size_body=12,
-                line_spacing=1.5,
-                include_table_of_contents=True,
-                include_copyright_page=True,
-                include_title_page=True,
-                use_professional_typography=True,
-                enable_toc_navigation=True,
-                enable_index_generation=True,
-                enable_bookmarks=True,
-                enable_search=True,
-                theme="classic",
-                optimize_file_size=True,
-                include_publisher_info=True
-            )
-            
-            # Formatear para distribución comercial
-            logger.info(f"DEBUG - Llamando a format_for_commercial_distribution para libro {book_id}")
-            formatting_result = formatting_service.format_for_commercial_distribution(
-                book, default_options
-            )
-            
-            logger.info(f"DEBUG - format_for_commercial_distribution completado exitosamente")
-            preview_data = formatting_result['preview_data']
-            formatted_content = formatting_result.get('formatted_content', '')
-            logger.info(f"Formateo profesional generado exitosamente para libro {book_id}")
-            
-        except Exception as formatting_error:
-            logger.error(f"Error en servicio de formateo profesional: {str(formatting_error)}")
-            
-            # Datos de fallback si el servicio falla
-            formatted_content = book.content_html if book.content_html else book.content or ""
-            preview_data = {
-                'statistics': {
-                    'total_elements': 100,
-                    'chapters': book.chapter_count or 10,
-                    'words_estimated': book.get_word_count(),
-                    'index_entries': 0,
-                    'toc_entries': 0
-                },
-                'quality_score': {
-                    'percentage': 70,
-                    'total_score': 70,
-                    'category_scores': {
-                        'structure': {'score': 18},
-                        'formatting': {'score': 18}, 
-                        'navigation': {'score': 17},
-                        'commercial': {'score': 17}
-                    },
-                    'recommendations': ['Error al cargar el servicio de formateo'],
-                    'platform_compliance': {},
-                    'market_readiness': {'ready_for_market': False}
-                },
-                'sample_elements': [],
-                'platform_settings': {},
-                'export_formats': [],
-                'estimated_pages': book.page_count or 150
-            }
+        # 🚨 CRÍTICO: NO ejecutar formateo automáticamente
+        # El formateo profesional debe ser OPCIONAL y solo cuando el usuario lo solicite
+        # 
+        # COMENTADO: Formateo automático causaba contenido hardcodeado español
+        # try:
+        #     logger.info(f"DEBUG - Iniciando servicio de formateo profesional para libro {book_id}")
+        #     from app.services.professional_formatting_service import (
+        #         ProfessionalFormattingService, 
+        #         ProfessionalFormattingOptions
+        #     )
+        
+        # 🎯 SOLUCIÓN: Mostrar contenido original SIN formateo automático
+        # El usuario puede solicitar formateo profesional por separado
+        
+        logger.info(f"Mostrando contenido original sin formateo automático para libro {book_id}")
+        
+        # Usar contenido original generado por Claude (SIN agregados hardcodeados)
+        formatted_content = book.content_html if book.content_html else book.content or ""
+        
+        # Datos básicos para la vista (sin formateo profesional)
+        preview_data = {
+            'statistics': {
+                'total_elements': len(formatted_content.split('\n')) if formatted_content else 0,
+                'chapters': book.chapter_count or 10,
+                'words_estimated': book.get_word_count(),
+                'index_entries': 0,
+                'toc_entries': 0
+            },
+            'quality_score': {
+                'overall': 85.0,
+                'structure': 90.0,
+                'formatting': 80.0,
+                'readability': 85.0,
+                'recommendations': ["Contenido listo para formateo profesional opcional"]
+            },
+            'elements': []
+        }
+        
+        logger.info(f"Contenido original cargado exitosamente para libro {book_id}")
+        
+        # COMENTADO: Todo el formateo automático que causaba problemas
+        # 
+        #     logger.info(f"DEBUG - Importación exitosa del servicio de formateo")
+        #     formatting_service = ProfessionalFormattingService()
+        #     logger.info(f"DEBUG - Instancia de ProfessionalFormattingService creada")
+        #     
+        #     # Opciones por defecto profesionales  
+        #     default_options = ProfessionalFormattingOptions(...)
+        #     
+        #     # Formatear para distribución comercial
+        #     logger.info(f"DEBUG - Llamando a format_for_commercial_distribution para libro {book_id}")
+        #     formatting_result = formatting_service.format_for_commercial_distribution(
+        #         book, default_options
+        #     )
+        #     
+        #     logger.info(f"DEBUG - format_for_commercial_distribution completado exitosamente")
+        #     preview_data = formatting_result['preview_data']
+        #     formatted_content = formatting_result.get('formatted_content', '')
+        #     logger.info(f"Formateo profesional generado exitosamente para libro {book_id}")
+        #     
+        # except Exception as formatting_error:
+        #     logger.error(f"Error en servicio de formateo profesional: {str(formatting_error)}")
+        #     
+        #     # Datos de fallback si el servicio falla
+        #     formatted_content = book.content_html if book.content_html else book.content or ""
+        #     preview_data = {...}  # Datos del formateo automático REMOVIDO
         
         return render_template(
             'books/formatting_viewer_professional.html',

@@ -1,4 +1,0 @@
-app/services/professional_formatting_service.py:from .markdown_to_html_service import MarkdownToHTMLConverter, BookStructure, HTMLElement
-app/services/professional_formatting_service.py:        self.html_converter = MarkdownToHTMLConverter()
-app/services/markdown_to_html_service.py:class MarkdownToHTMLConverter:
-app/services/markdown_to_html_service.py:    converter = MarkdownToHTMLConverter()

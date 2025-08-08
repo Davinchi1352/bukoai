@@ -82,8 +82,18 @@ def _generate_book_architecture_task_impl(self, book_id):
         # Obtener servicio de Claude
         claude_service = get_claude_service()
         
-        # Validar parámetros del libro
-        validated_params = claude_service.validate_book_params(book._build_parameters())
+        # Construir parámetros del libro
+        book_params = book._build_parameters()
+        
+        # Validar parámetros del libro (pero usamos los parámetros originales, no el resultado de validación)
+        validation_result = claude_service.validate_book_params(book_params)
+        
+        # Log de validación para debug
+        if not validation_result.get('is_complete', True):
+            logger.warning("book_params_validation_incomplete", 
+                          book_id=book_id,
+                          missing_elements=validation_result.get('missing_elements', []),
+                          warnings=validation_result.get('warnings', []))
         
         # Actualizar progreso inicial
         progress_data = {
@@ -101,8 +111,8 @@ def _generate_book_architecture_task_impl(self, book_id):
         if emit_book_progress_update:
             emit_book_progress_update(book_id, progress_data)
         
-        # Generar arquitectura usando el nuevo método
-        result = asyncio.run(claude_service.generate_book_architecture(book_id, validated_params))
+        # Generar arquitectura usando el nuevo método con parámetros reales
+        result = asyncio.run(claude_service.generate_book_architecture(book_id, book_params))
         
         # Actualizar progreso - arquitectura completada
         progress_data = {
@@ -320,11 +330,14 @@ def _generate_book_task_impl(self, book_id):
         # Obtener servicio de Claude
         claude_service = get_claude_service()
         
-        # Validar parámetros del libro (usar método que construye parámetros completos)
-        validated_params = claude_service.validate_book_params(book._build_parameters())
+        # Construir parámetros del libro
+        book_params = book._build_parameters()
+        
+        # Validar parámetros del libro (pero usamos los parámetros originales)
+        validation_result = claude_service.validate_book_params(book_params)
         
         # Estimar tiempo de generación
-        estimated_time = claude_service.estimate_generation_time(validated_params)
+        estimated_time = claude_service.estimate_generation_time(book_params)
         
         # Actualizar progreso inicial
         progress_data = {
@@ -362,7 +375,7 @@ def _generate_book_task_impl(self, book_id):
                 raise Exception(f"Error parsing architecture JSON: {e}")
         
         result = asyncio.run(claude_service.generate_book_from_architecture_multichunk(
-            book_id, validated_params, architecture
+            book_id, book_params, architecture
         ))
         
         # Actualizar progreso - generación completada
@@ -812,8 +825,11 @@ def _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedba
         # Obtener servicio de Claude
         claude_service = get_claude_service()
         
-        # Validar parámetros del libro
-        validated_params = claude_service.validate_book_params(book._build_parameters())
+        # Construir parámetros del libro
+        book_params = book._build_parameters()
+        
+        # Validar parámetros del libro (pero usamos los parámetros originales)
+        validation_result = claude_service.validate_book_params(book_params)
         
         # Actualizar progreso inicial
         progress_data = {
@@ -833,7 +849,7 @@ def _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedba
         
         # Regenerar arquitectura usando el nuevo método con feedback
         result = asyncio.run(claude_service.regenerate_book_architecture(
-            book_id, validated_params, current_architecture, feedback_what, feedback_how
+            book_id, book_params, current_architecture, feedback_what, feedback_how
         ))
         
         # Actualizar progreso - arquitectura regenerada
