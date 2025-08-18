@@ -167,8 +167,8 @@ Recuerda: Estás perfeccionando una arquitectura existente, no creando una nueva
             User prompt para regeneración
         """
         # Extraer información básica
-        current_title = current_architecture.get('title', book_params.get('title', 'Sin título'))
-        current_genre = current_architecture.get('genre', book_params.get('genre', 'ficción'))
+        current_title = current_architecture.get('title', book_params.get('title', ''))
+        current_genre = current_architecture.get('genre', book_params.get('genre', ''))
         target_pages = current_architecture.get('target_pages', book_params.get('target_pages', 150))
         
         # Preparar resumen de la arquitectura actual

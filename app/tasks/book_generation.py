@@ -46,12 +46,12 @@ def _generate_book_architecture_task_impl(self, book_id):
     Mucho más rápida que la generación completa.
     """
     try:
-        logger.info("starting_book_architecture_generation", book_id=book_id)
+        logging_logger.info(f"starting_book_architecture_generation for book_id={book_id}")
         
         # Obtener el libro de la base de datos
         book = BookGeneration.query.get(book_id)
         if not book:
-            logger.error("book_not_found", book_id=book_id)
+            logging_logger.error(f"book_not_found for book_id={book_id}")
             return {'status': 'error', 'message': 'Libro no encontrado'}
         
         # Verificar que el libro esté en estado correcto
@@ -114,6 +114,28 @@ def _generate_book_architecture_task_impl(self, book_id):
         # Generar arquitectura usando el nuevo método con parámetros reales
         result = asyncio.run(claude_service.generate_book_architecture(book_id, book_params))
         
+        # 🚀 FIX: Verificar que la generación de arquitectura fue exitosa
+        if not result.get('success', False):
+            error_msg = result.get('error', 'Error desconocido generando arquitectura')
+            error_type = result.get('error_type', 'unknown')
+            
+            # Log detallado del error
+            logger.error("architecture_generation_failed_in_task",
+                        book_id=book_id,
+                        error=error_msg,
+                        error_type=error_type,
+                        result_keys=list(result.keys()))
+            
+            # Lanzar excepción para que se maneje en el bloque except
+            raise Exception(f"Error generando arquitectura: {error_msg}")
+        
+        # Verificar que la arquitectura esté presente en el resultado
+        if 'architecture' not in result:
+            logger.error("architecture_missing_in_result",
+                        book_id=book_id,
+                        result_keys=list(result.keys()))
+            raise Exception("Arquitectura generada pero no se encontró en el resultado")
+        
         # Actualizar progreso - arquitectura completada
         progress_data = {
             'current': 95, 
@@ -130,7 +152,7 @@ def _generate_book_architecture_task_impl(self, book_id):
             emit_book_progress_update(book_id, progress_data)
         
         # Actualizar libro con la arquitectura generada
-        book.thinking_content = result.get('thinking', '')
+        book.thinking_content = result.get('thinking_content', '')
         
         # Actualizar estadísticas de tokens usando el método que calcula costos
         if 'usage' in result:
@@ -141,7 +163,7 @@ def _generate_book_architecture_task_impl(self, book_id):
                 thinking_tokens=usage.get('thinking_tokens', 0)
             )
         
-        # Marcar como esperando revisión de arquitectura
+        # Marcar como esperando revisión de arquitectura (ahora es seguro)
         book.mark_architecture_review(result['architecture'])
         
         # Progreso final
@@ -301,12 +323,12 @@ def _generate_book_task_impl(self, book_id):
     Utiliza el nuevo método de generación completa con streaming.
     """
     try:
-        logger.info("starting_book_generation", book_id=book_id)
+        logging_logger.info(f"starting_book_generation for book_id={book_id}")
         
         # Obtener el libro de la base de datos
         book = BookGeneration.query.get(book_id)
         if not book:
-            logger.error("book_not_found", book_id=book_id)
+            logging_logger.error(f"book_not_found for book_id={book_id}")
             return {'status': 'error', 'message': 'Libro no encontrado'}
         
         # Actualizar estado y timestamp de inicio
@@ -378,6 +400,45 @@ def _generate_book_task_impl(self, book_id):
             book_id, book_params, architecture
         ))
         
+        # 🔒 VALIDACIÓN ROBUSTA - Logging detallado para diagnóstico
+        logger.info("claude_service_response_received", 
+                   book_id=book_id,
+                   result_type=type(result).__name__,
+                   result_keys=list(result.keys()) if isinstance(result, dict) else "not_dict",
+                   has_success=result.get('success') if isinstance(result, dict) else False,
+                   has_content=('content' in result) if isinstance(result, dict) else False)
+        
+        # Verificar que el resultado es un diccionario válido
+        if not isinstance(result, dict):
+            raise Exception(f"Claude service devolvió tipo inválido: {type(result).__name__} en lugar de dict")
+        
+        # Verificar que la generación fue exitosa antes de procesar el resultado
+        if not result.get('success', False):
+            error_message = result.get('error', 'Error desconocido en generación de contenido')
+            error_type = result.get('error_type', 'unknown')
+            logger.error("claude_service_generation_failed", 
+                        book_id=book_id,
+                        error=error_message,
+                        error_type=error_type,
+                        full_result=result)
+            raise Exception(f"Falla en generación de contenido [{error_type}]: {error_message}")
+        
+        # 🔒 VALIDACIÓN DEFENSIVA - Verificar que el contenido existe en el resultado
+        if 'content' not in result:
+            logger.error("claude_service_missing_content_field", 
+                        book_id=book_id,
+                        result_keys=list(result.keys()),
+                        result_preview=str(result)[:500])
+            raise Exception(f"El resultado de generación no contiene el campo 'content' requerido. Claves disponibles: {list(result.keys())}")
+        
+        # 🔒 VALIDACIÓN ADICIONAL - Verificar que el contenido no está vacío
+        if not result['content'] or len(str(result['content']).strip()) == 0:
+            logger.error("claude_service_empty_content", 
+                        book_id=book_id,
+                        content_type=type(result['content']).__name__,
+                        content_length=len(str(result['content'])))
+            raise Exception("El contenido generado está vacío o es inválido")
+        
         # Actualizar progreso - generación completada
         progress_data = {
             'current': 85, 
@@ -393,10 +454,34 @@ def _generate_book_task_impl(self, book_id):
         if emit_book_progress_update:
             emit_book_progress_update(book_id, progress_data)
         
-        # Actualizar libro con el contenido generado (ambos reciben HTML puro idéntico)
-        book.content = result['content']  # HTML original de Claude AI (versión respaldo)
-        book.content_html = result['content']  # HTML original (será procesado para formateo profesional)
-        book.thinking_content = result.get('thinking', '')
+        # 🔒 ACCESO DEFENSIVO - Actualizar libro con el contenido generado (ambos reciben HTML puro idéntico)
+        try:
+            generated_content = result['content']  # Acceso seguro ya validado arriba
+            book.content = generated_content  # HTML original de Claude AI (versión respaldo)
+            book.content_html = generated_content  # HTML original (será procesado para formateo profesional)
+            book.thinking_content = result.get('thinking_content', result.get('thinking', ''))
+            
+            # Log exitoso para monitoreo
+            logger.info("book_content_updated_successfully", 
+                       book_id=book_id,
+                       content_length=len(generated_content),
+                       thinking_length=len(book.thinking_content),
+                       has_thinking=bool(book.thinking_content))
+                       
+        except KeyError as e:
+            # Esto NO debería ocurrir después de las validaciones arriba, pero por seguridad
+            logger.error("unexpected_keyerror_after_validation", 
+                        book_id=book_id,
+                        missing_key=str(e),
+                        result_keys=list(result.keys()),
+                        validation_passed=True)
+            raise Exception(f"Error inesperado: falta clave {e} después de validación exitosa")
+        except Exception as e:
+            logger.error("unexpected_error_content_assignment", 
+                        book_id=book_id,
+                        error=str(e),
+                        error_type=type(e).__name__)
+            raise Exception(f"Error inesperado al asignar contenido: {e}")
         
         # Actualizar estadísticas de tokens usando el método que calcula costos
         if 'usage' in result:
@@ -456,7 +541,7 @@ def _generate_book_task_impl(self, book_id):
                 file_paths['docx'] = docx_path
                 
         except ImportError:
-            logger.warning("file_generation_modules_not_available", book_id=book_id)
+            logging_logger.warning(f"file_generation_modules_not_available for book_id={book_id}")
             # Continuar sin archivos si los módulos no están disponibles
             pass
         
@@ -657,16 +742,16 @@ def _send_book_completion_email_impl(self, book_id):
     Envía email de notificación cuando se completa un libro.
     """
     try:
-        logger.info("sending_book_completion_email", book_id=book_id)
+        logging_logger.info(f"sending_book_completion_email for book_id={book_id}")
         
         book = BookGeneration.query.get(book_id)
         if not book or book.status != BookStatus.COMPLETED:
-            logger.warning("book_not_completed_for_email", book_id=book_id)
+            logging_logger.warning(f"book_not_completed_for_email for book_id={book_id}")
             return
         
         user = User.query.get(book.user_id)
         if not user:
-            logger.error("user_not_found_for_email", book_id=book_id)
+            logging_logger.error(f"user_not_found_for_email for book_id={book_id}")
             return
         
         # Usar servicio de email
@@ -756,7 +841,7 @@ def _update_book_generation_stats_impl(self):
         }
         
     except Exception as exc:
-        logger.error("book_stats_update_failed", error=str(exc))
+        logging_logger.error(f"book_stats_update_failed: {str(exc)}")
         return {'error': str(exc)}
 
 
@@ -798,7 +883,7 @@ def _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedba
         # Obtener el libro de la base de datos
         book = BookGeneration.query.get(book_id)
         if not book:
-            logger.error("book_not_found", book_id=book_id)
+            logging_logger.error(f"book_not_found for book_id={book_id}")
             return {'status': 'error', 'message': 'Libro no encontrado'}
         
         # Actualizar estado y timestamp de inicio
@@ -852,6 +937,28 @@ def _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedba
             book_id, book_params, current_architecture, feedback_what, feedback_how
         ))
         
+        # 🚀 FIX: Verificar que la regeneración de arquitectura fue exitosa
+        if not result.get('success', False):
+            error_msg = result.get('error', 'Error desconocido regenerando arquitectura')
+            error_type = result.get('error_type', 'unknown')
+            
+            # Log detallado del error
+            logger.error("architecture_regeneration_failed_in_task",
+                        book_id=book_id,
+                        error=error_msg,
+                        error_type=error_type,
+                        result_keys=list(result.keys()))
+            
+            # Lanzar excepción para que se maneje en el bloque except
+            raise Exception(f"Error regenerando arquitectura: {error_msg}")
+        
+        # Verificar que la arquitectura esté presente en el resultado
+        if 'architecture' not in result:
+            logger.error("architecture_missing_in_regeneration_result",
+                        book_id=book_id,
+                        result_keys=list(result.keys()))
+            raise Exception("Arquitectura regenerada pero no se encontró en el resultado")
+        
         # Actualizar progreso - arquitectura regenerada
         progress_data = {
             'current': 95, 
@@ -868,7 +975,7 @@ def _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedba
             emit_book_progress_update(book_id, progress_data)
         
         # Actualizar libro con la arquitectura regenerada
-        book.thinking_content = result.get('thinking', '')
+        book.thinking_content = result.get('thinking_content', '')
         
         # Actualizar estadísticas de tokens usando el método que calcula costos
         if 'usage' in result:
@@ -879,7 +986,7 @@ def _regenerate_book_architecture_task_impl(self, book_id, feedback_what, feedba
                 thinking_tokens=usage.get('thinking_tokens', 0)
             )
         
-        # Marcar como esperando revisión de arquitectura
+        # Marcar como esperando revisión de arquitectura (ahora es seguro)
         book.mark_architecture_review(result['architecture'])
         
         # Progreso final

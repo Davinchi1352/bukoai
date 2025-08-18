@@ -18,7 +18,9 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_VENV_IN_PROJECT=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true \
+    ICU_VERSION=76.1
 
 # Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
@@ -27,6 +29,10 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libffi-dev \
     libssl-dev \
+    libssl3 \
+    libcrypto++8 \
+    openssl \
+    ca-certificates \
     libxml2-dev \
     libxslt1-dev \
     libjpeg-dev \
@@ -38,6 +44,11 @@ RUN apt-get update && apt-get install -y \
     git \
     redis-tools \
     postgresql-client \
+    libicu-dev \
+    icu-devtools \
+    libc6-dev \
+    libgdiplus \
+    libfontconfig1 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

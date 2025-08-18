@@ -49,6 +49,8 @@ reportlab==4.0.7
 Pillow==10.1.0
 ebooklib==0.18
 python-docx==1.1.0
+# Professional Word document generation
+aspose-words==25.8.0  # Professional Word document generation and manipulation
 # Additional dependencies for professional export
 fonttools==4.47.0  # Better font handling
 defusedxml==0.7.1  # Secure XML processing

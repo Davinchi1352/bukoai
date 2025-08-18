@@ -119,7 +119,14 @@ class ClaudeServiceFacade:
             testing_mode: Si True, no requiere API key para testing
         """
         # Configuración centralizada (Phase 1)
-        self.config = ClaudeConfig()
+        # Load from Flask app config to get ANTHROPIC_API_KEY
+        from flask import current_app
+        if current_app:
+            self.config = ClaudeConfig.from_app_config(current_app.config)
+        else:
+            # Fallback for cases where Flask context is not available
+            import os
+            self.config = ClaudeConfig(api_key=os.getenv('ANTHROPIC_API_KEY'))
         
         # En modo testing, no requerir API key
         if testing_mode:
@@ -219,7 +226,7 @@ class ClaudeServiceFacade:
                 'messages': messages,
                 'thinking': {
                     'type': 'enabled',
-                    'budget_tokens': self.config.thinking_budget
+                    'budget_tokens': self.config.get_thinking_budget_for_content_type('architecture')  # min(12000-500, 45000) = 11500
                 }
             }
             
@@ -469,11 +476,11 @@ Mantén el estilo y tono, pero implementa las mejoras solicitadas."""
     
     def _get_optimized_tokens(self, content_type: str) -> int:
         """Obtiene tokens optimizados para un tipo de contenido."""
-        return self.config.token_config.get_limit(content_type)
+        return self.config.token_config.get_tokens_for_content_type(content_type)
     
     def _get_optimized_thinking_budget(self, content_type: str) -> int:
-        """Obtiene presupuesto de thinking optimizado."""
-        return self.config.thinking_budget
+        """Obtiene presupuesto de thinking optimizado según tipo de contenido."""
+        return self.config.get_thinking_budget_for_content_type(content_type)
     
     def estimate_thinking_tokens(self, thinking_content) -> int:
         """Estima tokens de thinking usando MessageBuilder."""
@@ -482,6 +489,59 @@ Mantén el estilo y tono, pero implementa las mejoras solicitadas."""
         
         content_str = str(thinking_content)
         return self.message_builder.estimate_token_count(content_str)
+    
+    # =========================================
+    # COMPATIBILITY METHOD
+    # =========================================
+    
+    def generate_content(self, messages: list, max_tokens: int = None) -> str:
+        """
+        Método de compatibilidad síncrono para IntelligentContentGenerator.
+        
+        Args:
+            messages: Lista de mensajes para Claude (formato estándar)
+            max_tokens: Número máximo de tokens (opcional)
+            
+        Returns:
+            str: Contenido generado por Claude
+        """
+        import asyncio
+        
+        try:
+            # Ejecutar la llamada asíncrona de forma síncrona
+            async def _async_generate():
+                response = await self.claude_client.create_message(
+                    messages=messages,
+                    max_tokens=max_tokens or self.config.max_tokens
+                )
+                
+                # Extraer contenido de la respuesta
+                if hasattr(response, 'content') and response.content:
+                    if hasattr(response.content[0], 'text'):
+                        return response.content[0].text
+                    else:
+                        return str(response.content[0])
+                else:
+                    return str(response)
+            
+            # Manejar el loop de eventos existente
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Si ya hay un loop corriendo, crear una nueva tarea
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(asyncio.run, _async_generate())
+                        return future.result()
+                else:
+                    return loop.run_until_complete(_async_generate())
+            except RuntimeError:
+                # No hay loop, crear uno nuevo
+                return asyncio.run(_async_generate())
+                
+        except Exception as e:
+            logger.error(f"Error in generate_content: {e}")
+            raise
     
     # =========================================
     # STRING REPRESENTATION

@@ -59,6 +59,23 @@ class TokenConfig:
         logger.debug(f"Tokens for content type '{content_type}': {tokens}")
         return tokens
     
+    def get_limit(self, content_type: str, default: int = 28000) -> int:
+        """
+        Método alias para compatibilidad hacia atrás.
+        
+        DEPRECATED: Usar get_tokens_for_content_type() en lugar de este método.
+        Este método existe solo para evitar errores en código legacy.
+        
+        Args:
+            content_type: Tipo de contenido ('architecture', 'chunk_main', etc.)
+            default: Valor por defecto si no se encuentra el tipo
+        
+        Returns:
+            Número de tokens para el tipo de contenido
+        """
+        logger.warning(f"DEPRECATED: get_limit() called for '{content_type}'. Use get_tokens_for_content_type() instead.")
+        return self.get_tokens_for_content_type(content_type, default)
+    
     def get_thinking_budget_for_content_type(self, content_type: str, 
                                            max_thinking_budget: int = None) -> int:
         """

@@ -96,10 +96,28 @@ class User(BaseModel, SoftDeleteMixin, UserMixin):
         self.password_hash = hashed.decode('utf-8')
     
     def check_password(self, password: str) -> bool:
-        """Verifica la contraseña con bcrypt"""
-        password_bytes = password.encode('utf-8')
-        hash_bytes = self.password_hash.encode('utf-8')
-        return bcrypt.checkpw(password_bytes, hash_bytes)
+        """Verifica la contraseña con bcrypt o scrypt (compatibilidad hacia atrás)"""
+        try:
+            password_bytes = password.encode('utf-8')
+            
+            # Verificar si es un hash scrypt (formato legacy)
+            if self.password_hash.startswith('scrypt:'):
+                from werkzeug.security import check_password_hash
+                return check_password_hash(self.password_hash, password)
+            
+            # Asumir bcrypt por defecto
+            hash_bytes = self.password_hash.encode('utf-8')
+            return bcrypt.checkpw(password_bytes, hash_bytes)
+            
+        except Exception as e:
+            # Log del error para debugging
+            from app.utils.structured_logging import StructuredLogger
+            logger = StructuredLogger('auth')
+            logger.error('password_check_error', 
+                        error=str(e), 
+                        user_id=getattr(self, 'id', None),
+                        hash_format='scrypt' if self.password_hash.startswith('scrypt:') else 'bcrypt')
+            return False
     
     @property
     def full_name(self) -> str:

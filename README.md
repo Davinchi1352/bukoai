@@ -46,6 +46,15 @@ Buko AI democratiza la creación de libros profesionales usando IA avanzada. Tra
 - **IA**: Claude Sonnet 4 API (Anthropic)
 - **Infraestructura**: Docker, Nginx, Gunicorn
 
+### 📄 Stack de Generación de Documentos (100% Libre)
+- **python-docx**: Generación de documentos DOCX profesionales
+- **ReportLab**: Creación de PDFs de calidad comercial
+- **WeasyPrint**: HTML a PDF con tipografía avanzada
+- **EbookLib**: Generación de EPUBs estándar e-publishing
+- **Calibre**: Conversión a formatos Kindle (MOBI/AZW3)
+- **BeautifulSoup**: Procesamiento avanzado de HTML/XML
+- **Sin dependencias comerciales**: Sistema completamente libre
+
 ### Optimizaciones de Escala
 - **DB Pool**: 20 conexiones base + 30 overflow = 50 total
 - **Redis**: Configurado para 1000 clientes concurrentes
@@ -154,34 +163,13 @@ La aplicación estará disponible en http://localhost
 
 **IMPORTANTE**: Este proyecto tiene dos entornos virtuales por razones específicas:
 
-#### `venv/` - Entorno Principal
-- **Propósito**: Desarrollo general y funcionalidad core de la aplicación
-- **Cuándo usar**: Para desarrollo normal, API, web interface, Celery workers
+#### `venv/` - Entorno de Desarrollo
+- **Propósito**: Entorno único para todo el desarrollo de la aplicación
+- **Contiene**: Todas las dependencias necesarias para Buko AI
+- **Cuándo usar**: Para desarrollo, testing, API, web interface, Celery workers
 - **Activación**: `source venv/bin/activate`
 
-#### `venv_professional/` - Entorno de Exportación Profesional
-- **Propósito**: Generación de documentos profesionales (PDF de calidad editorial)
-- **Creado**: 30 julio 2024 para funcionalidad de exportación avanzada
-- **Contiene**: WeasyPrint + dependencias complejas (Cairo, Pango, fontconfig)
-- **Cuándo usar**: Solo para pruebas de exportación profesional de documentos
-- **Activación**: `source venv_professional/bin/activate`
-- **Servicios relacionados**:
-  - `app/services/professional_formatting_service.py`
-  - `app/services/ultimate_professional_generator.py`
-  - `app/services/revolutionary_document_service.py`
-
-#### ¿Por qué dos entornos?
-- **Aislamiento de dependencias**: WeasyPrint tiene dependencias del sistema complejas
-- **Evitar conflictos**: Las dependencias de WeasyPrint podrían interferir con el entorno principal
-- **Estabilidad**: Mantiene el entorno de desarrollo principal limpio y estable
-
-#### Archivos de prueba generados:
-- `professional_commercial_ebook.docx`
-- `test_professional_book.docx`
-- `test_professional_formatting.py`
-
-**🔧 Para desarrollo normal**: Usar `venv/`
-**📄 Para exportación PDF profesional**: Usar `venv_professional/`
+**Nota**: Después del cleanup de agosto 2025, se consolidó en un solo entorno virtual para simplificar el desarrollo y mantenimiento.
 
 ### Ejecutar Celery Worker (Optimizado)
 
@@ -241,6 +229,124 @@ celery -A app.celery flower --port=5555
 │(50 conns)   │              │(w/ Timeouts)│           │ Optimized   │
 └─────────────┘              └─────────────┘           └─────────────┘
 ```
+
+## 📄 Rutas de Formateo Profesional
+
+### Visores de Formateo Disponibles
+
+El sistema tiene **dos rutas complementarias** para formateo profesional de libros:
+
+#### 1. 🖥️ Visor HTML Profesional (Heredado)
+```
+GET /books/book/<book_id>/formatting-viewer
+```
+- **Propósito**: Vista HTML profesional del libro con formateo dinámico
+- **Tecnología**: ProfessionalFormattingService + HTML/CSS avanzado
+- **Template**: `formatting_viewer_simple.html`
+- **Características**:
+  - ✅ Preview instantáneo en navegador
+  - ✅ Formateo profesional con tipografía avanzada
+  - ✅ Tabla de contenidos automática
+  - ✅ Sistema de fallback elegante
+  - ✅ Compatible con todos los libros
+- **Uso recomendado**: Vista rápida y preview del contenido formateado
+
+#### 2. 📚 Generador Profesional de eBooks (Actualizado)
+```
+GET /books/book/<book_id>/professional-ebook-viewer
+```
+- **Propósito**: Generación de eBooks y documentos profesionales con múltiples formatos
+- **Tecnología**: Generadores libres + IntelligentContentGenerator + Calibre
+- **Template**: `professional_ebook_viewer_modern.html` (actualizado)
+- **Formatos soportados**:
+  - ✅ **EPUB** - Estándar universal con navegación avanzada
+  - ✅ **MOBI** - Compatible con Kindle clásico
+  - ✅ **AZW3** - Kindle moderno con X-Ray y tipografía mejorada
+  - ✅ **PDF** - Calidad editorial con bookmarks y metadatos
+  - ✅ **DOCX** - Documentos Word profesionales
+- **Características**:
+  - ✅ Configuración en tiempo real (fuentes, márgenes, formato)
+  - ✅ Análisis inteligente del contenido con IA
+  - ✅ Múltiples presets profesionales (académico, comercial, lujo, Kindle)
+  - ✅ Preview de 5 páginas antes de generar documento completo
+  - ✅ Metadatos profesionales automáticos con Claude AI
+  - ✅ Conversión automática a formatos Kindle usando Calibre
+  - ✅ Descarga directa de eBooks en cualquier formato
+- **Uso recomendado**: Generación de eBooks finales para distribución comercial o personal
+
+### 🚀 Endpoints de API Professional eBook Generator
+
+#### Preview Dinámico
+```
+POST /books/book/<book_id>/ebook-config-preview
+```
+Genera preview de 5 páginas con configuración específica
+
+#### Documento/eBook Completo
+```
+POST /books/book/<book_id>/ebook-generate-full
+```
+Genera eBook completo en formato seleccionado (EPUB, MOBI, AZW3, PDF, DOCX)
+
+#### Análisis Inteligente
+```
+POST /books/book/<book_id>/ebook-intelligent-analysis
+```
+Análisis AI del contenido con recomendaciones de formateo
+
+#### Presets de Configuración
+```
+GET /books/book/<book_id>/ebook-configuration-presets
+```
+Obtiene configuraciones predefinidas optimizadas por tipo de libro y formato
+
+#### Generación de Metadatos con IA
+```
+POST /books/book/<book_id>/ebook-generate-metadata
+POST /books/book/<book_id>/ebook-save-metadata
+```
+Genera y guarda metadatos profesionales usando Claude AI
+
+#### Descargas
+```
+GET /books/book/<book_id>/ebook-download-preview?file=<filename>
+GET /books/book/<book_id>/ebook-download-full?file=<filename>
+```
+
+### 🎯 Cuándo Usar Cada Ruta
+
+| Escenario | Ruta Recomendada | Razón |
+|-----------|------------------|-------|
+| **Vista rápida del libro** | `formatting-viewer` | Instant preview en navegador |
+| **Verificar formateo** | `formatting-viewer` | No requiere descarga |
+| **Documento para imprimir** | `professional-ebook-viewer` | Calidad editorial múltiples formatos |
+| **Envío a editor** | `professional-ebook-viewer` | Formatos estándar de la industria |
+| **Distribución comercial** | `professional-ebook-viewer` | Configuración profesional avanzada |
+| **Configuración personalizada** | `professional-ebook-viewer` | Control total sobre tipografía y formato |
+
+### 🔧 Flujo de Trabajo Recomendado
+
+1. **Desarrollo del libro**: Escribir y editar contenido
+2. **Preview inicial**: Usar `formatting-viewer` para verificar estructura
+3. **Configuración profesional**: Acceder a `professional-ebook-viewer`
+4. **Preview configurado**: Generar preview de 5 páginas con configuración deseada
+5. **Documento final**: Generar y descargar documento Word completo
+
+### ⚙️ Estado de Implementación
+
+- ✅ **formatting-viewer**: 100% funcional, optimizado con nueva arquitectura
+- ✅ **professional-ebook-viewer**: 100% funcional, con IA y configuración avanzada
+- ✅ **Error handling**: Correcciones aplicadas, sin errores de TemplateNotFound
+- ✅ **Compatibility**: Ambas rutas coexisten sin conflictos
+- ✅ **Authentication**: Ambas rutas requieren login y verifican ownership
+
+### 💡 Recomendación de Migración
+
+**No es necesario deprecar `formatting-viewer`** - ambas rutas son complementarias:
+- `formatting-viewer`: Para preview rápido y desarrollo
+- `professional-ebook-viewer`: Para documentos finales profesionales
+
+Los usuarios pueden usar ambas según sus necesidades específicas.
 
 ## 📁 Estructura del Proyecto
 

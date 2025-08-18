@@ -172,7 +172,7 @@ class StructureBuilder:
             
             # Tipo y título
             section_type = section.get('type', 'sección especial')
-            title = section.get('title', f'Sin título ({section_type})')
+            title = section.get('title', f'({section_type})')
             section_parts.append(f"**{title}** ({section_type.title()})")
             
             # Descripción
@@ -220,7 +220,7 @@ class StructureBuilder:
         
         # Número y título
         number = chapter.get('number', 'N/A')
-        title = chapter.get('title', 'Sin título')
+        title = chapter.get('title', '')
         chapter_parts.append(f"**Capítulo {number}: {title}**")
         
         # Resumen

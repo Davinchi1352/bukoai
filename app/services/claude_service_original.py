@@ -2336,7 +2336,7 @@ Genera la introducción completa en HTML ahora:
                 temperature=self.temperature,
                 system=system_content,  # Use separate system parameter for new Claude API
                 messages=messages,
-                thinking={"type": "enabled", "budget_tokens": min(12000, self.thinking_budget // 3)}  # 🧠 Ampliado thinking para introducción
+                thinking={"type": "enabled", "budget_tokens": self._get_optimized_thinking_budget('introduction')}  # 🧠 Ampliado thinking para introducción (fixed: usa método optimizado)
             ) as stream:
                 
                 async for event in stream:
@@ -2504,7 +2504,7 @@ Genera la conclusión completa en HTML ahora:
                 temperature=self.temperature,
                 system=system_content,  # Use separate system parameter for new Claude API
                 messages=messages,
-                thinking={"type": "enabled", "budget_tokens": min(12000, self.thinking_budget // 3)}  # 🧠 Ampliado thinking para conclusión
+                thinking={"type": "enabled", "budget_tokens": self._get_optimized_thinking_budget('conclusion')}  # 🧠 Ampliado thinking para conclusión
             ) as stream:
                 
                 async for event in stream:

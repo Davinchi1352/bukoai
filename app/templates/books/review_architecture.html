@@ -1441,6 +1441,17 @@
 // Global variables
 let currentArchitecture = {{ book.architecture|tojson if book.architecture else '{}' }};
 
+// CRITICAL FIX: Parse JSON string to object if needed
+if (typeof currentArchitecture === 'string') {
+    try {
+        currentArchitecture = JSON.parse(currentArchitecture);
+        console.log('✅ JSON string parsed to object successfully');
+    } catch (e) {
+        console.error('❌ Error parsing architecture JSON:', e);
+        currentArchitecture = {};
+    }
+}
+
 // Debug: Log architecture structure on page load
 console.log('🏗️ ARCHITECTURE DEBUG - currentArchitecture loaded:', currentArchitecture);
 console.log('🏗️ ARCHITECTURE DEBUG - has structure property?', !!currentArchitecture.structure);
@@ -1495,12 +1506,12 @@ function parseMarkdownArchitecture(rawArchitecture) {
     
     // Use REAL book parameters from database (rendered by Jinja2)
     const bookParams = {{ book.parameters|tojson if book.parameters else '{}' }};
-    const bookTitle = {{ book.title|tojson if book.title else '"Nuevo Libro"' }};
-    const bookDescription = {{ book.key_topics|tojson if book.key_topics else '"Descripción del libro basada en los temas seleccionados"' }};
-    const bookGenre = {{ book.genre|tojson if book.genre else '"self_help"' }};
-    const bookAudience = {{ book.target_audience|tojson if book.target_audience else '"all"' }};
-    const bookTone = {{ book.tone|tojson if book.tone else '"formal"' }};
-    const bookStyle = {{ book.writing_style|tojson if book.writing_style else '"professional"' }};
+    const bookTitle = {{ book.title|tojson if book.title else '""' }};
+    const bookDescription = {{ book.key_topics|tojson if book.key_topics else '""' }};
+    const bookGenre = {{ book.genre|tojson if book.genre else '""' }};
+    const bookAudience = {{ book.target_audience|tojson if book.target_audience else '""' }};
+    const bookTone = {{ book.tone|tojson if book.tone else '""' }};
+    const bookStyle = {{ book.writing_style|tojson if book.writing_style else '""' }};
     
     // Use REAL user-configured parameters
     const userConfiguredPages = {{ book.page_count or 60 }};
@@ -1666,9 +1677,9 @@ function parseIntroductionFromMarkdown(content) {
         };
     }
     return {
-        title: 'Introducción',
-        summary: 'Introducción al tema principal del libro.',
-        estimated_pages: 4
+        title: '',
+        summary: '',
+        estimated_pages: 0
     };
 }
 
@@ -1684,29 +1695,20 @@ function parseConclusionFromMarkdown(content) {
         };
     }
     return {
-        title: 'Conclusión',
-        summary: 'Conclusiones y próximos pasos.',
-        estimated_pages: 4
+        title: '',
+        summary: '',
+        estimated_pages: 0
     };
 }
 
 function generateContextualThemes(bookDescription, bookGenre) {
-    // Generate themes based on actual book content
-    const baseThemes = {
-        'self_help': ['Desarrollo Personal', 'Crecimiento Profesional', 'Habilidades Prácticas', 'Motivación'],
-        'business': ['Estrategias Empresariales', 'Liderazgo', 'Innovación', 'Productividad'],
-        'technology': ['Tendencias Tecnológicas', 'Transformación Digital', 'Herramientas', 'Futuro'],
-        'health': ['Bienestar', 'Hábitos Saludables', 'Prevención', 'Calidad de Vida'],
-        'fiction': ['Narrativa', 'Personajes', 'Conflicto', 'Resolución']
-    };
-    
-    // Extract themes from description if available
+    // Only use Claude AI generated themes - no hardcoded fallbacks
     if (bookDescription && bookDescription.length > 20) {
-        // Use actual book description to extract relevant themes
         return extractThemesFromDescription(bookDescription);
     }
     
-    return baseThemes[bookGenre] || baseThemes['self_help'];
+    // Return empty if no themes available from Claude AI
+    return [];
 }
 
 function extractThemesFromDescription(description) {
@@ -1729,56 +1731,79 @@ function extractThemesFromDescription(description) {
     return themes.slice(0, 5); // Limit to 5 themes
 }
 
-function generateContextualCharacters(bookGenre = 'self_help', bookDescription = '') {
-    // Generate characters based on book genre and content
-    const characterTemplates = {
-        'self_help': [
-            { name: 'María González', role: 'Protagonista Inspiradora', description: 'Profesional que transformó su carrera aplicando las estrategias del libro.' },
-            { name: 'Carlos Mendoza', role: 'Mentor Experto', description: 'Consultor especializado que guía a los lectores con consejos prácticos.' },
-            { name: 'Ana Rivera', role: 'Caso de Éxito', description: 'Empresaria que implementó las técnicas y logró resultados extraordinarios.' },
-            { name: 'Roberto Silva', role: 'Experto del Sector', description: 'Especialista de la industria que comparte insights valiosos.' }
-        ],
-        'business': [
-            { name: 'Elena Castro', role: 'CEO Innovadora', description: 'Líder empresarial que revolucionó su industria con estrategias disruptivas.' },
-            { name: 'Miguel Torres', role: 'Consultor Estratégico', description: 'Asesor de grandes corporaciones con más de 15 años de experiencia.' },
-            { name: 'Laura Vargas', role: 'Emprendedora Serial', description: 'Fundadora de múltiples startups exitosas que comparte sus aprendizajes.' },
-            { name: 'David Ruiz', role: 'Analista de Mercado', description: 'Experto en tendencias que predice el futuro de los negocios.' }
-        ]
-    };
-    
-    return characterTemplates[bookGenre] || characterTemplates['self_help'];
+function generateContextualCharacters(bookGenre = '', bookDescription = '') {
+    // Only use Claude AI generated characters - no hardcoded fallbacks
+    return [];
 }
 
-function generateSpecialSections(bookGenre = 'self_help') {
-    const sectionTemplates = {
-        'self_help': [
-            { type: 'Casos de Estudio Reales', frequency: 'En cada capítulo', purpose: 'Historias reales de personas que aplicaron las estrategias del libro con resultados verificables.' },
-            { type: 'Ejercicios Prácticos', frequency: 'Final de cada capítulo', purpose: 'Actividades prácticas con cronograma de implementación para aplicar inmediatamente lo aprendido.' },
-            { type: 'Recursos Descargables', frequency: '2-3 por capítulo', purpose: 'Plantillas, checklists y herramientas digitales listas para usar.' },
-            { type: 'Reflexiones Profundas', frequency: 'En secciones clave', purpose: 'Momentos de introspeción que ayudan al lector a personalizar las enseñanzas.' },
-            { type: 'Contenido Multimedia QR', frequency: '1-2 por capítulo', purpose: 'Códigos QR con acceso a videos explicativos y recursos adicionales.' }
-        ],
-        'business': [
-            { type: 'Análisis de Casos Empresariales', frequency: 'En cada capítulo', purpose: 'Estudios detallados de empresas que implementaron las estrategias descritas.' },
-            { type: 'Frameworks de Implementación', frequency: 'Por sección', purpose: 'Metodologías paso a paso para aplicar las estrategias en contextos empresariales.' },
-            { type: 'Métricas y KPIs', frequency: 'En capítulos clave', purpose: 'Indicadores de rendimiento para medir el éxito de la implementación.' },
-            { type: 'Herramientas de Diagnóstico', frequency: '1 por capítulo', purpose: 'Evaluaciones para identificar oportunidades de mejora en la organización.' }
-        ]
-    };
-    
-    return sectionTemplates[bookGenre] || sectionTemplates['self_help'];
+function generateSpecialSections(bookGenre = '') {
+    // Only use Claude AI generated special sections - no hardcoded fallbacks
+    return [];
 }
 
 function loadArchitectureData() {
+    // CRITICAL FIX: Parse JSON string to object if needed
+    if (typeof currentArchitecture === 'string') {
+        try {
+            currentArchitecture = JSON.parse(currentArchitecture);
+            console.log('✅ JSON string parsed to object in loadArchitectureData');
+        } catch (e) {
+            console.error('❌ Error parsing architecture JSON:', e);
+            currentArchitecture = {};
+        }
+    }
+    
+    // FIELD MAPPING: Map Claude AI fields to template expected fields
+    if (currentArchitecture) {
+        // Map special_elements (Claude AI) → special_sections (template expects)
+        if (currentArchitecture.special_elements && !currentArchitecture.special_sections) {
+            currentArchitecture.special_sections = currentArchitecture.special_elements.map(element => ({
+                type: element.title || element.type,
+                frequency: 'Una vez',
+                purpose: element.description
+            }));
+            console.log('✅ Mapped special_elements to special_sections:', currentArchitecture.special_sections.length);
+        }
+        
+        // Create introduction and conclusion from plot_structure if available
+        if (currentArchitecture.plot_structure) {
+            // Map introduction if not exists or is empty/null
+            if (!currentArchitecture.introduction && currentArchitecture.plot_structure.exposition) {
+                currentArchitecture.introduction = {
+                    title: 'Introducción',
+                    summary: currentArchitecture.plot_structure.exposition,
+                    estimated_pages: 3
+                };
+                console.log('✅ Created introduction from plot_structure.exposition');
+            }
+            
+            // Map conclusion if not exists or is empty/null  
+            if (!currentArchitecture.conclusion && currentArchitecture.plot_structure.resolution) {
+                currentArchitecture.conclusion = {
+                    title: 'Conclusión', 
+                    summary: currentArchitecture.plot_structure.resolution,
+                    estimated_pages: 3
+                };
+                console.log('✅ Created conclusion from plot_structure.resolution');
+            }
+        }
+    }
+    
     if (!currentArchitecture || Object.keys(currentArchitecture).length === 0) {
         console.error('No architecture data available');
         return;
     }
     
     // Check if this is raw_content format (markdown) and parse it
-    if (currentArchitecture.raw_content && !currentArchitecture.structure) {
-        console.log('Parsing raw markdown content');
+    // Only parse markdown if we DON'T have Claude AI generated architecture
+    // Claude AI architecture has: summary, writing_approach, key_themes, chapters
+    const hasClaudeArchitecture = currentArchitecture.summary || currentArchitecture.writing_approach || currentArchitecture.key_themes;
+    
+    if (currentArchitecture.raw_content && !currentArchitecture.structure && !hasClaudeArchitecture) {
+        console.log('Parsing raw markdown content (no Claude AI architecture found)');
         currentArchitecture = parseMarkdownArchitecture(currentArchitecture);
+    } else if (hasClaudeArchitecture) {
+        console.log('✅ Using Claude AI generated architecture with summary, writing_approach, and key_themes');
     }
     
     // IMPORTANTE: Siempre sobrescribir los valores de páginas y palabras con los de la BD
@@ -1816,8 +1841,8 @@ function loadArchitectureData() {
     });
     const structureData = currentArchitecture.structure || currentArchitecture;
     document.getElementById('totalChapters').textContent = structureData.chapters?.length || userChapters;
-    document.getElementById('bookSummary').textContent = currentArchitecture.summary || {{ book.key_topics|tojson if book.key_topics else '"Descripción del libro basada en los temas seleccionados por el usuario"' }};
-    document.getElementById('writingApproach').textContent = currentArchitecture.writing_approach || `Enfoque {{ book.writing_style or "profesional" }} con tono {{ book.tone or "formal" }} para {{ book.target_audience or "lectores generales" }}`;
+    document.getElementById('bookSummary').textContent = currentArchitecture.summary || '';
+    document.getElementById('writingApproach').textContent = currentArchitecture.writing_approach || '';
     
     // Load key themes with enhanced styling
     const themesContainer = document.getElementById('keyThemes');
@@ -1855,17 +1880,18 @@ function loadStructure() {
     
     console.log('Loading structure data:', structure);
     
-    // Load introduction
+    // Load introduction - check first in currentArchitecture (field mapped), then in structure
     const introContainer = document.getElementById('introductionSection');
-    if (structure.introduction) {
-        console.log('Loading introduction:', structure.introduction);
+    const introduction = currentArchitecture.introduction || structure.introduction;
+    if (introduction) {
+        console.log('Loading introduction:', introduction);
         introContainer.innerHTML = `
             <div class="architecture-section">
                 <div class="section-title">
-                    🚀 ${structure.introduction.title || 'Introducción'}
+                    🚀 ${introduction.title || ''}
                 </div>
-                <div class="chapter-summary">${structure.introduction.summary || 'Sin descripción'}</div>
-                <div class="chapter-pages">${structure.introduction.estimated_pages || structure.introduction.pages || 0} páginas estimadas</div>
+                <div class="chapter-summary">${introduction.summary || ''}</div>
+                <div class="chapter-pages">${introduction.estimated_pages || introduction.pages || 0} páginas estimadas</div>
             </div>
         `;
     } else {
@@ -1891,7 +1917,7 @@ function loadStructure() {
                     </div>
                 </div>
                 <div class="chapter-content">
-                    <div class="chapter-summary">${chapter.summary || 'Sin descripción'}</div>
+                    <div class="chapter-summary">${chapter.summary || ''}</div>
                     ${chapter.key_points && chapter.key_points.length > 0 ? `
                         <div class="key-points-section" style="margin-top: 15px;">
                             <strong>Puntos clave:</strong>
@@ -1936,21 +1962,22 @@ function loadStructure() {
         `;
     }
     
-    // Load conclusion
+    // Load conclusion - check first in currentArchitecture (field mapped), then in structure
     const conclusionContainer = document.getElementById('conclusionSection');
-    if (structure.conclusion) {
-        console.log('Loading conclusion:', structure.conclusion);
+    const conclusion = currentArchitecture.conclusion || structure.conclusion;
+    if (conclusion) {
+        console.log('✅ Loading conclusion from field mapping:', conclusion);
         conclusionContainer.innerHTML = `
             <div class="architecture-section">
                 <div class="section-title">
-                    🎯 ${structure.conclusion.title || 'Conclusión'}
+                    🎯 ${conclusion.title || ''}
                 </div>
-                <div class="chapter-summary">${structure.conclusion.summary || 'Sin descripción'}</div>
-                <div class="chapter-pages">${structure.conclusion.estimated_pages || structure.conclusion.pages || 0} páginas estimadas</div>
+                <div class="chapter-summary">${conclusion.summary || ''}</div>
+                <div class="chapter-pages">${conclusion.estimated_pages || conclusion.pages || 0} páginas estimadas</div>
             </div>
         `;
     } else {
-        console.warn('No conclusion data found');
+        console.warn('No conclusion data found in currentArchitecture.conclusion or structure.conclusion');
         conclusionContainer.innerHTML = `
             <div class="architecture-section">
                 <div class="section-title">🎯 Conclusión</div>
@@ -1965,8 +1992,16 @@ function loadDetails() {
     if (!currentArchitecture.characters) {
         currentArchitecture.characters = generateContextualCharacters();
     }
-    if (!currentArchitecture.special_sections) {
+    
+    // Don't override special_sections if they were already mapped from special_elements
+    // Only generate fallback special_sections if both special_elements and special_sections are missing
+    if (!currentArchitecture.special_sections && !currentArchitecture.special_elements) {
+        console.log('⚠️ No special_sections or special_elements found, generating fallback');
         currentArchitecture.special_sections = generateSpecialSections();
+    } else if (currentArchitecture.special_sections) {
+        console.log('✅ Using existing special_sections:', currentArchitecture.special_sections.length);
+    } else if (currentArchitecture.special_elements) {
+        console.log('⚠️ special_elements found but special_sections missing - field mapping may have failed');
     }
     
     // Load characters with enhanced design

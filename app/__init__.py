@@ -161,6 +161,7 @@ def create_app(config_name=None):
     from app.routes.books import bp as books_bp
     app.register_blueprint(books_bp, url_prefix='/books')
     
+    
     # Import WebSocket handlers (this registers the socket events)
     from app.routes import websocket
     

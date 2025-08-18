@@ -8,12 +8,14 @@ from flask_login import current_user
 from flask_socketio import emit, join_room, leave_room, disconnect
 from celery.result import AsyncResult
 import structlog
+import logging
 
 from app import socketio, celery
 from app.models.book_generation import BookGeneration
 from app.utils.logging import log_system_event
 
 logger = structlog.get_logger()
+logging_logger = logging.getLogger(__name__)
 
 
 @socketio.on('connect')
@@ -21,25 +23,15 @@ def handle_connect():
     """
     Handle client connection.
     """
-    logger.info("websocket_connection_attempt", 
-               client_id=request.sid,
-               authenticated=current_user.is_authenticated,
-               user_id=getattr(current_user, 'id', None),
-               session_exists=bool(session),
-               session_keys=list(session.keys()) if session else [])
+    logging_logger.info(f"websocket_connection_attempt - client_id={request.sid}, authenticated={current_user.is_authenticated}, user_id={getattr(current_user, 'id', None)}")
     
     if not current_user.is_authenticated:
-        logger.warning("unauthenticated_websocket_connection", 
-                      client_id=request.sid,
-                      session_exists=bool(session),
-                      session_keys=list(session.keys()) if session else [])
+        logging_logger.warning(f"unauthenticated_websocket_connection - client_id={request.sid}, session_exists={bool(session)}, session_keys={list(session.keys()) if session else []}")
         emit('error', {'message': 'Authentication required'})
         disconnect()
         return False
     
-    logger.info("websocket_connected", 
-               user_id=current_user.id,
-               client_id=request.sid)
+    logging_logger.info(f"websocket_connected - user_id={current_user.id}, client_id={request.sid}")
     
     # Join user-specific room
     join_room(f"user_{current_user.id}")
@@ -57,9 +49,7 @@ def handle_disconnect():
     Handle client disconnection.
     """
     if current_user.is_authenticated:
-        logger.info("websocket_disconnected", 
-                   user_id=current_user.id,
-                   client_id=request.sid)
+        logging_logger.info(f"websocket_disconnected - user_id={current_user.id}, client_id={request.sid}")
         
         # Leave user-specific room
         leave_room(f"user_{current_user.id}")
@@ -75,23 +65,16 @@ def handle_subscribe_book_progress(data):
         "book_uuid": "uuid-string"
     }
     """
-    logger.info("WEBSOCKET DEBUG - Subscription attempt", 
-               data=data,
-               authenticated=current_user.is_authenticated,
-               user_id=getattr(current_user, 'id', None),
-               session_keys=list(session.keys()) if session else [])
+    logging_logger.info(f"WEBSOCKET DEBUG - Subscription attempt - data={data}, authenticated={current_user.is_authenticated}, user_id={getattr(current_user, 'id', None)}, session_keys={list(session.keys()) if session else []}")
     
     if not current_user.is_authenticated:
-        logger.error("WEBSOCKET DEBUG - Authentication failed", 
-                    session_exists=bool(session),
-                    session_keys=list(session.keys()) if session else [],
-                    current_user_type=type(current_user).__name__)
+        logging_logger.error(f"WEBSOCKET DEBUG - Authentication failed - session_exists={bool(session)}, session_keys={list(session.keys()) if session else []}, current_user_type={type(current_user).__name__}")
         emit('error', {'message': 'Authentication required'})
         return
     
     try:
         book_uuid = data.get('book_uuid')
-        logger.info("processing_book_uuid", book_uuid=book_uuid)
+        logging_logger.info(f"processing_book_uuid={book_uuid}")
         
         if not book_uuid:
             logger.warning("book_uuid_missing")
@@ -100,20 +83,16 @@ def handle_subscribe_book_progress(data):
         
         # Find the book
         book = BookGeneration.find_by_uuid(book_uuid)
-        logger.info("book_lookup_result", 
-                   book_found=book is not None,
-                   book_id=book.id if book else None)
+        logging_logger.info(f"book_lookup_result - book_found={book is not None}, book_id={book.id if book else None}")
         
         if not book:
-            logger.warning("book_not_found", book_uuid=book_uuid)
+            logging_logger.warning(f"book_not_found for book_uuid={book_uuid}")
             emit('error', {'message': 'Book not found'})
             return
         
         # Check ownership
         if book.user_id != current_user.id:
-            logger.warning("access_denied", 
-                          book_user_id=book.user_id,
-                          current_user_id=current_user.id)
+            logging_logger.warning(f"access_denied - book_user_id={book.user_id}, current_user_id={current_user.id}")
             emit('error', {'message': 'Access denied'})
             return
         
@@ -121,27 +100,17 @@ def handle_subscribe_book_progress(data):
         room_name = f"book_{book.id}"
         join_room(room_name)
         
-        logger.info("WEBSOCKET DEBUG - Successfully subscribed", 
-                   user_id=current_user.id,
-                   book_id=book.id,
-                   book_uuid=book_uuid,
-                   room=room_name,
-                   task_id=book.task_id)
+        logging_logger.info(f"WEBSOCKET DEBUG - Successfully subscribed - user_id={current_user.id}, book_id={book.id}, book_uuid={book_uuid}, room={room_name}, task_id={book.task_id}")
         
         # Send current progress
         progress_info = book.get_progress_info()
-        logger.info("WEBSOCKET DEBUG - Book progress info", 
-                   book_id=book.id,
-                   progress_info=progress_info,
-                   book_status=book.status.value)
+        logging_logger.info(f"WEBSOCKET DEBUG - Book progress info - book_id={book.id}, progress_info={progress_info}, book_status={book.status.value}")
         
         # Only check Celery task status for books that are actively processing
         if hasattr(book, 'task_id') and book.task_id and book.status.value in ['queued', 'processing']:
             try:
                 task_result = AsyncResult(book.task_id, app=celery)
-                logger.info("WEBSOCKET DEBUG - Celery task state", 
-                           task_id=book.task_id,
-                           task_state=task_result.state)
+                logging_logger.info(f"WEBSOCKET DEBUG - Celery task state - task_id={book.task_id}, task_state={task_result.state}")
                 
                 if task_result.state == 'PROGRESS':
                     celery_meta = task_result.info or {}
@@ -168,9 +137,7 @@ def handle_subscribe_book_progress(data):
                         'status_message': 'Generation failed'
                     })
             except Exception as task_error:
-                logger.warning("celery_task_status_error", 
-                             task_id=book.task_id,
-                             error=str(task_error))
+                logging_logger.warning(f"celery_task_status_error - task_id={book.task_id}, error={str(task_error)}")
         
         progress_data = {
             'book_uuid': str(book.uuid),
@@ -179,10 +146,7 @@ def handle_subscribe_book_progress(data):
             'message': progress_info.get('status_message', progress_info.get('error_message', ''))
         }
         
-        logger.info("WEBSOCKET DEBUG - Emitting initial book_progress", 
-                   book_id=book.id,
-                   progress_data=progress_data,
-                   room=room_name)
+        logging_logger.info(f"WEBSOCKET DEBUG - Emitting initial book_progress - book_id={book.id}, progress_data={progress_data}, room={room_name}")
         
         emit('book_progress', progress_data)
         
@@ -191,16 +155,10 @@ def handle_subscribe_book_progress(data):
             'room': room_name
         })
         
-        logger.info("WEBSOCKET DEBUG - Subscription completed successfully", 
-                   book_id=book.id,
-                   room=room_name)
+        logging_logger.info(f"WEBSOCKET DEBUG - Subscription completed successfully - book_id={book.id}, room={room_name}")
         
     except Exception as e:
-        logger.error("error_subscribing_to_book_progress", 
-                    user_id=getattr(current_user, 'id', None),
-                    error=str(e),
-                    error_type=type(e).__name__,
-                    traceback=str(e))
+        logging_logger.error(f"error_subscribing_to_book_progress - user_id={getattr(current_user, 'id', None)}, error={str(e)}, error_type={type(e).__name__}, traceback={str(e)}")
         emit('error', {'message': 'Failed to subscribe to book progress'})
 
 
@@ -234,10 +192,7 @@ def handle_unsubscribe_book_progress(data):
         room_name = f"book_{book.id}"
         leave_room(room_name)
         
-        logger.info("unsubscribed_from_book_progress", 
-                   user_id=current_user.id,
-                   book_id=book.id,
-                   room=room_name)
+        logging_logger.info(f"unsubscribed_from_book_progress - user_id={current_user.id}, book_id={book.id}, room={room_name}")
         
         emit('unsubscription_confirmed', {
             'book_uuid': str(book.uuid),
@@ -245,9 +200,7 @@ def handle_unsubscribe_book_progress(data):
         })
         
     except Exception as e:
-        logger.error("error_unsubscribing_from_book_progress", 
-                    user_id=current_user.id,
-                    error=str(e))
+        logging_logger.error(f"error_unsubscribing_from_book_progress - user_id={current_user.id}, error={str(e)}")
         emit('error', {'message': 'Failed to unsubscribe from book progress'})
 
 
@@ -269,9 +222,7 @@ def handle_get_user_stats():
         })
         
     except Exception as e:
-        logger.error("error_getting_user_stats_ws", 
-                    user_id=current_user.id,
-                    error=str(e))
+        logging_logger.error(f"error_getting_user_stats_ws - user_id={current_user.id}, error={str(e)}")
         emit('error', {'message': 'Failed to retrieve user statistics'})
 
 
@@ -288,15 +239,12 @@ def emit_book_progress_update(book_id, progress_data):
     try:
         room_name = f"book_{book_id}"
         
-        logger.info("WEBSOCKET DEBUG - emit_book_progress_update called", 
-                   book_id=book_id,
-                   progress_data=progress_data,
-                   room=room_name)
+        logging_logger.info(f"WEBSOCKET DEBUG - emit_book_progress_update called - book_id={book_id}, progress_data={progress_data}, room={room_name}")
         
         # Get book info
         book = BookGeneration.query.get(book_id)
         if not book:
-            logger.warning("book_not_found_for_progress_update", book_id=book_id)
+            logging_logger.warning(f"book_not_found_for_progress_update for book_id={book_id}")
             return
         
         # Prepare progress update data
@@ -309,10 +257,7 @@ def emit_book_progress_update(book_id, progress_data):
             'stats': progress_data.get('stats', {})
         }
         
-        logger.info("WEBSOCKET DEBUG - Emitting book_progress to room", 
-                   book_id=book_id,
-                   room=room_name,
-                   data=book_progress_data)
+        logging_logger.info(f"WEBSOCKET DEBUG - Emitting book_progress to room - book_id={book_id}, room={room_name}, data={book_progress_data}")
         
         # Emit to all clients in the book's room
         socketio.emit('book_progress', book_progress_data, room=room_name)
@@ -326,17 +271,10 @@ def emit_book_progress_update(book_id, progress_data):
             'progress': progress_data
         }, room=user_room)
         
-        logger.info("progress_update_emitted_successfully", 
-                   book_id=book_id,
-                   room=room_name,
-                   user_room=user_room,
-                   progress=progress_data.get('current', 0))
+        logging_logger.info(f"progress_update_emitted_successfully - book_id={book_id}, room={room_name}, user_room={user_room}, progress={progress_data.get('current', 0)}")
         
     except Exception as e:
-        logger.error("error_emitting_progress_update", 
-                    book_id=book_id,
-                    error=str(e),
-                    traceback=str(e))
+        logging_logger.error(f"error_emitting_progress_update - book_id={book_id}, error={str(e)}, traceback={str(e)}")
 
 
 def emit_thinking_start(book_id):
@@ -358,12 +296,10 @@ def emit_thinking_start(book_id):
             'timestamp': datetime.now(timezone.utc).isoformat()
         }, room=room_name)
         
-        logger.info("thinking_start_emitted", book_id=book_id)
+        logging_logger.info(f"thinking_start_emitted for book_id={book_id}")
         
     except Exception as e:
-        logger.error("error_emitting_thinking_start", 
-                    book_id=book_id,
-                    error=str(e))
+        logging_logger.error(f"error_emitting_thinking_start - book_id={book_id}, error={str(e)}")
 
 
 def emit_thinking_update(book_id, chunk, stats=None):
@@ -394,9 +330,7 @@ def emit_thinking_update(book_id, chunk, stats=None):
         socketio.emit('thinking_update', data, room=room_name)
         
     except Exception as e:
-        logger.error("error_emitting_thinking_update", 
-                    book_id=book_id,
-                    error=str(e))
+        logging_logger.error(f"error_emitting_thinking_update - book_id={book_id}, error={str(e)}")
 
 
 def emit_thinking_complete(book_id, total_stats):
@@ -420,14 +354,10 @@ def emit_thinking_complete(book_id, total_stats):
             'timestamp': datetime.now(timezone.utc).isoformat()
         }, room=room_name)
         
-        logger.info("thinking_complete_emitted", 
-                   book_id=book_id,
-                   stats=total_stats)
+        logging_logger.info(f"thinking_complete_emitted - book_id={book_id}, stats={total_stats}")
         
     except Exception as e:
-        logger.error("error_emitting_thinking_complete", 
-                    book_id=book_id,
-                    error=str(e))
+        logging_logger.error(f"error_emitting_thinking_complete - book_id={book_id}, error={str(e)}")
 
 
 def emit_generation_log(book_id, log_type, message, details=None):
@@ -460,9 +390,7 @@ def emit_generation_log(book_id, log_type, message, details=None):
         socketio.emit('generation_log', data, room=room_name)
         
     except Exception as e:
-        logger.error("error_emitting_generation_log", 
-                    book_id=book_id,
-                    error=str(e))
+        logging_logger.error(f"error_emitting_generation_log - book_id={book_id}, error={str(e)}")
 
 
 def emit_book_completed(book_id):
@@ -475,7 +403,7 @@ def emit_book_completed(book_id):
     try:
         book = BookGeneration.query.get(book_id)
         if not book:
-            logger.warning("book_not_found_for_completion_notification", book_id=book_id)
+            logging_logger.warning(f"book_not_found_for_completion_notification for book_id={book_id}")
             return
         
         completion_data = {
@@ -511,14 +439,10 @@ def emit_book_completed(book_id):
             'book_uuid': str(book.uuid)
         }, room=user_room)
         
-        logger.info("book_completion_notification_sent", 
-                   book_id=book_id,
-                   user_id=book.user_id)
+        logging_logger.info(f"book_completion_notification_sent - book_id={book_id}, user_id={book.user_id}")
         
     except Exception as e:
-        logger.error("error_emitting_book_completion", 
-                    book_id=book_id,
-                    error=str(e))
+        logging_logger.error(f"error_emitting_book_completion - book_id={book_id}, error={str(e)}")
 
 
 def emit_architecture_ready(book_id, data):
@@ -532,7 +456,7 @@ def emit_architecture_ready(book_id, data):
     try:
         book = BookGeneration.query.get(book_id)
         if not book:
-            logger.warning("book_not_found_for_architecture_notification", book_id=book_id)
+            logging_logger.warning(f"book_not_found_for_architecture_notification for book_id={book_id}")
             return
         
         architecture_data = {
@@ -546,10 +470,7 @@ def emit_architecture_ready(book_id, data):
         # Emit to book room for automatic redirection
         room_name = f"book_{book_id}"
         
-        logger.info("WEBSOCKET DEBUG - emit_architecture_ready called", 
-                   book_id=book_id,
-                   room=room_name,
-                   architecture_data=architecture_data)
+        logging_logger.info(f"WEBSOCKET DEBUG - emit_architecture_ready called - book_id={book_id}, room={room_name}, architecture_data={architecture_data}")
         
         socketio.emit('architecture_ready', architecture_data, room=room_name)
         
@@ -557,17 +478,10 @@ def emit_architecture_ready(book_id, data):
         user_room = f"user_{book.user_id}"
         socketio.emit('architecture_ready', architecture_data, room=user_room)
         
-        logger.info("architecture_ready_notification_sent_successfully", 
-                   book_id=book_id,
-                   user_id=book.user_id,
-                   room=room_name,
-                   user_room=user_room)
+        logging_logger.info(f"architecture_ready_notification_sent_successfully - book_id={book_id}, user_id={book.user_id}, room={room_name}, user_room={user_room}")
         
     except Exception as e:
-        logger.error("error_emitting_architecture_ready", 
-                    book_id=book_id,
-                    error=str(e),
-                    traceback=str(e))
+        logging_logger.error(f"error_emitting_architecture_ready - book_id={book_id}, error={str(e)}, traceback={str(e)}")
 
 
 def emit_book_failed(book_id, error_message):
@@ -581,7 +495,7 @@ def emit_book_failed(book_id, error_message):
     try:
         book = BookGeneration.query.get(book_id)
         if not book:
-            logger.warning("book_not_found_for_failure_notification", book_id=book_id)
+            logging_logger.warning(f"book_not_found_for_failure_notification for book_id={book_id}")
             return
         
         failure_data = {
@@ -611,15 +525,10 @@ def emit_book_failed(book_id, error_message):
             'can_retry': book.can_retry
         }, room=user_room)
         
-        logger.info("book_failure_notification_sent", 
-                   book_id=book_id,
-                   user_id=book.user_id,
-                   error=error_message)
+        logging_logger.info(f"book_failure_notification_sent - book_id={book_id}, user_id={book.user_id}, error={error_message}")
         
     except Exception as e:
-        logger.error("error_emitting_book_failure", 
-                    book_id=book_id,
-                    error=str(e))
+        logging_logger.error(f"error_emitting_book_failure - book_id={book_id}, error={str(e)}")
 
 
 def emit_system_notification(user_id, notification_data):
@@ -634,14 +543,10 @@ def emit_system_notification(user_id, notification_data):
         user_room = f"user_{user_id}"
         socketio.emit('notification', notification_data, room=user_room)
         
-        logger.info("system_notification_sent", 
-                   user_id=user_id,
-                   notification_type=notification_data.get('type'))
+        logging_logger.info(f"system_notification_sent - user_id={user_id}, notification_type={notification_data.get('type')}")
         
     except Exception as e:
-        logger.error("error_emitting_system_notification", 
-                    user_id=user_id,
-                    error=str(e))
+        logging_logger.error(f"error_emitting_system_notification - user_id={user_id}, error={str(e)}")
 
 
 def emit_queue_update(user_id, queue_position):
@@ -660,6 +565,4 @@ def emit_queue_update(user_id, queue_position):
         }, room=user_room)
         
     except Exception as e:
-        logger.error("error_emitting_queue_update", 
-                    user_id=user_id,
-                    error=str(e))
+        logging_logger.error(f"error_emitting_queue_update - user_id={user_id}, error={str(e)}")

@@ -16,6 +16,7 @@ from ..config.claude_config import ClaudeConfig
 from ..config.token_config import TokenConfig
 
 logger = logging.getLogger(__name__)
+logging_logger = logging.getLogger(__name__)
 
 
 class ArchitectureGenerator:
@@ -42,8 +43,7 @@ class ArchitectureGenerator:
         self.architecture_timeout = config.architecture_timeout
         self.progress_check_interval = config.progress_check_interval
         
-        logger.info("ArchitectureGenerator initialized", 
-                   extra={"timeout": self.architecture_timeout})
+        logging_logger.info(f"ArchitectureGenerator initialized - timeout={self.architecture_timeout}")
     
     async def generate_book_architecture(self, book_id: int, book_params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -60,10 +60,14 @@ class ArchitectureGenerator:
             Resultado con la arquitectura generada
         """
         try:
-            # Iniciar tracking de generación
-            from app.tracking.analytics import track_book_generation_start
-            track_book_generation_start(book_id, book_params.get('user_id', 0), 
-                                       'architecture', book_params)
+            # Iniciar tracking de generación (opcional)
+            try:
+                from app.tracking.analytics import track_book_generation_start
+                track_book_generation_start(book_id, book_params.get('user_id', 0), 
+                                           'architecture', book_params)
+            except ImportError:
+                # Tracking module not available, continue without tracking
+                pass
             
             # Preparar el prompt específico para arquitectura
             prompt_data = self._build_architecture_messages(book_params)
@@ -92,14 +96,10 @@ class ArchitectureGenerator:
             })
             
             # 🚀 OPTIMIZACIÓN: Tokens específicos optimizados para arquitectura
-            arch_max_tokens = self.token_config.get_limit('architecture')  # 12000 optimizado
-            arch_budget_tokens = self.config.thinking_budget  # Budget default
+            arch_max_tokens = self.token_config.get_tokens_for_content_type('architecture')  # 12000 optimizado
+            arch_budget_tokens = self.config.get_thinking_budget_for_content_type('architecture')  # Budget optimizado para arquitectura
             
-            logger.info("starting_architecture_stream",
-                       book_id=book_id,
-                       max_tokens=arch_max_tokens,
-                       thinking_budget=arch_budget_tokens,
-                       timeout=self.architecture_timeout)
+            logging_logger.info(f"starting_architecture_stream - book_id={book_id}, max_tokens={arch_max_tokens}, thinking_budget={arch_budget_tokens}, timeout={self.architecture_timeout}")
             
             # Usar timeout generoso pero efectivo para arquitectura de calidad
             async with asyncio.timeout(self.architecture_timeout):
@@ -131,12 +131,7 @@ class ArchitectureGenerator:
                         # Debug: Log todos los tipos de eventos para investigar thinking_delta
                         if hasattr(event, 'type'):
                             if 'thinking' in str(event.type).lower() or chunk_count <= 5:  # Log thinking events + primeros 5
-                                logger.info("stream_event_debug", 
-                                           book_id=book_id,
-                                           event_type=event.type,
-                                           chunk_count=chunk_count,
-                                           has_delta=hasattr(event, 'delta'),
-                                           event_attributes=list(vars(event).keys()) if hasattr(event, '__dict__') else [])
+                                logging_logger.info(f"stream_event_debug - book_id={book_id}, event_type={event.type}, chunk_count={chunk_count}, has_delta={hasattr(event, 'delta')}, event_attributes={list(vars(event).keys()) if hasattr(event, '__dict__') else []}")
                         
                         # Actualizar progreso optimizado para 10K usuarios (menos overhead)
                         if chunk_count % self.progress_check_interval == 0:
@@ -189,12 +184,7 @@ class ArchitectureGenerator:
             # Registrar éxito en circuit breaker
             self.client.circuit_breaker.record_success()
             
-            logger.info("architecture_generation_completed",
-                       book_id=book_id,
-                       content_length=len(complete_content),
-                       thinking_length=len(complete_thinking),
-                       api_duration=api_duration,
-                       chunk_count=chunk_count)
+            logging_logger.info(f"architecture_generation_completed - book_id={book_id}, content_length={len(complete_content)}, thinking_length={len(complete_thinking)}, api_duration={api_duration}, chunk_count={chunk_count}")
             
             emit_book_progress_update(book_id, {
                 'current': self.config.progress_processing,
@@ -204,10 +194,14 @@ class ArchitectureGenerator:
                 'timestamp': datetime.now(timezone.utc).isoformat()
             })
             
-            # Tracking de finalización
-            from app.tracking.analytics import track_book_generation_end
-            track_book_generation_end(book_id, book_params.get('user_id', 0), 
-                                     'architecture', api_duration, len(complete_content))
+            # Tracking de finalización (opcional)
+            try:
+                from app.tracking.analytics import track_book_generation_end
+                track_book_generation_end(book_id, book_params.get('user_id', 0), 
+                                         'architecture', api_duration, len(complete_content))
+            except ImportError:
+                # Tracking module not available, continue without tracking
+                pass
             
             emit_book_progress_update(book_id, {
                 'current': self.config.progress_completed,
@@ -229,9 +223,7 @@ class ArchitectureGenerator:
             
         except asyncio.TimeoutError:
             error_msg = f"Timeout generando arquitectura después de {self.architecture_timeout}s"
-            logger.error("architecture_generation_timeout", 
-                        book_id=book_id,
-                        timeout=self.architecture_timeout)
+            logging_logger.error(f"architecture_generation_timeout - book_id={book_id}, timeout={self.architecture_timeout}")
             
             # Registrar error en circuit breaker
             self.client.circuit_breaker.record_failure(Exception(error_msg))
@@ -244,10 +236,7 @@ class ArchitectureGenerator:
             
         except Exception as e:
             error_msg = f"Error generando arquitectura: {str(e)}"
-            logger.error("architecture_generation_error",
-                        book_id=book_id,
-                        error=str(e),
-                        error_type=type(e).__name__)
+            logging_logger.error(f"architecture_generation_error - book_id={book_id}, error={str(e)}, error_type={type(e).__name__}")
             
             # Registrar error en circuit breaker
             self.client.circuit_breaker.record_failure(e)
@@ -306,6 +295,9 @@ Debes responder EXACTAMENTE con este formato JSON válido (sin markdown, sin com
   "estimated_words": número_palabras_estimadas,
   "tone": "tono_narrativo",
   "perspective": "perspectiva_narrativa",
+  "summary": "Descripción detallada del libro que será mostrada al usuario",
+  "writing_approach": "Enfoque de escritura específico (ej: 'Enfoque profesional con tono inspirador para adultos, estrategias prácticas del género self-help')",
+  "key_themes": ["tema_principal", "tema_secundario", "tema_terciario"],
   "chapters": [
     {
       "number": 1,
@@ -386,8 +378,8 @@ Recuerda: Tu arquitectura será la base para generar todo el contenido. Debe ser
             User prompt para arquitectura
         """
         # Extraer TODOS los parámetros del usuario
-        title = book_params.get('title', 'Sin título')
-        genre = book_params.get('genre', 'ficción')
+        title = book_params.get('title', '')
+        genre = book_params.get('genre', '')
         description = book_params.get('description', '')
         target_audience = book_params.get('target_audience', '')
         tone = book_params.get('tone', '')

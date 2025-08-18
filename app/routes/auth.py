@@ -22,11 +22,13 @@ from app.forms.auth import (
 )
 from app.utils.structured_logging import StructuredLogger, security_logger
 from app.services.email_service import email_service
+import logging
 
 bp = Blueprint('auth', __name__)
 
 # Configurar logger
 logger = StructuredLogger('auth')
+logging_logger = logging.getLogger(__name__)
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -79,7 +81,7 @@ def login():
                     ip_address=request.remote_addr
                 )
         except Exception as e:
-            logger.error('login_error', error=str(e), email=form.email.data)
+            logging_logger.error(f'login_error: {str(e)}, email={form.email.data}')
             flash('Error interno del servidor. Intenta nuevamente.', 'error')
     
     return render_template('auth/login.html', form=form)
@@ -90,11 +92,7 @@ def login():
 def logout():
     """Ruta de cierre de sesión"""
     user_email = current_user.email
-    logger.info('user_logout', 
-        user_id=current_user.id,
-        email=user_email,
-        ip=request.remote_addr
-    )
+    logging_logger.info(f'user_logout - user_id={current_user.id}, email={user_email}, ip={request.remote_addr}')
     
     logout_user()
     flash('Has cerrado sesión exitosamente', 'info')
@@ -132,12 +130,7 @@ def register():
             db.session.add(user)
             db.session.commit()
             
-            logger.info('user_registered', 
-                user_id=user.id,
-                email=user.email,
-                country=user.country,
-                ip=request.remote_addr
-            )
+            logging_logger.info(f'user_registered - user_id={user.id}, email={user.email}, country={user.country}, ip={request.remote_addr}')
             
             # Enviar email de verificación
             email_sent = email_service.send_verification_email(user, verification_token)
@@ -164,7 +157,7 @@ def register():
             
         except Exception as e:
             db.session.rollback()
-            logger.error('registration_error', error=str(e), email=form.email.data)
+            logging_logger.error(f'registration_error: {str(e)}, email={form.email.data}')
             flash('Error al crear la cuenta. Intenta nuevamente.', 'error')
     
     return render_template('auth/register.html', form=form)
@@ -185,11 +178,7 @@ def password_reset_request():
                 # Generar token de restablecimiento
                 reset_token = user.generate_password_reset_token()
                 
-                logger.info('password_reset_requested', 
-                    user_id=user.id,
-                    email=user.email,
-                    ip=request.remote_addr
-                )
+                logging_logger.info(f'password_reset_requested - user_id={user.id}, email={user.email}, ip={request.remote_addr}')
                 
                 # Enviar email con enlace de restablecimiento
                 email_sent = email_service.send_password_reset_email(user, reset_token)
@@ -208,7 +197,7 @@ def password_reset_request():
             return redirect(url_for('auth.login'))
             
         except Exception as e:
-            logger.error('password_reset_request_error', error=str(e))
+            logging_logger.error(f'password_reset_request_error: {str(e)}')
             flash('Error interno. Intenta nuevamente.', 'error')
     
     return render_template('auth/password_reset_request.html', form=form)
@@ -232,17 +221,13 @@ def password_reset(token):
             user.set_password(form.password.data)
             user.clear_password_reset_token()
             
-            logger.info('password_reset_completed', 
-                user_id=user.id,
-                email=user.email,
-                ip=request.remote_addr
-            )
+            logging_logger.info(f'password_reset_completed - user_id={user.id}, email={user.email}, ip={request.remote_addr}')
             
             flash('Tu contraseña ha sido actualizada exitosamente.', 'success')
             return redirect(url_for('auth.login'))
             
         except Exception as e:
-            logger.error('password_reset_error', error=str(e), user_id=user.id)
+            logging_logger.error(f'password_reset_error: {str(e)}, user_id={user.id}')
             flash('Error al actualizar la contraseña. Intenta nuevamente.', 'error')
     
     return render_template('auth/password_reset.html', form=form)
@@ -267,11 +252,7 @@ def verify_email(token):
     try:
         user.verify_email()
         
-        logger.info('email_verified', 
-            user_id=user.id,
-            email=user.email,
-            ip=request.remote_addr
-        )
+        logging_logger.info(f'email_verified - user_id={user.id}, email={user.email}, ip={request.remote_addr}')
         
         flash('¡Email verificado exitosamente!', 'success')
         
@@ -282,7 +263,7 @@ def verify_email(token):
         return redirect(url_for('main.index'))
         
     except Exception as e:
-        logger.error('email_verification_error', error=str(e), user_id=user.id)
+        logging_logger.error(f'email_verification_error: {str(e)}, user_id={user.id}')
         flash('Error al verificar el email. Intenta nuevamente.', 'error')
         return redirect(url_for('main.index'))
 
@@ -301,11 +282,7 @@ def resend_verification():
         try:
             verification_token = current_user.generate_email_verification_token()
             
-            logger.info('verification_email_resent', 
-                user_id=current_user.id,
-                email=current_user.email,
-                ip=request.remote_addr
-            )
+            logging_logger.info(f'verification_email_resent - user_id={current_user.id}, email={current_user.email}, ip={request.remote_addr}')
             
             # Enviar email de verificación
             email_sent = email_service.send_verification_email(current_user, verification_token)
@@ -318,7 +295,7 @@ def resend_verification():
             return redirect(url_for('main.index'))
             
         except Exception as e:
-            logger.error('resend_verification_error', error=str(e))
+            logging_logger.error(f'resend_verification_error: {str(e)}')
             flash('Error al enviar el email. Intenta nuevamente.', 'error')
     
     return render_template('auth/resend_verification.html', form=form)
@@ -346,18 +323,14 @@ def profile():
             
             db.session.commit()
             
-            logger.info('profile_updated', 
-                user_id=current_user.id,
-                email=current_user.email,
-                ip=request.remote_addr
-            )
+            logging_logger.info(f'profile_updated - user_id={current_user.id}, email={current_user.email}, ip={request.remote_addr}')
             
             flash('Perfil actualizado exitosamente.', 'success')
             return redirect(url_for('auth.profile'))
             
         except Exception as e:
             db.session.rollback()
-            logger.error('profile_update_error', error=str(e), user_id=current_user.id)
+            logging_logger.error(f'profile_update_error: {str(e)}, user_id={current_user.id}')
             flash('Error al actualizar el perfil. Intenta nuevamente.', 'error')
     
     return render_template('auth/profile.html', form=form, user=current_user)
@@ -378,18 +351,14 @@ def change_password():
             current_user.set_password(form.new_password.data)
             db.session.commit()
             
-            logger.info('password_changed', 
-                user_id=current_user.id,
-                email=current_user.email,
-                ip=request.remote_addr
-            )
+            logging_logger.info(f'password_changed - user_id={current_user.id}, email={current_user.email}, ip={request.remote_addr}')
             
             flash('Contraseña actualizada exitosamente.', 'success')
             return redirect(url_for('auth.profile'))
             
         except Exception as e:
             db.session.rollback()
-            logger.error('password_change_error', error=str(e), user_id=current_user.id)
+            logging_logger.error(f'password_change_error: {str(e)}, user_id={current_user.id}')
             flash('Error al cambiar la contraseña. Intenta nuevamente.', 'error')
     
     return render_template('auth/change_password.html', form=form)
@@ -420,11 +389,7 @@ def delete_account():
             
             db.session.commit()
             
-            logger.info('account_deleted', 
-                user_id=user_id,
-                email=user_email,
-                ip=request.remote_addr
-            )
+            logging_logger.info(f'account_deleted - user_id={user_id}, email={user_email}, ip={request.remote_addr}')
             
             logout_user()
             flash('Tu cuenta ha sido eliminada permanentemente.', 'info')
@@ -432,7 +397,7 @@ def delete_account():
             
         except Exception as e:
             db.session.rollback()
-            logger.error('account_deletion_error', error=str(e), user_id=current_user.id)
+            logging_logger.error(f'account_deletion_error: {str(e)}, user_id={current_user.id}')
             flash('Error al eliminar la cuenta. Intenta nuevamente.', 'error')
     
     return render_template('auth/delete_account.html', form=form)
@@ -458,7 +423,7 @@ def api_check_email():
         })
         
     except Exception as e:
-        logger.error('api_check_email_error', error=str(e))
+        logging_logger.error(f'api_check_email_error: {str(e)}')
         return jsonify({'available': False, 'message': 'Error interno'}), 500
 
 
@@ -482,7 +447,7 @@ def api_session():
             return jsonify({'authenticated': False})
             
     except Exception as e:
-        logger.error('api_session_error', error=str(e))
+        logging_logger.error(f'api_session_error: {str(e)}')
         return jsonify({'authenticated': False, 'error': 'Error interno'}), 500
 
 
@@ -503,7 +468,7 @@ def verify_password():
         return jsonify({'success': True, 'message': 'Contraseña verificada'})
         
     except Exception as e:
-        logger.error('verify_password_error', error=str(e), user_id=current_user.id)
+        logging_logger.error(f'verify_password_error: {str(e)}, user_id={current_user.id}')
         return jsonify({'error': 'Error interno'}), 500
 
 

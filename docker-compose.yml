@@ -73,6 +73,7 @@ services:
       - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
       - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
       - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN}
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true
     volumes:
       - ./storage:/storage
       - ./logs:/app/logs
@@ -111,6 +112,7 @@ services:
       - MAIL_PORT=${MAIL_PORT}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true
     volumes:
       - ./storage:/storage
       - ./logs:/app/logs

@@ -1,0 +1,1165 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+    :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --accent-color: #e74c3c;
+        --success-color: #27ae60;
+        --warning-color: #f39c12;
+        --background-light: #f8f9fa;
+        --text-muted: #6c757d;
+        --border-color: #dee2e6;
+        --shadow-light: 0 2px 4px rgba(0,0,0,0.1);
+        --shadow-medium: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .formatting-viewer {
+        background: var(--background-light);
+        min-height: 100vh;
+        padding-top: 80px;
+    }
+
+    .viewer-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-medium);
+    }
+
+    .viewer-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .viewer-header .subtitle {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+
+    .control-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-light);
+        border: 1px solid var(--border-color);
+    }
+
+    .panel-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .platform-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .platform-card {
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .platform-card:hover {
+        border-color: var(--secondary-color);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-light);
+    }
+
+    .platform-card.active {
+        border-color: var(--secondary-color);
+        background: rgba(52, 152, 219, 0.1);
+    }
+
+    .platform-card .platform-icon {
+        font-size: 2rem;
+        color: var(--secondary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .platform-card .platform-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .platform-card .platform-desc {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    .formatting-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .option-group {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .option-group h4 {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-check {
+        margin-bottom: 0.75rem;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+
+    .form-range::-webkit-slider-thumb {
+        background: var(--secondary-color);
+    }
+
+    .form-range::-moz-range-thumb {
+        background: var(--secondary-color);
+        border: none;
+    }
+
+    .preview-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .preview-controls {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: var(--shadow-light);
+        height: fit-content;
+        border: 1px solid var(--border-color);
+    }
+
+    .preview-display {
+        background: white;
+        border-radius: 12px;
+        padding: 0;
+        box-shadow: var(--shadow-medium);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .preview-header {
+        background: var(--primary-color);
+        color: white;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: between;
+        align-items: center;
+    }
+
+    .preview-content {
+        padding: 2rem;
+        max-height: 800px;
+        overflow-y: auto;
+    }
+
+    .book-page {
+        background: white;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-radius: 4px;
+        min-height: 700px;
+        position: relative;
+    }
+
+    .book-element {
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .book-element:hover {
+        background: rgba(52, 152, 219, 0.05);
+        border-radius: 4px;
+        padding: 0.25rem;
+        margin: -0.25rem;
+    }
+
+    .element-main-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        text-align: center;
+        color: var(--primary-color);
+        margin: 2rem 0;
+        line-height: 1.2;
+    }
+
+    .element-chapter-header {
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+        color: var(--primary-color);
+        margin: 3rem 0 2rem 0;
+        padding-top: 2rem;
+        border-top: 2px solid var(--primary-color);
+    }
+
+    .element-chapter-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin: 2rem 0 1rem 0;
+    }
+
+    .element-section-heading {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin: 1.5rem 0 1rem 0;
+    }
+
+    .element-subsection-heading {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin: 1rem 0 0.5rem 0;
+    }
+
+    .element-numbered-expression {
+        background: rgba(52, 152, 219, 0.1);
+        border-left: 4px solid var(--secondary-color);
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 0 4px 4px 0;
+    }
+
+    .element-phonetic-transcription {
+        font-family: 'Courier New', monospace;
+        font-style: italic;
+        color: #666;
+        background: rgba(108, 117, 125, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        margin: 0.25rem 0;
+    }
+
+    .element-translation-literal,
+    .element-translation-contextual {
+        font-weight: 600;
+        color: var(--secondary-color);
+        margin: 0.5rem 0;
+    }
+
+    .element-usage-description,
+    .element-example-text {
+        margin: 0.5rem 0;
+        padding-left: 1rem;
+    }
+
+    .element-bullet-list {
+        margin-left: 1.5rem;
+        margin: 0.25rem 0;
+    }
+
+    .element-paragraph {
+        text-align: justify;
+        line-height: 1.6;
+        margin: 1rem 0;
+    }
+
+    .element-separator {
+        border: none;
+        border-top: 1px solid var(--border-color);
+        margin: 2rem 0;
+    }
+
+    .statistics-panel {
+        background: linear-gradient(135deg, var(--success-color), #2ecc71);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .stat-value {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .quality-score {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .score-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        margin: 0 auto 1rem;
+    }
+
+    .score-excellent { background: var(--success-color); }
+    .score-good { background: var(--secondary-color); }
+    .score-fair { background: var(--warning-color); }
+    .score-poor { background: var(--accent-color); }
+
+    .score-breakdown {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .score-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .recommendations {
+        background: rgba(243, 156, 18, 0.1);
+        border: 1px solid var(--warning-color);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .recommendations h6 {
+        color: var(--warning-color);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .recommendations ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .recommendations li {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-update-preview {
+        background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .btn-update-preview:hover {
+        background: linear-gradient(135deg, #2980b9, var(--secondary-color));
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+        color: white;
+    }
+
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .spinner-border {
+        color: var(--secondary-color);
+    }
+
+    .element-badge {
+        display: inline-block;
+        background: var(--secondary-color);
+        color: white;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        margin-right: 0.5rem;
+        font-weight: 500;
+    }
+
+    .preview-tabs {
+        display: flex;
+        background: var(--background-light);
+        border-radius: 8px 8px 0 0;
+        padding: 0;
+        margin: 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .preview-tab {
+        flex: 1;
+        padding: 1rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .preview-tab.active {
+        background: white;
+        color: var(--secondary-color);
+        border-bottom: 2px solid var(--secondary-color);
+    }
+
+    .preview-tab:hover:not(.active) {
+        background: rgba(52, 152, 219, 0.1);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .preview-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .formatting-options {
+            grid-template-columns: 1fr;
+        }
+        
+        .platform-selector {
+            grid-template-columns: 1fr;
+        }
+        
+        .viewer-header h1 {
+            font-size: 2rem;
+        }
+    }
+
+    .element-tooltip {
+        position: relative;
+        cursor: help;
+    }
+
+    .element-tooltip::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--primary-color);
+        color: white;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 1000;
+    }
+
+    .element-tooltip:hover::after {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="formatting-viewer">
+    <!-- Header -->
+    <div class="viewer-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-palette me-2"></i>Visor de Formateo Profesional</h1>
+                    <p class="subtitle">{{ book.title }}</p>
+                </div>
+                <div class="text-end">
+                    <a href="{{ url_for('books.view_book', book_id=book.id) }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Libro
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Platform Selection -->
+        <div class="control-panel">
+            <h3 class="panel-title">
+                <i class="fas fa-store"></i>
+                Seleccionar Plataforma de Publicación
+            </h3>
+            <div class="platform-selector" id="platformSelector">
+                <div class="platform-card" data-platform="universal">
+                    <div class="platform-icon"><i class="fas fa-globe"></i></div>
+                    <div class="platform-name">Universal</div>
+                    <div class="platform-desc">Formato estándar compatible</div>
+                </div>
+                <div class="platform-card" data-platform="amazon_kdp">
+                    <div class="platform-icon"><i class="fab fa-amazon"></i></div>
+                    <div class="platform-name">Amazon KDP</div>
+                    <div class="platform-desc">Kindle Direct Publishing</div>
+                </div>
+                <div class="platform-card" data-platform="google_play_books">
+                    <div class="platform-icon"><i class="fab fa-google-play"></i></div>
+                    <div class="platform-name">Google Play Books</div>
+                    <div class="platform-desc">Biblioteca digital de Google</div>
+                </div>
+                <div class="platform-card" data-platform="apple_books">
+                    <div class="platform-icon"><i class="fab fa-apple"></i></div>
+                    <div class="platform-name">Apple Books</div>
+                    <div class="platform-desc">iBooks Store de Apple</div>
+                </div>
+                <div class="platform-card" data-platform="kobo">
+                    <div class="platform-icon"><i class="fas fa-book-reader"></i></div>
+                    <div class="platform-name">Kobo</div>
+                    <div class="platform-desc">Plataforma Kobo</div>
+                </div>
+                <div class="platform-card" data-platform="smashwords">
+                    <div class="platform-icon"><i class="fas fa-feather-alt"></i></div>
+                    <div class="platform-name">Smashwords</div>
+                    <div class="platform-desc">Distribución indie</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formatting Options -->
+        <div class="control-panel">
+            <h3 class="panel-title">
+                <i class="fas fa-cogs"></i>
+                Opciones de Formateo Profesional
+            </h3>
+            
+            <form id="formattingForm">
+                <div class="formatting-options">
+                    <!-- Estructura del Libro -->
+                    <div class="option-group">
+                        <h4><i class="fas fa-book-open"></i>Estructura del Libro</h4>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_cover_page" name="include_cover_page" checked>
+                            <label class="form-check-label" for="include_cover_page">Página de Portada</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_title_page" name="include_title_page" checked>
+                            <label class="form-check-label" for="include_title_page">Página de Título</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_copyright_page" name="include_copyright_page" checked>
+                            <label class="form-check-label" for="include_copyright_page">Página de Derechos de Autor</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_dedication" name="include_dedication">
+                            <label class="form-check-label" for="include_dedication">Dedicatoria</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_acknowledgments" name="include_acknowledgments">
+                            <label class="form-check-label" for="include_acknowledgments">Agradecimientos</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_prologue" name="include_prologue" checked>
+                            <label class="form-check-label" for="include_prologue">Prólogo</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_table_of_contents" name="include_table_of_contents" checked>
+                            <label class="form-check-label" for="include_table_of_contents">Tabla de Contenidos</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_epilogue" name="include_epilogue">
+                            <label class="form-check-label" for="include_epilogue">Epílogo</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_about_author" name="include_about_author" checked>
+                            <label class="form-check-label" for="include_about_author">Acerca del Autor</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_bibliography" name="include_bibliography">
+                            <label class="form-check-label" for="include_bibliography">Bibliografía</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_index" name="include_index">
+                            <label class="form-check-label" for="include_index">Índice</label>
+                        </div>
+                    </div>
+
+                    <!-- Tipografía -->
+                    <div class="option-group">
+                        <h4><i class="fas fa-font"></i>Tipografía</h4>
+                        <div class="mb-3">
+                            <label for="font_family" class="form-label">Familia de Fuente</label>
+                            <select class="form-select" id="font_family" name="font_family">
+                                <option value="Times New Roman" selected>Times New Roman</option>
+                                <option value="Georgia">Georgia</option>
+                                <option value="Palatino">Palatino</option>
+                                <option value="Book Antiqua">Book Antiqua</option>
+                                <option value="Arial">Arial</option>
+                                <option value="Helvetica">Helvetica</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="font_size_body" class="form-label">Tamaño de Fuente del Cuerpo: <span id="font_size_value">12</span>pt</label>
+                            <input type="range" class="form-range" id="font_size_body" name="font_size_body" min="9" max="16" value="12" step="1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="line_spacing" class="form-label">Espaciado de Línea: <span id="line_spacing_value">1.5</span></label>
+                            <input type="range" class="form-range" id="line_spacing" name="line_spacing" min="1.0" max="2.5" value="1.5" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="paragraph_spacing" class="form-label">Espaciado de Párrafo: <span id="paragraph_spacing_value">6.0</span>pt</label>
+                            <input type="range" class="form-range" id="paragraph_spacing" name="paragraph_spacing" min="0" max="12" value="6" step="1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="first_line_indent" class="form-label">Sangría Primera Línea: <span id="first_line_indent_value">12.0</span>pt</label>
+                            <input type="range" class="form-range" id="first_line_indent" name="first_line_indent" min="0" max="24" value="12" step="2">
+                        </div>
+                    </div>
+
+                    <!-- Elementos Especiales -->
+                    <div class="option-group">
+                        <h4><i class="fas fa-star"></i>Elementos Especiales</h4>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="highlight_expressions" name="highlight_expressions" checked>
+                            <label class="form-check-label" for="highlight_expressions">Resaltar Expresiones</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show_phonetic_pronunciation" name="show_phonetic_pronunciation" checked>
+                            <label class="form-check-label" for="show_phonetic_pronunciation">Mostrar Pronunciación Fonética</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="emphasize_translations" name="emphasize_translations" checked>
+                            <label class="form-check-label" for="emphasize_translations">Enfatizar Traducciones</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="number_chapters" name="number_chapters" checked>
+                            <label class="form-check-label" for="number_chapters">Numerar Capítulos</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="number_sections" name="number_sections">
+                            <label class="form-check-label" for="number_sections">Numerar Secciones</label>
+                        </div>
+                    </div>
+
+                    <!-- Estilo Profesional -->
+                    <div class="option-group">
+                        <h4><i class="fas fa-magic"></i>Estilo Profesional</h4>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use_drop_caps" name="use_drop_caps">
+                            <label class="form-check-label" for="use_drop_caps">Usar Capitulares (Drop Caps)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use_chapter_breaks" name="use_chapter_breaks" checked>
+                            <label class="form-check-label" for="use_chapter_breaks">Saltos de Página entre Capítulos</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use_headers_footers" name="use_headers_footers" checked>
+                            <label class="form-check-label" for="use_headers_footers">Encabezados y Pies de Página</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use_professional_typography" name="use_professional_typography" checked>
+                            <label class="form-check-label" for="use_professional_typography">Tipografía Profesional</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="button" class="btn-update-preview" id="updatePreview">
+                        <i class="fas fa-sync-alt me-2"></i>Actualizar Vista Previa
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Preview Container -->
+        <div class="preview-container">
+            <!-- Preview Controls -->
+            <div class="preview-controls">
+                <!-- Statistics -->
+                <div class="statistics-panel">
+                    <h5><i class="fas fa-chart-bar me-2"></i>Estadísticas del Libro</h5>
+                    <div class="stat-item">
+                        <span>Capítulos:</span>
+                        <span class="stat-value">{{ preview_data.book_info.statistics.chapters }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Secciones:</span>
+                        <span class="stat-value">{{ preview_data.book_info.statistics.sections }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Expresiones:</span>
+                        <span class="stat-value">{{ preview_data.book_info.statistics.expressions }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Palabras aprox.:</span>
+                        <span class="stat-value">{{ "{:,}".format(preview_data.book_info.statistics.word_count_estimated) }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Elementos totales:</span>
+                        <span class="stat-value">{{ preview_data.book_info.total_elements }}</span>
+                    </div>
+                </div>
+
+                <!-- Quality Score -->
+                <div class="quality-score">
+                    <h6><i class="fas fa-award me-2"></i>Calidad del Formateo</h6>
+                    <div class="score-circle 
+                        {% if preview_data.formatting_quality_score.overall_score >= 85 %}score-excellent
+                        {% elif preview_data.formatting_quality_score.overall_score >= 70 %}score-good
+                        {% elif preview_data.formatting_quality_score.overall_score >= 50 %}score-fair
+                        {% else %}score-poor{% endif %}" id="qualityScore">
+                        {{ preview_data.formatting_quality_score.overall_score }}
+                    </div>
+                    
+                    <div class="score-breakdown">
+                        <div class="score-item">
+                            <span>Estructura:</span>
+                            <span>{{ preview_data.formatting_quality_score.structure_score }}/25</span>
+                        </div>
+                        <div class="score-item">
+                            <span>Tipografía:</span>
+                            <span>{{ preview_data.formatting_quality_score.typography_score }}/25</span>
+                        </div>
+                        <div class="score-item">
+                            <span>Plataforma:</span>
+                            <span>{{ preview_data.formatting_quality_score.platform_compliance }}/25</span>
+                        </div>
+                        <div class="score-item">
+                            <span>Profesional:</span>
+                            <span>{{ preview_data.formatting_quality_score.professional_elements }}/25</span>
+                        </div>
+                    </div>
+
+                    {% if preview_data.formatting_quality_score.recommendations %}
+                    <div class="recommendations">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Recomendaciones</h6>
+                        <ul>
+                            {% for recommendation in preview_data.formatting_quality_score.recommendations %}
+                            <li>{{ recommendation }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Preview Display -->
+            <div class="preview-display">
+                <div class="preview-header">
+                    <h5><i class="fas fa-eye me-2"></i>Vista Previa del Libro</h5>
+                    <div>
+                        <span class="badge bg-secondary">{{ preview_data.book_info.platform.title() }}</span>
+                    </div>
+                </div>
+
+                <div class="preview-tabs">
+                    <button class="preview-tab active" data-tab="content">Contenido</button>
+                    <button class="preview-tab" data-tab="structure">Estructura</button>
+                    <button class="preview-tab" data-tab="elements">Elementos</button>
+                </div>
+
+                <div class="preview-content">
+                    <div class="loading-spinner" id="loadingSpinner">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Generando vista previa...</p>
+                    </div>
+
+                    <!-- Content Tab -->
+                    <div class="tab-content active" id="contentTab">
+                        <div class="book-page" id="bookPreview">
+                            {% for element in preview_data.elements_sample[:20] %}
+                            <div class="book-element element-{{ element.type.replace('_', '-') }}" 
+                                 data-tooltip="Tipo: {{ element.type.replace('_', ' ').title() }}">
+                                <span class="element-badge">{{ element.type.replace('_', ' ').title() }}</span>
+                                {{ element.content | safe }}
+                            </div>
+                            {% endfor %}
+                            
+                            {% if preview_data.elements_sample|length > 20 %}
+                            <div class="text-center text-muted mt-4">
+                                <i class="fas fa-ellipsis-h"></i>
+                                <p>Y {{ preview_data.book_info.total_elements - 20 }} elementos más...</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Structure Tab -->
+                    <div class="tab-content" id="structureTab">
+                        <div class="book-page">
+                            <h3>Estructura del Libro</h3>
+                            {% for chapter in preview_data.structure_overview.chapters %}
+                            <div class="mb-3">
+                                <h5><i class="fas fa-book me-2"></i>{{ chapter.title }}</h5>
+                                {% if chapter.sections %}
+                                <ul class="ms-4">
+                                    {% for section in chapter.sections %}
+                                    <li>{{ section }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Elements Tab -->
+                    <div class="tab-content" id="elementsTab">
+                        <div class="book-page">
+                            <h3>Tipos de Elementos</h3>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Elementos Estructurales</h6>
+                                    <ul>
+                                        <li>Títulos principales ({{ preview_data.book_info.statistics.chapters }})</li>
+                                        <li>Secciones ({{ preview_data.book_info.statistics.sections }})</li>
+                                        <li>Subsecciones ({{ preview_data.book_info.statistics.subsections }})</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Elementos de Contenido</h6>
+                                    <ul>
+                                        <li>Expresiones numeradas ({{ preview_data.book_info.statistics.expressions }})</li>
+                                        <li>Transcripciones fonéticas ({{ preview_data.book_info.statistics.phonetic_transcriptions }})</li>
+                                        <li>Puntos de lista ({{ preview_data.book_info.statistics.bullet_points }})</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Platform Selection
+    const platformCards = document.querySelectorAll('.platform-card');
+    const currentPlatform = document.querySelector('.platform-card.active') || 
+                           document.querySelector('[data-platform="universal"]');
+    currentPlatform?.classList.add('active');
+
+    platformCards.forEach(card => {
+        card.addEventListener('click', function() {
+            platformCards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Range Inputs
+    const rangeInputs = document.querySelectorAll('input[type="range"]');
+    rangeInputs.forEach(input => {
+        const updateValue = () => {
+            const valueSpan = document.getElementById(input.id + '_value');
+            if (valueSpan) {
+                valueSpan.textContent = input.value;
+            }
+        };
+        
+        updateValue();
+        input.addEventListener('input', updateValue);
+    });
+
+    // Tab Navigation
+    const tabs = document.querySelectorAll('.preview-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+
+            this.classList.add('active');
+            document.getElementById(targetTab + 'Tab').classList.add('active');
+        });
+    });
+
+    // Update Preview
+    const updateButton = document.getElementById('updatePreview');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const bookPreview = document.getElementById('bookPreview');
+
+    updateButton.addEventListener('click', function() {
+        const formData = new FormData(document.getElementById('formattingForm'));
+        const selectedPlatform = document.querySelector('.platform-card.active').dataset.platform;
+        
+        // Convert FormData to object
+        const formObject = {};
+        formData.forEach((value, key) => {
+            if (formObject[key]) {
+                if (Array.isArray(formObject[key])) {
+                    formObject[key].push(value);
+                } else {
+                    formObject[key] = [formObject[key], value];
+                }
+            } else {
+                formObject[key] = value;
+            }
+        });
+
+        // Add platform
+        formObject.platform = selectedPlatform;
+
+        // Handle checkboxes (they're only present if checked)
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            formObject[checkbox.name] = checkbox.checked;
+        });
+
+        // Show loading
+        loadingSpinner.style.display = 'block';
+        bookPreview.style.opacity = '0.5';
+        updateButton.disabled = true;
+        updateButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Actualizando...';
+
+        // Send request
+        fetch(`/books/{{ book.id }}/formatting-preview`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formObject)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Preview data received:', data.preview_data);
+                
+                try {
+                    updatePreviewDisplay(data.preview_data);
+                } catch (error) {
+                    console.error('Error updating preview display:', error);
+                }
+                
+                try {
+                    updateQualityScore(data.preview_data.formatting_quality_score);
+                } catch (error) {
+                    console.error('Error updating quality score:', error);
+                }
+                
+                try {
+                    updateStatistics(data.preview_data.book_info.statistics);
+                } catch (error) {
+                    console.error('Error updating statistics:', error);
+                }
+            } else {
+                showAlert('error', 'Error al generar vista previa: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de conexión al generar vista previa');
+        })
+        .finally(() => {
+            loadingSpinner.style.display = 'none';
+            bookPreview.style.opacity = '1';
+            updateButton.disabled = false;
+            updateButton.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Actualizar Vista Previa';
+        });
+    });
+
+    function updatePreviewDisplay(previewData) {
+        const bookPreview = document.getElementById('bookPreview');
+        
+        let html = '';
+        previewData.elements_sample.slice(0, 20).forEach(element => {
+            html += `
+                <div class="book-element element-${element.type.replace(/_/g, '-')}" 
+                     data-tooltip="Tipo: ${element.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}">
+                    <span class="element-badge">${element.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                    ${element.content}
+                </div>
+            `;
+        });
+
+        if (previewData.book_info.total_elements > 20) {
+            html += `
+                <div class="text-center text-muted mt-4">
+                    <i class="fas fa-ellipsis-h"></i>
+                    <p>Y ${previewData.book_info.total_elements - 20} elementos más...</p>
+                </div>
+            `;
+        }
+
+        bookPreview.innerHTML = html;
+    }
+
+    function updateQualityScore(qualityScore) {
+        // Verificar que qualityScore existe
+        if (!qualityScore) {
+            console.error('qualityScore data is missing');
+            return;
+        }
+
+        const scoreCircle = document.getElementById('qualityScore');
+        if (!scoreCircle) {
+            console.error('qualityScore element not found');
+            return;
+        }
+        
+        scoreCircle.textContent = qualityScore.overall_score || 0;
+        
+        // Update circle color
+        scoreCircle.className = 'score-circle ';
+        const score = qualityScore.overall_score || 0;
+        if (score >= 85) {
+            scoreCircle.className += 'score-excellent';
+        } else if (score >= 70) {
+            scoreCircle.className += 'score-good';
+        } else if (score >= 50) {
+            scoreCircle.className += 'score-fair';
+        } else {
+            scoreCircle.className += 'score-poor';
+        }
+
+        // Update breakdown
+        const breakdown = document.querySelector('.score-breakdown');
+        if (breakdown) {
+            breakdown.innerHTML = `
+                <div class="score-item">
+                    <span>Estructura:</span>
+                    <span>${qualityScore.structure_score || 0}/25</span>
+                </div>
+                <div class="score-item">
+                    <span>Tipografía:</span>
+                    <span>${qualityScore.typography_score || 0}/25</span>
+                </div>
+                <div class="score-item">
+                    <span>Plataforma:</span>
+                    <span>${qualityScore.platform_compliance || 0}/25</span>
+                </div>
+                <div class="score-item">
+                    <span>Profesional:</span>
+                    <span>${qualityScore.professional_elements || 0}/25</span>
+                </div>
+            `;
+        } else {
+            console.error('.score-breakdown element not found');
+        }
+
+        // Update recommendations
+        const recommendations = document.querySelector('.recommendations');
+        if (recommendations) {
+            if (qualityScore.recommendations && qualityScore.recommendations.length > 0) {
+                let recHtml = `
+                    <h6><i class="fas fa-lightbulb me-2"></i>Recomendaciones</h6>
+                    <ul>
+                `;
+                qualityScore.recommendations.forEach(rec => {
+                    recHtml += `<li>${rec}</li>`;
+                });
+                recHtml += '</ul>';
+                recommendations.innerHTML = recHtml;
+                recommendations.style.display = 'block';
+            } else {
+                recommendations.style.display = 'none';
+            }
+        } else {
+            console.warn('.recommendations element not found - this may be optional');
+        }
+    }
+
+    function updateStatistics(statistics) {
+        if (!statistics) {
+            console.error('statistics data is missing');
+            return;
+        }
+
+        const statsPanel = document.querySelector('.statistics-panel');
+        if (!statsPanel) {
+            console.error('.statistics-panel element not found');
+            return;
+        }
+
+        const statValues = statsPanel.querySelectorAll('.stat-value');
+        if (statValues.length < 4) {
+            console.error('Expected at least 4 stat-value elements, found:', statValues.length);
+            return;
+        }
+        
+        statValues[0].textContent = statistics.chapters || 0;
+        statValues[1].textContent = statistics.sections || 0;
+        statValues[2].textContent = statistics.expressions || 0;
+        statValues[3].textContent = (statistics.word_count_estimated || 0).toLocaleString();
+        // Note: total_elements is not in statistics, it's in book_info
+    }
+
+    function showAlert(type, message) {
+        // Create and show alert message
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // Tooltip functionality
+    document.addEventListener('mouseover', function(e) {
+        if (e.target.classList.contains('element-tooltip')) {
+            // Tooltip functionality is handled by CSS
+        }
+    });
+});
+</script>
+{% endblock %}

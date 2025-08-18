@@ -1408,8 +1408,8 @@
                     <button class="action-btn secondary" onclick="showBookConfiguration()">
                         ⚙️ Configuración
                     </button>
-                    <button class="action-btn secondary" onclick="openFormattingViewer()">
-                        🎨 Formateo Profesional
+                    <button class="action-btn secondary" onclick="openProfessionalAspose()">
+                        📄 Documento Profesional
                     </button>
                 </div>
             </div>
@@ -1436,6 +1436,44 @@
                     {% if book.key_topics %}
                     <h4 style="margin-top: 25px; margin-bottom: 12px; color: #374151;">Descripción</h4>
                     <p style="text-indent: 0; font-style: italic;">{{ book.key_topics }}</p>
+                    {% endif %}
+                    
+                    {% if book.parameters and book.parameters.get('ai_metadata') %}
+                    {% set ai_meta = book.parameters.ai_metadata %}
+                    <div style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <h4 style="margin-bottom: 12px; color: #007bff; font-size: 1rem;">
+                            <i class="fas fa-robot" style="margin-right: 8px;"></i>Metadatos generados con IA
+                        </h4>
+                        
+                        {% if ai_meta.get('subtitle') %}
+                        <p style="margin-bottom: 8px;"><strong>Subtítulo:</strong> {{ ai_meta.subtitle }}</p>
+                        {% endif %}
+                        
+                        {% if ai_meta.get('description') %}
+                        <div style="margin-bottom: 8px;">
+                            <strong>Descripción comercial:</strong>
+                            <p style="font-style: italic; margin: 4px 0; text-indent: 0; font-size: 0.9rem;">
+                                {{ ai_meta.description[:150] }}{% if ai_meta.description|length > 150 %}...{% endif %}
+                            </p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if ai_meta.get('keywords') %}
+                        <p style="margin-bottom: 8px; font-size: 0.9rem;">
+                            <strong>Palabras clave:</strong> {{ ai_meta.keywords|join(', ') }}
+                        </p>
+                        {% endif %}
+                        
+                        {% if ai_meta.get('categories') %}
+                        <p style="margin-bottom: 8px; font-size: 0.9rem;">
+                            <strong>Categorías:</strong> {{ ai_meta.categories|join(', ') }}
+                        </p>
+                        {% endif %}
+                        
+                        <small style="color: #6c757d; font-style: italic;">
+                            Generado: {{ ai_meta.get('generated_at', '').split('T')[0] if ai_meta.get('generated_at') else 'N/A' }}
+                        </small>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -3002,16 +3040,16 @@
             `;
         }
 
-        // === FORMATTING VIEWER FUNCTION ===
+        // === PROFESSIONAL ASPOSE FUNCTION ===
         
-        function openFormattingViewer() {
-            // Redirect to the formatting viewer page
-            console.log('Opening formatting viewer for book ID:', bookData.id);
+        function openProfessionalAspose() {
+            // Redirect to the professional Aspose.Words viewer page
+            console.log('Opening professional Aspose viewer for book ID:', bookData.id);
             console.log('Book status:', bookData.status);
             console.log('Current URL:', window.location.href);
             
             // Store debug info in sessionStorage to persist across page loads
-            sessionStorage.setItem('formatting_debug', JSON.stringify({
+            sessionStorage.setItem('aspose_debug', JSON.stringify({
                 bookId: bookData.id,
                 bookStatus: bookData.status,
                 timestamp: new Date().toISOString(),
@@ -3025,7 +3063,7 @@
                 return;
             }
             
-            const targetUrl = `/books/book/${bookData.id}/formatting-viewer`;
+            const targetUrl = `/books/book/${bookData.id}/professional-ebook-viewer`;
             console.log('Navigating to:', targetUrl);
             
             // Add a small delay to see the logs

@@ -109,6 +109,7 @@ class DevelopmentConfig(BaseConfig):
     PRESERVE_CONTEXT_ON_EXCEPTION = True
     
     # Claude AI Configuration - Latest Model
+    ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
     CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-4-20250514')
     CLAUDE_MAX_TOKENS = int(os.environ.get('CLAUDE_MAX_TOKENS', '64000'))
     CLAUDE_TEMPERATURE = float(os.environ.get('CLAUDE_TEMPERATURE', '1'))

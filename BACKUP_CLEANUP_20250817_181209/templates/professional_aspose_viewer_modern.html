@@ -1,0 +1,2160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formateo Profesional - {{ book.title }}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --locked-color: #95a5a6;
+            --configurable-color: #3498db;
+            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            --border-radius: 16px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Modern Header */
+        .professional-header {
+            background: var(--gradient-bg);
+            color: white;
+            padding: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .professional-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.15"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.1;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .header-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        /* Configuration Status Banner */
+        .config-status-banner {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: var(--card-shadow);
+            border-left: 6px solid var(--success-color);
+        }
+
+        .config-status-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .original-config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .config-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .config-item.locked {
+            background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
+            border-color: var(--locked-color);
+        }
+
+        .config-item.configurable {
+            background: linear-gradient(135deg, #ebf8ff 0%, #dbeafe 100%);
+            border-color: var(--configurable-color);
+        }
+
+        /* Elemento de Audiencia - Layout independiente y compacto */
+        .original-config-grid .config-item:nth-child(6) {
+            grid-column: 1 / -1; /* Ocupa toda la línea disponible */
+            padding: 0.75rem 1rem; /* Padding vertical reducido para ser más compacto */
+            max-width: 100%; /* Asegurar que use todo el ancho disponible */
+            margin-top: 0.5rem; /* Pequeña separación del grupo anterior */
+        }
+
+        /* Ajustes específicos para el contenido del elemento de audiencia */
+        .original-config-grid .config-item:nth-child(6) .config-text {
+            flex: 1;
+            min-width: 0; /* Permite que el texto se ajuste correctamente */
+        }
+
+        .original-config-grid .config-item:nth-child(6) .config-value {
+            white-space: normal; /* Permite que el texto largo se envuelva */
+            line-height: 1.3; /* Espaciado de línea compacto pero legible */
+        }
+
+        .config-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: white;
+        }
+
+        .locked .config-icon {
+            background: var(--locked-color);
+        }
+
+        .configurable .config-icon {
+            background: var(--configurable-color);
+        }
+
+        .config-text {
+            flex: 1;
+        }
+
+        .config-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .config-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .lock-badge {
+            background: var(--locked-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+            min-height: calc(100vh - 300px);
+        }
+
+        /* Modern Configuration Panel */
+        .configuration-panel {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
+            max-height: calc(100vh - 4rem);
+        }
+
+        .config-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #34495e 100%);
+            color: white;
+            padding: 1.5rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .config-content {
+            padding: 1.5rem;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        /* Enhanced Section Styling */
+        .config-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .config-section.configurable {
+            background: linear-gradient(135deg, #ebf8ff 0%, #f0f9ff 100%);
+            border-color: var(--configurable-color);
+        }
+
+        .config-section.locked {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ecf0f1 100%);
+            border-color: var(--locked-color);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .config-section h6 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .section-badge.locked {
+            background: var(--locked-color);
+            color: white;
+        }
+
+        .section-badge.configurable {
+            background: var(--configurable-color);
+            color: white;
+        }
+
+        /* Enhanced Form Controls */
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            padding: 0.875rem 1rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            background: white;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--configurable-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Preview Panel */
+        .preview-panel {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            background: linear-gradient(135deg, var(--success-color) 0%, #229954 100%);
+            color: white;
+            padding: 1.5rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            gap: 0.75rem;
+        }
+
+        .preview-content {
+            flex: 1;
+            padding: 2rem;
+            min-height: 500px;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #64748b;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-professional {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #34495e 100%);
+            border: none;
+            color: white;
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-professional:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(44, 62, 80, 0.3);
+            color: white;
+        }
+
+        .btn-secondary-modern {
+            background: white;
+            border: 2px solid var(--configurable-color);
+            color: var(--configurable-color);
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary-modern:hover {
+            background: var(--configurable-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Loading States */
+        .loading {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .configuration-panel {
+                position: static;
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .original-config-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Tooltips */
+        .tooltip-trigger {
+            cursor: help;
+            position: relative;
+        }
+
+        .tooltip-trigger:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Professional Header -->
+    <div class="professional-header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i class="fas fa-magic me-3"></i>
+                    Formateo Profesional
+                </h1>
+                <p class="header-subtitle">
+                    Configuraciones avanzadas para "{{ book.title }}"
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Configuration Status Banner -->
+        <div class="config-status-banner">
+            <div class="config-status-title">
+                <i class="fas fa-check-circle text-success"></i>
+                Tu configuración original está protegida
+                <span class="badge bg-success ms-2">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    Aprobada el {{ book.architecture_approved_at.strftime('%d/%m/%Y') if book.architecture_approved_at else 'N/A' }}
+                </span>
+            </div>
+            
+            <p class="text-muted mb-3">
+                Las siguientes configuraciones fueron establecidas cuando creaste tu libro en <code>/books/generate</code> 
+                y están <strong>protegidas</strong> para mantener la coherencia de tu obra:
+            </p>
+
+            <div class="original-config-grid">
+                <!-- Configuraciones Inmutables -->
+                <div class="config-item locked">
+                    <div class="config-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="config-text">
+                        <div class="config-label">Género</div>
+                        <div class="config-value">{{ book.genre|title }}</div>
+                    </div>
+                    <div class="lock-badge">
+                        <i class="fas fa-lock"></i>
+                        Protegido
+                    </div>
+                </div>
+
+                <div class="config-item locked">
+                    <div class="config-icon">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </div>
+                    <div class="config-text">
+                        <div class="config-label">Formato</div>
+                        <div class="config-value">{{ book.format_size|title }}</div>
+                    </div>
+                    <div class="lock-badge">
+                        <i class="fas fa-lock"></i>
+                        Protegido
+                    </div>
+                </div>
+
+                <div class="config-item locked">
+                    <div class="config-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="config-text">
+                        <div class="config-label">Páginas</div>
+                        <div class="config-value">{{ book.page_count }} páginas</div>
+                    </div>
+                    <div class="lock-badge">
+                        <i class="fas fa-lock"></i>
+                        Protegido
+                    </div>
+                </div>
+
+                <div class="config-item locked">
+                    <div class="config-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="config-text">
+                        <div class="config-label">Capítulos</div>
+                        <div class="config-value">{{ book.chapter_count }} capítulos</div>
+                    </div>
+                    <div class="lock-badge">
+                        <i class="fas fa-lock"></i>
+                        Protegido
+                    </div>
+                </div>
+
+                <div class="config-item locked">
+                    <div class="config-icon">
+                        <i class="fas fa-align-left"></i>
+                    </div>
+                    <div class="config-text">
+                        <div class="config-label">Espaciado</div>
+                        <div class="config-value">{{ book.line_spacing|title }}</div>
+                    </div>
+                    <div class="lock-badge">
+                        <i class="fas fa-lock"></i>
+                        Protegido
+                    </div>
+                </div>
+
+                <div class="config-item locked">
+                    <div class="config-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="config-text">
+                        <div class="config-label">Audiencia</div>
+                        <div class="config-value">{{ book.target_audience|title }}</div>
+                    </div>
+                    <div class="lock-badge">
+                        <i class="fas fa-lock"></i>
+                        Protegido
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Configuration Interface -->
+        <div class="main-container">
+            <!-- Configuration Panel -->
+            <div class="configuration-panel">
+                <div class="config-header">
+                    <i class="fas fa-sliders-h"></i>
+                    Configuraciones Adicionales
+                </div>
+                
+                <div class="config-content">
+                    <form id="professionalConfigForm">
+                        <!-- Selector de Tipo de Salida -->
+                        <div class="config-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                            <h6 style="color: white;">
+                                <i class="fas fa-book-reader"></i>
+                                Tipo de Publicación
+                                <span class="section-badge" style="background: white; color: #667eea;">IMPORTANTE</span>
+                            </h6>
+                            
+                            <div class="output-type-selector d-flex align-items-center gap-4">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" name="outputType" id="outputEbook" value="ebook" checked>
+                                    <label class="form-check-label" for="outputEbook" style="color: white; font-weight: 600;">
+                                        <i class="fas fa-tablet-alt me-2"></i>E-book Digital
+                                    </label>
+                                </div>
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" name="outputType" id="outputPrint" value="print">
+                                    <label class="form-check-label" for="outputPrint" style="color: white; font-weight: 600;">
+                                        <i class="fas fa-print me-2"></i>Libro Impreso
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-light mt-3" style="background: rgba(255,255,255,0.9); border: none;">
+                                <small id="outputTypeDescription">
+                                    <strong>E-book:</strong> Optimizado para dispositivos digitales con tabla de contenidos navegable, metadatos completos y formato EPUB/MOBI.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Configuraciones Específicas de E-book -->
+                        <div class="config-section configurable ebook-only">
+                            <h6>
+                                <i class="fas fa-tablet-alt"></i>
+                                Configuración E-book
+                                <span class="section-badge configurable">E-book</span>
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Formato de Salida</label>
+                                <select class="form-select" id="ebookFormat">
+                                    <option value="epub" selected>EPUB (Recomendado)</option>
+                                    <option value="mobi">MOBI (Kindle clásico)</option>
+                                    <option value="azw3">AZW3 (Kindle nuevo)</option>
+                                    <option value="pdf">PDF (diseño fijo)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includeNavigableToc" checked>
+                                <label class="form-check-label" for="includeNavigableToc">
+                                    <i class="fas fa-list-ul me-1"></i>
+                                    Tabla de Contenidos Navegable
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includeMetadata" checked>
+                                <label class="form-check-label" for="includeMetadata">
+                                    <i class="fas fa-tags me-1"></i>
+                                    Metadatos Completos (SEO optimizado)
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="generateHighResCover" checked>
+                                <label class="form-check-label" for="generateHighResCover">
+                                    <i class="fas fa-image me-1"></i>
+                                    Portada HD (2560x1600px, 300 DPI)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Metadatos del E-book -->
+                        <div class="config-section configurable ebook-only">
+                            <h6>
+                                <i class="fas fa-info-circle"></i>
+                                Metadatos del Libro
+                                <span class="section-badge configurable">E-book</span>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-auto" id="generateMetadata">
+                                    <i class="fas fa-magic me-1"></i>
+                                    Generar con IA
+                                </button>
+                            </h6>
+                            
+                            <div class="alert alert-info mb-3" style="font-size: 0.85rem;">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Metadatos inteligentes:</strong> Estos campos se generan automáticamente basándose en tu arquitectura aprobada, pero puedes editarlos libremente.
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label d-flex align-items-center">
+                                    Subtítulo
+                                    <span class="badge bg-light text-dark ms-2" style="font-size: 0.7rem;">
+                                        <i class="fas fa-robot me-1"></i>IA Generado
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control" id="bookSubtitle" placeholder="Subtítulo opcional del libro" value="{{ book_metadata.subtitle if book_metadata and book_metadata.subtitle else '' }}">
+                                <div class="form-text">
+                                    <i class="fas fa-spinner fa-spin me-1 d-none" id="subtitleLoading"></i>
+                                    <span class="text-muted" id="subtitleStatus">{% if book_metadata and book_metadata.subtitle %}✓ Generado con Claude AI{% else %}Haz clic en "Generar con IA" para crear automáticamente{% endif %}</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label d-flex align-items-center">
+                                    Descripción / Sinopsis
+                                    <span class="badge bg-light text-dark ms-2" style="font-size: 0.7rem;">
+                                        <i class="fas fa-robot me-1"></i>IA Generado
+                                    </span>
+                                </label>
+                                <textarea class="form-control" id="bookDescription" rows="3" placeholder="Una sinopsis atractiva que enganche al lector...">{{ book_metadata.description if book_metadata and book_metadata.description else '' }}</textarea>
+                                <div class="form-text">
+                                    <i class="fas fa-spinner fa-spin me-1 d-none" id="descriptionLoading"></i>
+                                    <span class="text-muted" id="descriptionStatus">{% if book_metadata and book_metadata.description %}✓ Generado con Claude AI{% else %}Se generará automáticamente una descripción atractiva{% endif %}</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label d-flex align-items-center">
+                                    Palabras Clave
+                                    <span class="badge bg-light text-dark ms-2" style="font-size: 0.7rem;">
+                                        <i class="fas fa-robot me-1"></i>IA Generado
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control" id="bookKeywords" placeholder="Separadas por comas: novela, ficción, misterio..." value="{{ (', '.join(book_metadata.keywords) if book_metadata and book_metadata.keywords and isinstance(book_metadata.keywords, list) else (book_metadata.keywords if book_metadata and book_metadata.keywords else '')) }}">
+                                <div class="form-text">
+                                    <i class="fas fa-spinner fa-spin me-1 d-none" id="keywordsLoading"></i>
+                                    <span class="text-muted" id="keywordsStatus">{% if book_metadata and book_metadata.keywords %}✓ Generado con Claude AI{% else %}Se generarán automáticamente palabras clave SEO optimizadas{% endif %}</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label d-flex align-items-center">
+                                    ISBN (Opcional)
+                                    <span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">
+                                        <i class="fas fa-user-edit me-1"></i>Usuario
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control" id="bookIsbn" placeholder="978-x-xxxxx-xxx-x">
+                                <div class="form-text text-muted">
+                                    El ISBN debe ser configurado manualmente si tienes uno asignado
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label d-flex align-items-center">
+                                    Categorías
+                                    <span class="badge bg-light text-dark ms-2" style="font-size: 0.7rem;">
+                                        <i class="fas fa-robot me-1"></i>IA Sugerido
+                                    </span>
+                                </label>
+                                <select class="form-select" id="bookCategories" multiple size="8">
+                                    <!-- FICCIÓN -->
+                                    <optgroup label="🎭 FICCIÓN">
+                                        <option value="fiction-general">Ficción General</option>
+                                        <option value="romance">Romance</option>
+                                        <option value="mystery">Misterio</option>
+                                        <option value="thriller">Thriller</option>
+                                        <option value="horror">Terror</option>
+                                        <option value="sci-fi">Ciencia Ficción</option>
+                                        <option value="fantasy">Fantasía</option>
+                                        <option value="adventure">Aventura</option>
+                                        <option value="drama">Drama</option>
+                                        <option value="historical-fiction">Ficción Histórica</option>
+                                        <option value="crime">Crímenes/Policiacas</option>
+                                        <option value="action">Acción</option>
+                                        <option value="comedy">Comedia</option>
+                                        <option value="western">Western</option>
+                                        <option value="dystopian">Distópico</option>
+                                    </optgroup>
+                                    
+                                    <!-- NO FICCIÓN -->
+                                    <optgroup label="📚 NO FICCIÓN">
+                                        <option value="non-fiction-general">No Ficción General</option>
+                                        <option value="biography">Biografía/Autobiografía</option>
+                                        <option value="memoir">Memorias</option>
+                                        <option value="history">Historia</option>
+                                        <option value="politics">Política</option>
+                                        <option value="philosophy">Filosofía</option>
+                                        <option value="religion">Religión/Espiritualidad</option>
+                                        <option value="psychology">Psicología</option>
+                                        <option value="sociology">Sociología</option>
+                                        <option value="anthropology">Antropología</option>
+                                        <option value="true-crime">Crímenes Reales</option>
+                                        <option value="journalism">Periodismo</option>
+                                        <option value="essay">Ensayo</option>
+                                    </optgroup>
+                                    
+                                    <!-- CIENCIAS Y TÉCNICAS -->
+                                    <optgroup label="🔬 CIENCIAS Y TÉCNICAS">
+                                        <option value="science">Ciencias</option>
+                                        <option value="medicine">Medicina/Salud</option>
+                                        <option value="technology">Tecnología</option>
+                                        <option value="engineering">Ingeniería</option>
+                                        <option value="mathematics">Matemáticas</option>
+                                        <option value="physics">Física</option>
+                                        <option value="chemistry">Química</option>
+                                        <option value="biology">Biología</option>
+                                        <option value="computer-science">Informática</option>
+                                        <option value="programming">Programación</option>
+                                        <option value="artificial-intelligence">Inteligencia Artificial</option>
+                                        <option value="cybersecurity">Ciberseguridad</option>
+                                    </optgroup>
+                                    
+                                    <!-- NEGOCIOS Y ECONOMÍA -->
+                                    <optgroup label="💼 NEGOCIOS Y ECONOMÍA">
+                                        <option value="business">Negocios</option>
+                                        <option value="economics">Economía</option>
+                                        <option value="finance">Finanzas</option>
+                                        <option value="investing">Inversiones</option>
+                                        <option value="entrepreneurship">Emprendimiento</option>
+                                        <option value="marketing">Marketing</option>
+                                        <option value="management">Gestión/Management</option>
+                                        <option value="leadership">Liderazgo</option>
+                                        <option value="productivity">Productividad</option>
+                                        <option value="career">Desarrollo Profesional</option>
+                                        <option value="sales">Ventas</option>
+                                        <option value="real-estate">Bienes Raíces</option>
+                                    </optgroup>
+                                    
+                                    <!-- EDUCACIÓN Y DESARROLLO -->
+                                    <optgroup label="🎓 EDUCACIÓN Y DESARROLLO">
+                                        <option value="education">Educación</option>
+                                        <option value="academic">Académico</option>
+                                        <option value="self-help">Autoayuda</option>
+                                        <option value="personal-development">Desarrollo Personal</option>
+                                        <option value="motivation">Motivación</option>
+                                        <option value="language-learning">Aprendizaje de Idiomas</option>
+                                        <option value="study-guides">Guías de Estudio</option>
+                                        <option value="textbooks">Libros de Texto</option>
+                                        <option value="reference">Referencia</option>
+                                        <option value="how-to">Guías Prácticas</option>
+                                        <option value="tutorials">Tutoriales</option>
+                                        <option value="skills">Desarrollo de Habilidades</option>
+                                    </optgroup>
+                                    
+                                    <!-- ARTES Y CULTURA -->
+                                    <optgroup label="🎨 ARTES Y CULTURA">
+                                        <option value="art">Arte</option>
+                                        <option value="design">Diseño</option>
+                                        <option value="photography">Fotografía</option>
+                                        <option value="music">Música</option>
+                                        <option value="cinema">Cine</option>
+                                        <option value="theater">Teatro</option>
+                                        <option value="literature">Literatura</option>
+                                        <option value="poetry">Poesía</option>
+                                        <option value="cultural-studies">Estudios Culturales</option>
+                                        <option value="fashion">Moda</option>
+                                        <option value="architecture">Arquitectura</option>
+                                        <option value="crafts">Artesanías</option>
+                                    </optgroup>
+                                    
+                                    <!-- ESTILO DE VIDA -->
+                                    <optgroup label="🏠 ESTILO DE VIDA">
+                                        <option value="cooking">Cocina/Gastronomía</option>
+                                        <option value="fitness">Fitness/Ejercicio</option>
+                                        <option value="sports">Deportes</option>
+                                        <option value="travel">Viajes</option>
+                                        <option value="home-garden">Hogar y Jardín</option>
+                                        <option value="health-wellness">Salud y Bienestar</option>
+                                        <option value="relationships">Relaciones</option>
+                                        <option value="parenting">Crianza/Paternidad</option>
+                                        <option value="family">Familia</option>
+                                        <option value="pets">Mascotas</option>
+                                        <option value="hobbies">Hobbies</option>
+                                        <option value="lifestyle">Estilo de Vida</option>
+                                    </optgroup>
+                                    
+                                    <!-- ESPECIALES -->
+                                    <optgroup label="👥 AUDIENCIAS ESPECÍFICAS">
+                                        <option value="children">Infantil</option>
+                                        <option value="young-adult">Juvenil</option>
+                                        <option value="teen">Adolescentes</option>
+                                        <option value="seniors">Tercera Edad</option>
+                                        <option value="women">Mujeres</option>
+                                        <option value="men">Hombres</option>
+                                    </optgroup>
+                                    
+                                    <!-- FORMATOS ESPECIALES -->
+                                    <optgroup label="📖 FORMATOS ESPECIALES">
+                                        <option value="comics">Cómics</option>
+                                        <option value="graphic-novels">Novelas Gráficas</option>
+                                        <option value="manga">Manga</option>
+                                        <option value="picture-books">Libros Ilustrados</option>
+                                        <option value="workbooks">Libros de Ejercicios</option>
+                                        <option value="journals">Diarios/Journals</option>
+                                        <option value="anthologies">Antologías</option>
+                                        <option value="collections">Colecciones</option>
+                                    </optgroup>
+                                </select>
+                                <div class="form-text">
+                                    <i class="fas fa-spinner fa-spin me-1 d-none" id="categoriesLoading"></i>
+                                    <span class="text-muted" id="categoriesStatus">Se seleccionarán automáticamente las categorías más apropiadas</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuraciones Específicas de Impresión -->
+                        <div class="config-section configurable print-only" style="display: none;">
+                            <h6>
+                                <i class="fas fa-print"></i>
+                                Configuración de Impresión
+                                <span class="section-badge configurable">Impresión</span>
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Márgenes (mm)</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="number" class="form-control" id="marginTop" value="20" placeholder="Superior">
+                                        <small class="text-muted">Superior</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" class="form-control" id="marginBottom" value="20" placeholder="Inferior">
+                                        <small class="text-muted">Inferior</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" class="form-control" id="marginLeft" value="25" placeholder="Izquierdo">
+                                        <small class="text-muted">Izquierdo</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" class="form-control" id="marginRight" value="20" placeholder="Derecho">
+                                        <small class="text-muted">Derecho</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Sangría (mm)</label>
+                                <input type="number" class="form-control" id="bleedSize" value="3" min="0" max="10">
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includeCropMarks" checked>
+                                <label class="form-check-label" for="includeCropMarks">
+                                    <i class="fas fa-cut me-1"></i>
+                                    Incluir Marcas de Corte
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="useHighResImages" checked>
+                                <label class="form-check-label" for="useHighResImages">
+                                    <i class="fas fa-images me-1"></i>
+                                    Imágenes de Alta Resolución (300 DPI)
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includePrintIcc" checked>
+                                <label class="form-check-label" for="includePrintIcc">
+                                    <i class="fas fa-palette me-1"></i>
+                                    Perfil de Color CMYK
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Configuraciones de Tipografía -->
+                        <div class="config-section configurable">
+                            <h6>
+                                <i class="fas fa-font"></i>
+                                Tipografía y Estilo
+                                <span class="section-badge configurable">Configurable</span>
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Fuente del Cuerpo</label>
+                                <select class="form-select" id="bodyFontFamily">
+                                    <option value="Times New Roman" selected>Times New Roman (Clásica)</option>
+                                    <option value="Garamond">Garamond (Elegante)</option>
+                                    <option value="Georgia">Georgia (Legible)</option>
+                                    <option value="Crimson Pro">Crimson Pro (Moderna)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tamaño de Fuente</label>
+                                <select class="form-select" id="bodyFontSize">
+                                    <option value="10">10pt (Compacto)</option>
+                                    <option value="11" selected>11pt (Estándar)</option>
+                                    <option value="12">12pt (Cómodo)</option>
+                                    <option value="13">13pt (Grande)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Justificación de Texto</label>
+                                <select class="form-select" id="justifyText">
+                                    <option value="true" selected>Justificado (Profesional)</option>
+                                    <option value="false">Alineado a la izquierda</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Configuraciones de Estructura -->
+                        <div class="config-section configurable">
+                            <h6>
+                                <i class="fas fa-building"></i>
+                                Elementos del Libro
+                                <span class="section-badge configurable">Configurable</span>
+                            </h6>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includeCoverPage" checked>
+                                <label class="form-check-label" for="includeCoverPage">
+                                    Página de Portada
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includeCopyrightPage" checked>
+                                <label class="form-check-label" for="includeCopyrightPage">
+                                    Página de Copyright
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includeDedication" checked>
+                                <label class="form-check-label" for="includeDedication">
+                                    Dedicatoria
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includeAboutAuthor" checked>
+                                <label class="form-check-label" for="includeAboutAuthor">
+                                    Sobre el Autor
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3 ebook-only">
+                                <input class="form-check-input" type="checkbox" id="includeBackCover" checked>
+                                <label class="form-check-label" for="includeBackCover">
+                                    <i class="fas fa-book-open me-1"></i>
+                                    Contraportada / Sinopsis
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3 ebook-only">
+                                <input class="form-check-input" type="checkbox" id="includeReferences" checked>
+                                <label class="form-check-label" for="includeReferences">
+                                    <i class="fas fa-quote-right me-1"></i>
+                                    Referencias y Bibliografía
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Configuraciones de Calidad -->
+                        <div class="config-section configurable">
+                            <h6>
+                                <i class="fas fa-star"></i>
+                                Opciones de Calidad
+                                <span class="section-badge configurable">Configurable</span>
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Nivel de Calidad</label>
+                                <select class="form-select" id="qualityLevel">
+                                    <option value="75">Estándar (75%)</option>
+                                    <option value="85" selected>Profesional (85%)</option>
+                                    <option value="95">Premium (95%)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="optimizeForPrint" checked>
+                                <label class="form-check-label" for="optimizeForPrint">
+                                    Optimizar para Impresión
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="includeBookmarks" checked>
+                                <label class="form-check-label" for="includeBookmarks">
+                                    Incluir Marcadores
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Información de Autor -->
+                        <div class="config-section configurable">
+                            <h6>
+                                <i class="fas fa-user-edit"></i>
+                                Información del Autor
+                                <span class="section-badge configurable">Configurable</span>
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Nombre del Autor</label>
+                                <input type="text" class="form-control" id="authorName" value="{{ user_name }}" placeholder="Tu nombre como aparecerá en el libro">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-secondary-modern" id="generatePreview">
+                        <i class="fas fa-eye"></i>
+                        Ver Preview
+                    </button>
+                    <button type="button" class="btn btn-professional" id="generateFullDocument">
+                        <i class="fas fa-download"></i>
+                        Generar Libro
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="preview-panel">
+                <div class="preview-header">
+                    <i class="fas fa-monitor"></i>
+                    Vista Previa del Documento
+                    <div class="ms-auto">
+                        <button class="btn btn-sm btn-outline-light" id="intelligentAnalysis">
+                            <i class="fas fa-brain"></i>
+                            Análisis Inteligente
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="preview-content" id="previewContent">
+                    <div class="text-center">
+                        <i class="fas fa-file-alt fa-3x mb-3 text-muted"></i>
+                        <p>Haz clic en "Ver Preview" para generar una vista previa<br>con tus configuraciones adicionales</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+        <div class="d-flex align-items-center justify-content-center h-100">
+            <div class="text-center text-white">
+                <div class="spinner-border mb-3" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <h5 id="loadingText">Procesando...</h5>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Configuration data from Flask
+        const bookId = {{ book.id }};
+        const initialConfig = {{ config_json|safe }};
+        
+        // Initialize form with locked configurations
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Configuración inicial:', initialConfig);
+            
+            // Show locked configurations are already applied
+            updateLockedConfigDisplay();
+            
+            // Initialize output type handling
+            initializeOutputTypeHandling();
+            
+            // Initialize multiple select for categories
+            initializeCategorySelect();
+            
+            // Initialize metadata generation
+            initializeMetadataGeneration();
+            
+            // Auto-generate metadata on page load
+            autoGenerateMetadataOnLoad();
+        });
+
+        function updateLockedConfigDisplay() {
+            // Visual feedback that locked configs are applied
+            const lockedItems = document.querySelectorAll('.config-item.locked');
+            lockedItems.forEach(item => {
+                item.style.opacity = '1';
+                item.title = 'Esta configuración fue establecida en /books/generate y está protegida';
+            });
+        }
+
+        // Preview Generation
+        document.getElementById('generatePreview').addEventListener('click', function() {
+            generatePreview();
+        });
+
+        // Full Document Generation
+        document.getElementById('generateFullDocument').addEventListener('click', function() {
+            generateFullDocument();
+        });
+
+        // Intelligent Analysis
+        document.getElementById('intelligentAnalysis').addEventListener('click', function() {
+            performIntelligentAnalysis();
+        });
+
+        function generatePreview() {
+            showLoading('Generando vista previa...');
+            
+            const config = getFormConfiguration();
+            
+            fetch(`/books/book/${bookId}/ebook-config-preview`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayPreviewSuccess(data);
+                } else {
+                    displayError('Error generando preview: ' + data.error);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                displayError('Error: ' + error.message);
+            });
+        }
+
+        function generateFullDocument() {
+            showLoading('Generando documento completo...');
+            
+            const config = getFormConfiguration();
+            
+            fetch(`/books/book/${bookId}/ebook-generate-full`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayDocumentSuccess(data);
+                } else {
+                    displayError('Error generando documento: ' + data.error);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                displayError('Error: ' + error.message);
+            });
+        }
+
+        function performIntelligentAnalysis() {
+            showLoading('Realizando análisis inteligente...');
+            
+            fetch(`/books/book/${bookId}/aspose-intelligent-analysis`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayAnalysisResults(data);
+                } else {
+                    displayError('Error en análisis: ' + data.error);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                displayError('Error: ' + error.message);
+            });
+        }
+
+        function getFormConfiguration() {
+            // Determinar tipo de salida
+            const outputType = document.querySelector('input[name="outputType"]:checked').value;
+            
+            // Configuración base
+            const formConfig = {
+                // Tipo de salida
+                output_type: outputType,
+                
+                // Configuraciones adicionales del formulario
+                body_font_family: document.getElementById('bodyFontFamily').value,
+                body_font_size: parseFloat(document.getElementById('bodyFontSize').value),
+                justify_text: document.getElementById('justifyText').value === 'true',
+                include_cover_page: document.getElementById('includeCoverPage').checked,
+                include_copyright_page: document.getElementById('includeCopyrightPage').checked,
+                include_dedication: document.getElementById('includeDedication').checked,
+                include_about_author: document.getElementById('includeAboutAuthor').checked,
+                quality_level: parseInt(document.getElementById('qualityLevel').value),
+                optimize_for_print: document.getElementById('optimizeForPrint').checked,
+                include_bookmarks: document.getElementById('includeBookmarks').checked,
+                author_name: document.getElementById('authorName').value,
+                
+                // Configuraciones inmutables (respetadas del original)
+                page_format: initialConfig.page_format,
+                line_spacing: initialConfig.line_spacing,
+                include_table_of_contents: initialConfig.include_table_of_contents,
+                include_introduction: initialConfig.include_introduction,
+                include_conclusion: initialConfig.include_conclusion
+            };
+            
+            // Configuraciones específicas de E-book
+            if (outputType === 'ebook') {
+                formConfig.ebook_format = document.getElementById('ebookFormat').value;
+                formConfig.include_navigable_toc = document.getElementById('includeNavigableToc').checked;
+                formConfig.include_metadata = document.getElementById('includeMetadata').checked;
+                formConfig.generate_high_res_cover = document.getElementById('generateHighResCover').checked;
+                formConfig.include_back_cover = document.getElementById('includeBackCover')?.checked || false;
+                formConfig.include_references = document.getElementById('includeReferences')?.checked || false;
+                
+                // Metadatos
+                formConfig.book_subtitle = document.getElementById('bookSubtitle').value;
+                formConfig.book_description = document.getElementById('bookDescription').value;
+                formConfig.book_keywords = document.getElementById('bookKeywords').value;
+                formConfig.book_isbn = document.getElementById('bookIsbn').value;
+                
+                // Categorías seleccionadas
+                const categoriesSelect = document.getElementById('bookCategories');
+                formConfig.book_categories = Array.from(categoriesSelect.selectedOptions).map(option => option.value);
+                
+                // Especificaciones de portada para e-book
+                formConfig.cover_specs = getCoverSpecifications();
+            }
+            
+            // Configuraciones específicas de Impresión
+            if (outputType === 'print') {
+                formConfig.margin_top = parseFloat(document.getElementById('marginTop').value);
+                formConfig.margin_bottom = parseFloat(document.getElementById('marginBottom').value);
+                formConfig.margin_left = parseFloat(document.getElementById('marginLeft').value);
+                formConfig.margin_right = parseFloat(document.getElementById('marginRight').value);
+                formConfig.bleed_size = parseFloat(document.getElementById('bleedSize').value);
+                formConfig.include_crop_marks = document.getElementById('includeCropMarks').checked;
+                formConfig.use_high_res_images = document.getElementById('useHighResImages').checked;
+                formConfig.include_print_icc = document.getElementById('includePrintIcc').checked;
+                
+                // Especificaciones de portada para impresión
+                formConfig.cover_specs = getCoverSpecifications();
+            }
+            
+            return formConfig;
+        }
+
+        function displayPreviewSuccess(data) {
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = `
+                <div class="text-center">
+                    <div class="alert alert-success mb-4">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>¡Preview generado exitosamente!</strong>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-chart-bar me-2"></i>Análisis</h6>
+                                    <p class="mb-1"><strong>Páginas:</strong> ${data.page_count}</p>
+                                    <p class="mb-1"><strong>Tamaño:</strong> ${data.analysis.file_size_mb} MB</p>
+                                    <p class="mb-0"><strong>Calidad:</strong> ${data.analysis.quality_score}/100</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-download me-2"></i>Descarga</h6>
+                                    <a href="${data.preview_url}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-file-word me-1"></i>
+                                        Descargar Preview
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayDocumentSuccess(data) {
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = `
+                <div class="text-center">
+                    <div class="alert alert-success mb-4">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>¡Documento completo generado!</strong>
+                    </div>
+                    
+                    <div class="card border-0 shadow-lg">
+                        <div class="card-body p-4">
+                            <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Tu libro está listo</h5>
+                            <p class="card-text text-muted mb-4">
+                                Tamaño: ${data.file_size_mb} MB | Calidad: ${data.analysis.quality_score}/100
+                            </p>
+                            <a href="${data.download_url}" class="btn btn-professional btn-lg">
+                                <i class="fas fa-download me-2"></i>
+                                Descargar Libro Completo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayAnalysisResults(data) {
+            const previewContent = document.getElementById('previewContent');
+            const analysis = data.analysis;
+            
+            previewContent.innerHTML = `
+                <div class="analysis-results">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-brain me-2"></i>
+                        <strong>Análisis Inteligente Completado</strong>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-tags me-2"></i>Características</h6>
+                                    <p class="mb-1"><strong>Género:</strong> ${analysis.genre}</p>
+                                    <p class="mb-1"><strong>Audiencia:</strong> ${analysis.target_audience}</p>
+                                    <p class="mb-0"><strong>Nivel:</strong> ${analysis.estimated_reading_level}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-lightbulb me-2"></i>Recomendaciones</h6>
+                                    ${data.recommendations.structure.map(rec => `<p class="mb-1 small">• ${rec}</p>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6><i class="fas fa-star me-2"></i>Configuraciones Sugeridas</h6>
+                        <div class="row g-2">
+                            ${data.suggested_configurations.slice(0, 2).map(config => `
+                                <div class="col-md-6">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title small">${config.name}</h6>
+                                            <p class="card-text small text-muted">${config.description}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayError(message) {
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = `
+                <div class="text-center">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${message}
+                    </div>
+                </div>
+            `;
+        }
+
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.remove('d-none');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('d-none');
+        }
+
+        // Funciones para manejo dinámico de configuraciones
+        function initializeOutputTypeHandling() {
+            const ebookRadio = document.getElementById('outputEbook');
+            const printRadio = document.getElementById('outputPrint');
+            const description = document.getElementById('outputTypeDescription');
+            
+            // Handlers para cambio de tipo
+            ebookRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    showEbookConfiguration();
+                    updateDescription('ebook');
+                }
+            });
+            
+            printRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    showPrintConfiguration();
+                    updateDescription('print');
+                }
+            });
+            
+            // Mostrar configuración inicial
+            showEbookConfiguration();
+        }
+        
+        function showEbookConfiguration() {
+            // Mostrar secciones específicas de e-book
+            document.querySelectorAll('.ebook-only').forEach(el => {
+                el.style.display = 'block';
+            });
+            
+            // Ocultar secciones específicas de impresión
+            document.querySelectorAll('.print-only').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Actualizar botones
+            updateActionButtons('ebook');
+        }
+        
+        function showPrintConfiguration() {
+            // Ocultar secciones específicas de e-book
+            document.querySelectorAll('.ebook-only').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Mostrar secciones específicas de impresión
+            document.querySelectorAll('.print-only').forEach(el => {
+                el.style.display = 'block';
+            });
+            
+            // Actualizar botones
+            updateActionButtons('print');
+        }
+        
+        function updateDescription(type) {
+            const description = document.getElementById('outputTypeDescription');
+            if (type === 'ebook') {
+                description.innerHTML = '<strong>E-book:</strong> Optimizado para dispositivos digitales con tabla de contenidos navegable, metadatos completos y formato EPUB/MOBI.';
+            } else {
+                description.innerHTML = '<strong>Impresión:</strong> Configurado para impresión profesional con márgenes, sangría, marcas de corte y colores CMYK.';
+            }
+        }
+        
+        function updateActionButtons(type) {
+            const generateBtn = document.getElementById('generateFullDocument');
+            const previewBtn = document.getElementById('generatePreview');
+            
+            if (type === 'ebook') {
+                generateBtn.innerHTML = '<i class="fas fa-download"></i> Generar E-book';
+                previewBtn.innerHTML = '<i class="fas fa-tablet-alt"></i> Vista Previa Digital';
+            } else {
+                generateBtn.innerHTML = '<i class="fas fa-print"></i> Generar para Impresión';
+                previewBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Vista Previa PDF';
+            }
+        }
+        
+        function initializeCategorySelect() {
+            // Mejorar la experiencia del selector múltiple
+            const categorySelect = document.getElementById('bookCategories');
+            if (categorySelect) {
+                categorySelect.addEventListener('change', function() {
+                    const selectedCount = this.selectedOptions.length;
+                    const label = categorySelect.previousElementSibling;
+                    label.textContent = `Categorías ${selectedCount > 0 ? '(' + selectedCount + ' seleccionadas)' : ''}`;
+                });
+            }
+        }
+        
+        function getCoverSpecifications() {
+            const outputType = document.querySelector('input[name="outputType"]:checked').value;
+            
+            if (outputType === 'ebook') {
+                return {
+                    width: 2560,
+                    height: 1600,
+                    dpi: 300,
+                    format: 'PNG',
+                    ratio: '1.6:1'
+                };
+            } else {
+                return {
+                    width: 2100,
+                    height: 2800,
+                    dpi: 300,
+                    format: 'PDF',
+                    ratio: '1.33:1'
+                };
+            }
+        }
+        
+        // Funciones para generación automática de metadatos
+        function initializeMetadataGeneration() {
+            const generateBtn = document.getElementById('generateMetadata');
+            if (generateBtn) {
+                generateBtn.addEventListener('click', function() {
+                    generateAIMetadata();
+                });
+            }
+        }
+        
+        function autoGenerateMetadataOnLoad() {
+            // Auto-generar metadatos solo si están vacíos
+            const subtitle = document.getElementById('bookSubtitle');
+            const description = document.getElementById('bookDescription');
+            const keywords = document.getElementById('bookKeywords');
+            
+            if (!subtitle.value && !description.value && !keywords.value) {
+                setTimeout(() => {
+                    generateAIMetadata(true); // true = silent mode (without user notification)
+                }, 1000);
+            }
+        }
+        
+        function generateAIMetadata(silentMode = false) {
+            if (!silentMode) {
+                showMetadataLoading();
+            }
+            
+            const requestData = {
+                book_id: bookId,
+                book_title: initialConfig.book_title || "{{ book.title }}",
+                genre: "{{ book.genre }}",
+                architecture: initialConfig.architecture || {},
+                content_sample: initialConfig.content_sample || ""
+            };
+            
+            fetch(`/books/book/${bookId}/aspose-generate-metadata`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideMetadataLoading();
+                if (data.success) {
+                    populateGeneratedMetadata(data.metadata);
+                    updateMetadataStatus('success');
+                    if (!silentMode) {
+                        showMetadataSuccessMessage();
+                    }
+                } else {
+                    updateMetadataStatus('error', data.error);
+                    if (!silentMode) {
+                        showError('Error generando metadatos: ' + data.error);
+                    }
+                }
+            })
+            .catch(error => {
+                hideMetadataLoading();
+                updateMetadataStatus('error', error.message);
+                if (!silentMode) {
+                    showError('Error: ' + error.message);
+                }
+            });
+        }
+        
+        function populateGeneratedMetadata(metadata) {
+            // Poblar los campos con los metadatos generados
+            if (metadata.subtitle) {
+                document.getElementById('bookSubtitle').value = metadata.subtitle;
+            }
+            
+            if (metadata.description) {
+                document.getElementById('bookDescription').value = metadata.description;
+            }
+            
+            if (metadata.keywords) {
+                document.getElementById('bookKeywords').value = metadata.keywords;
+            }
+            
+            // Seleccionar categorías automáticamente con mapeo inteligente
+            if (metadata.categories && Array.isArray(metadata.categories)) {
+                const categoriesSelect = document.getElementById('bookCategories');
+                // Limpiar selecciones previas
+                Array.from(categoriesSelect.options).forEach(option => option.selected = false);
+                
+                // Función de mapeo expandida de categorías descriptivas a valores del select
+                const categoryMapping = {
+                    // === FICCIÓN ===
+                    'ficción': 'fiction-general',
+                    'ficción general': 'fiction-general',
+                    'novela': 'fiction-general',
+                    'narrativa': 'fiction-general',
+                    'literatura': 'literature',
+                    'romance': 'romance',
+                    'romántico': 'romance',
+                    'amor': 'romance',
+                    'misterio': 'mystery',
+                    'misterioso': 'mystery',
+                    'detective': 'mystery',
+                    'thriller': 'thriller',
+                    'suspense': 'thriller',
+                    'intriga': 'thriller',
+                    'terror': 'horror',
+                    'horror': 'horror',
+                    'miedo': 'horror',
+                    'ciencia ficción': 'sci-fi',
+                    'sci-fi': 'sci-fi',
+                    'científico': 'sci-fi',
+                    'futurista': 'sci-fi',
+                    'fantasía': 'fantasy',
+                    'fantástico': 'fantasy',
+                    'magia': 'fantasy',
+                    'aventura': 'adventure',
+                    'aventurero': 'adventure',
+                    'épico': 'adventure',
+                    'drama': 'drama',
+                    'dramático': 'drama',
+                    'histórico': 'historical-fiction',
+                    'histórica': 'historical-fiction',
+                    'época': 'historical-fiction',
+                    'crimen': 'crime',
+                    'criminal': 'crime',
+                    'policíaco': 'crime',
+                    'policial': 'crime',
+                    'acción': 'action',
+                    'comedia': 'comedy',
+                    'humor': 'comedy',
+                    'cómico': 'comedy',
+                    'western': 'western',
+                    'distópico': 'dystopian',
+                    'distopía': 'dystopian',
+                    'utopía': 'dystopian',
+                    
+                    // === NO FICCIÓN ===
+                    'no ficción': 'non-fiction-general',
+                    'biografía': 'biography',
+                    'autobiografía': 'biography',
+                    'vida': 'biography',
+                    'memorias': 'memoir',
+                    'memoir': 'memoir',
+                    'recuerdos': 'memoir',
+                    'historia': 'history',
+                    'histórico': 'history',
+                    'pasado': 'history',
+                    'política': 'politics',
+                    'político': 'politics',
+                    'gobierno': 'politics',
+                    'filosofía': 'philosophy',
+                    'filosófico': 'philosophy',
+                    'pensamiento': 'philosophy',
+                    'religión': 'religion',
+                    'espiritual': 'religion',
+                    'espiritualidad': 'religion',
+                    'fe': 'religion',
+                    'psicología': 'psychology',
+                    'psicológico': 'psychology',
+                    'mente': 'psychology',
+                    'sociología': 'sociology',
+                    'social': 'sociology',
+                    'sociedad': 'sociology',
+                    'antropología': 'anthropology',
+                    'cultural': 'anthropology',
+                    'crímenes reales': 'true-crime',
+                    'true crime': 'true-crime',
+                    'periodismo': 'journalism',
+                    'reportaje': 'journalism',
+                    'ensayo': 'essay',
+                    
+                    // === CIENCIAS Y TÉCNICAS ===
+                    'ciencia': 'science',
+                    'ciencias': 'science',
+                    'científico': 'science',
+                    'medicina': 'medicine',
+                    'médico': 'medicine',
+                    'salud': 'medicine',
+                    'tecnología': 'technology',
+                    'técnico': 'technology',
+                    'ingeniería': 'engineering',
+                    'ingeniero': 'engineering',
+                    'matemáticas': 'mathematics',
+                    'matemático': 'mathematics',
+                    'cálculo': 'mathematics',
+                    'física': 'physics',
+                    'físico': 'physics',
+                    'química': 'chemistry',
+                    'químico': 'chemistry',
+                    'biología': 'biology',
+                    'biológico': 'biology',
+                    'informática': 'computer-science',
+                    'computación': 'computer-science',
+                    'sistemas': 'computer-science',
+                    'programación': 'programming',
+                    'código': 'programming',
+                    'software': 'programming',
+                    'inteligencia artificial': 'artificial-intelligence',
+                    'ia': 'artificial-intelligence',
+                    'machine learning': 'artificial-intelligence',
+                    'ciberseguridad': 'cybersecurity',
+                    'seguridad': 'cybersecurity',
+                    'hacking': 'cybersecurity',
+                    
+                    // === NEGOCIOS Y ECONOMÍA ===
+                    'negocios': 'business',
+                    'empresarial': 'business',
+                    'empresa': 'business',
+                    'economía': 'economics',
+                    'económico': 'economics',
+                    'finanzas': 'finance',
+                    'financiero': 'finance',
+                    'dinero': 'finance',
+                    'inversiones': 'investing',
+                    'invertir': 'investing',
+                    'emprendimiento': 'entrepreneurship',
+                    'emprendedor': 'entrepreneurship',
+                    'startup': 'entrepreneurship',
+                    'marketing': 'marketing',
+                    'mercadeo': 'marketing',
+                    'publicidad': 'marketing',
+                    'gestión': 'management',
+                    'management': 'management',
+                    'administración': 'management',
+                    'liderazgo': 'leadership',
+                    'líder': 'leadership',
+                    'productividad': 'productivity',
+                    'eficiencia': 'productivity',
+                    'desarrollo profesional': 'career',
+                    'carrera': 'career',
+                    'profesional': 'career',
+                    'ventas': 'sales',
+                    'vender': 'sales',
+                    'bienes raíces': 'real-estate',
+                    'inmobiliario': 'real-estate',
+                    'propiedades': 'real-estate',
+                    
+                    // === EDUCACIÓN Y DESARROLLO ===
+                    'educación': 'education',
+                    'educativo': 'education',
+                    'enseñanza': 'education',
+                    'académico': 'academic',
+                    'universidad': 'academic',
+                    'universitario': 'academic',
+                    'investigación': 'academic',
+                    'autoayuda': 'self-help',
+                    'auto-ayuda': 'self-help',
+                    'desarrollo personal': 'personal-development',
+                    'crecimiento personal': 'personal-development',
+                    'superación': 'personal-development',
+                    'motivación': 'motivation',
+                    'motivacional': 'motivation',
+                    'inspiración': 'motivation',
+                    'idiomas': 'language-learning',
+                    'lingüística': 'language-learning',
+                    'lengua': 'language-learning',
+                    'aprendizaje de idiomas': 'language-learning',
+                    'alemán como lengua extranjera': 'language-learning',
+                    'francés como lengua extranjera': 'language-learning',
+                    'inglés como lengua extranjera': 'language-learning',
+                    'guías de estudio': 'study-guides',
+                    'estudio': 'study-guides',
+                    'libros de texto': 'textbooks',
+                    'texto': 'textbooks',
+                    'referencia': 'reference',
+                    'diccionario': 'reference',
+                    'enciclopedia': 'reference',
+                    'guías prácticas': 'how-to',
+                    'how-to': 'how-to',
+                    'práctico': 'how-to',
+                    'métodos': 'how-to',
+                    'metodología': 'how-to',
+                    'tutorial': 'tutorials',
+                    'tutoriales': 'tutorials',
+                    'habilidades': 'skills',
+                    'destrezas': 'skills',
+                    
+                    // === ARTES Y CULTURA ===
+                    'arte': 'art',
+                    'artístico': 'art',
+                    'diseño': 'design',
+                    'gráfico': 'design',
+                    'fotografía': 'photography',
+                    'fotográfico': 'photography',
+                    'música': 'music',
+                    'musical': 'music',
+                    'cine': 'cinema',
+                    'película': 'cinema',
+                    'cinematográfico': 'cinema',
+                    'teatro': 'theater',
+                    'teatral': 'theater',
+                    'drama': 'theater',
+                    'poesía': 'poetry',
+                    'poético': 'poetry',
+                    'verso': 'poetry',
+                    'estudios culturales': 'cultural-studies',
+                    'cultura': 'cultural-studies',
+                    'moda': 'fashion',
+                    'estilo': 'fashion',
+                    'arquitectura': 'architecture',
+                    'construcción': 'architecture',
+                    'artesanías': 'crafts',
+                    'manualidades': 'crafts',
+                    
+                    // === ESTILO DE VIDA ===
+                    'cocina': 'cooking',
+                    'gastronomía': 'cooking',
+                    'culinario': 'cooking',
+                    'recetas': 'cooking',
+                    'fitness': 'fitness',
+                    'ejercicio': 'fitness',
+                    'gimnasio': 'fitness',
+                    'entrenamiento': 'fitness',
+                    'deportes': 'sports',
+                    'deporte': 'sports',
+                    'atlético': 'sports',
+                    'viajes': 'travel',
+                    'turismo': 'travel',
+                    'viajar': 'travel',
+                    'hogar': 'home-garden',
+                    'jardín': 'home-garden',
+                    'casa': 'home-garden',
+                    'salud y bienestar': 'health-wellness',
+                    'bienestar': 'health-wellness',
+                    'wellness': 'health-wellness',
+                    'relaciones': 'relationships',
+                    'pareja': 'relationships',
+                    'amor': 'relationships',
+                    'crianza': 'parenting',
+                    'paternidad': 'parenting',
+                    'maternidad': 'parenting',
+                    'hijos': 'parenting',
+                    'familia': 'family',
+                    'familiar': 'family',
+                    'mascotas': 'pets',
+                    'animales': 'pets',
+                    'perros': 'pets',
+                    'gatos': 'pets',
+                    'hobbies': 'hobbies',
+                    'pasatiempos': 'hobbies',
+                    'estilo de vida': 'lifestyle',
+                    'lifestyle': 'lifestyle',
+                    
+                    // === AUDIENCIAS ESPECÍFICAS ===
+                    'infantil': 'children',
+                    'niños': 'children',
+                    'niñas': 'children',
+                    'juvenil': 'young-adult',
+                    'jóvenes': 'young-adult',
+                    'adolescentes': 'teen',
+                    'adolescente': 'teen',
+                    'tercera edad': 'seniors',
+                    'adultos mayores': 'seniors',
+                    'mujeres': 'women',
+                    'femenino': 'women',
+                    'hombres': 'men',
+                    'masculino': 'men',
+                    
+                    // === FORMATOS ESPECIALES ===
+                    'cómics': 'comics',
+                    'comic': 'comics',
+                    'novelas gráficas': 'graphic-novels',
+                    'gráfico': 'graphic-novels',
+                    'manga': 'manga',
+                    'libros ilustrados': 'picture-books',
+                    'ilustrado': 'picture-books',
+                    'libros de ejercicios': 'workbooks',
+                    'ejercicios': 'workbooks',
+                    'workbook': 'workbooks',
+                    'diarios': 'journals',
+                    'journal': 'journals',
+                    'antologías': 'anthologies',
+                    'antología': 'anthologies',
+                    'colecciones': 'collections',
+                    'colección': 'collections'
+                };
+                
+                // Mapear categorías de Claude AI a valores del select
+                const mappedCategories = new Set(); // Usar Set para evitar duplicados
+                
+                metadata.categories.forEach(category => {
+                    const categoryLower = category.toLowerCase();
+                    
+                    // Buscar coincidencia exacta primero
+                    if (categoryMapping[categoryLower]) {
+                        mappedCategories.add(categoryMapping[categoryLower]);
+                    } else {
+                        // Buscar coincidencias parciales
+                        for (const [key, value] of Object.entries(categoryMapping)) {
+                            if (categoryLower.includes(key) || key.includes(categoryLower)) {
+                                mappedCategories.add(value);
+                                break; // Primera coincidencia gana
+                            }
+                        }
+                    }
+                });
+                
+                // Seleccionar las categorías mapeadas
+                mappedCategories.forEach(categoryValue => {
+                    const option = categoriesSelect.querySelector(`option[value="${categoryValue}"]`);
+                    if (option) {
+                        option.selected = true;
+                    }
+                });
+                
+                // Trigger change event para actualizar la UI
+                categoriesSelect.dispatchEvent(new Event('change'));
+                
+                // Mostrar debug info en desarrollo
+                console.log('Categorías Claude AI:', metadata.categories);
+                console.log('Categorías mapeadas:', Array.from(mappedCategories));
+            }
+            
+            // NUEVO: Guardar automáticamente los metadatos en la base de datos
+            saveMetadataToDatabase(metadata);
+        }
+        
+        function saveMetadataToDatabase(metadata) {
+            // Guardar los metadatos generados automáticamente en la base de datos
+            console.log('🔄 Guardando metadatos en la base de datos...');
+            
+            fetch(`/books/book/${bookId}/aspose-save-metadata`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    metadata: metadata
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Metadatos guardados exitosamente:', data);
+                    
+                    // Mostrar notificación sutil de éxito
+                    showMetadataSaveNotification('success', 'Metadatos guardados automáticamente');
+                    
+                    // Actualizar interfaz con información de guardado
+                    updateMetadataIntegrationStatus(data);
+                } else {
+                    console.error('❌ Error guardando metadatos:', data.error);
+                    showMetadataSaveNotification('warning', 'Metadatos generados pero no guardados: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error en la llamada para guardar metadatos:', error);
+                showMetadataSaveNotification('warning', 'Metadatos generados pero error al guardar');
+            });
+        }
+        
+        function showMetadataSaveNotification(type, message) {
+            // Crear notificación pequeña y elegante
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'warning'} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = `
+                top: 20px; 
+                right: 20px; 
+                z-index: 9999; 
+                max-width: 350px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+            `;
+            
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                    <span>${message}</span>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remover automáticamente después de 4 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 4000);
+        }
+        
+        function updateMetadataIntegrationStatus(saveData) {
+            // Crear o actualizar indicador de integración exitosa
+            let statusIndicator = document.getElementById('metadataIntegrationStatus');
+            if (!statusIndicator) {
+                statusIndicator = document.createElement('div');
+                statusIndicator.id = 'metadataIntegrationStatus';
+                statusIndicator.className = 'alert alert-info mt-3';
+                
+                // Insertar después del botón de generar metadatos
+                const generateBtn = document.getElementById('generateMetadata');
+                if (generateBtn && generateBtn.parentNode) {
+                    generateBtn.parentNode.insertBefore(statusIndicator, generateBtn.nextSibling);
+                }
+            }
+            
+            const updatedFields = saveData.updated_fields || [];
+            const metadataSaved = saveData.metadata_saved || {};
+            
+            statusIndicator.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-database me-2 text-success"></i>
+                    <div>
+                        <strong>Metadatos integrados al libro</strong>
+                        <small class="d-block text-muted">
+                            Guardado: ${metadataSaved.subtitle ? 'subtítulo' : ''} 
+                            ${metadataSaved.keywords_count ? metadataSaved.keywords_count + ' palabras clave' : ''} 
+                            ${metadataSaved.categories_count ? metadataSaved.categories_count + ' categorías' : ''} 
+                            - ${saveData.saved_at ? new Date(saveData.saved_at).toLocaleTimeString() : ''}
+                        </small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showMetadataLoading() {
+            // Mostrar spinners de carga
+            document.getElementById('subtitleLoading').classList.remove('d-none');
+            document.getElementById('descriptionLoading').classList.remove('d-none');
+            document.getElementById('keywordsLoading').classList.remove('d-none');
+            document.getElementById('categoriesLoading').classList.remove('d-none');
+            
+            // Actualizar estados
+            document.getElementById('subtitleStatus').textContent = 'Generando subtítulo...';
+            document.getElementById('descriptionStatus').textContent = 'Generando descripción...';
+            document.getElementById('keywordsStatus').textContent = 'Generando palabras clave...';
+            document.getElementById('categoriesStatus').textContent = 'Seleccionando categorías...';
+            
+            // Deshabilitar el botón
+            const generateBtn = document.getElementById('generateMetadata');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generando...';
+        }
+        
+        function hideMetadataLoading() {
+            // Ocultar spinners de carga
+            document.getElementById('subtitleLoading').classList.add('d-none');
+            document.getElementById('descriptionLoading').classList.add('d-none');
+            document.getElementById('keywordsLoading').classList.add('d-none');
+            document.getElementById('categoriesLoading').classList.add('d-none');
+            
+            // Rehabilitar el botón
+            const generateBtn = document.getElementById('generateMetadata');
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="fas fa-magic me-1"></i>Generar con IA';
+        }
+        
+        function updateMetadataStatus(status, errorMessage = '') {
+            const successMessage = 'Generado automáticamente con IA';
+            const errorMsg = errorMessage || 'Error en la generación';
+            
+            if (status === 'success') {
+                document.getElementById('subtitleStatus').textContent = successMessage;
+                document.getElementById('descriptionStatus').textContent = successMessage;
+                document.getElementById('keywordsStatus').textContent = successMessage;
+                document.getElementById('categoriesStatus').textContent = 'Categorías seleccionadas automáticamente';
+            } else {
+                document.getElementById('subtitleStatus').textContent = errorMsg;
+                document.getElementById('descriptionStatus').textContent = errorMsg;
+                document.getElementById('keywordsStatus').textContent = errorMsg;
+                document.getElementById('categoriesStatus').textContent = errorMsg;
+            }
+        }
+        
+        function showMetadataSuccessMessage() {
+            // Mostrar un mensaje temporal de éxito
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; width: 300px;';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>¡Metadatos generados!</strong> Los campos se han completado automáticamente.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

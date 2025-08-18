@@ -1563,9 +1563,11 @@ async function checkInitialStatus() {
             
             // Actualizar progreso con validación - forzar 100% para completados
             let progress = data.progress !== undefined ? data.progress : 0;
-            if (data.status === 'completed') {
+            // FIX: Normalizar status para consistencia (reutilizar normalizedStatus)
+            const normalizedStatus = data.status ? data.status.toLowerCase() : '';
+            if (normalizedStatus === 'completed') {
                 progress = 100;
-            } else if (data.status === 'failed') {
+            } else if (normalizedStatus === 'failed') {
                 progress = 0;
             }
             updateProgressCircle(progress);
@@ -1581,8 +1583,11 @@ async function checkInitialStatus() {
             }
             
             // Manejar estado de arquitectura lista para revisión
-            if (data.status === 'architecture_review') {
+            // FIX: Normalizar status para consistencia (API devuelve ARCHITECTURE_REVIEW, JS busca architecture_review)
+            // (normalizedStatus ya definido arriba)
+            if (normalizedStatus === 'architecture_review') {
                 console.log('🏗️ Architecture review ready, redirecting to review page');
+                console.log('🔍 Status data:', data.status, '→', normalizedStatus);
                 addLog('success', '¡Arquitectura generada! Redirigiendo a página de revisión...');
                 
                 // Pequeño delay para que el usuario vea el mensaje
@@ -1594,7 +1599,7 @@ async function checkInitialStatus() {
             }
             
             // Manejar estado completado
-            if (data.status === 'completed') {
+            if (normalizedStatus === 'completed') {
                 console.log('🔍 Book is completed, updating UI');
                 const badge = document.getElementById('statusBadge');
                 badge.className = 'status-badge badge-completed';
@@ -1609,7 +1614,7 @@ async function checkInitialStatus() {
                 if (state.elapsedInterval) {
                     clearInterval(state.elapsedInterval);
                 }
-            } else if (data.status === 'failed') {
+            } else if (normalizedStatus === 'failed') {
                 console.log('🔍 Book is failed, updating UI');
                 const badge = document.getElementById('statusBadge');
                 badge.className = 'status-badge badge-failed';

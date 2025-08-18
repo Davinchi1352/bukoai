@@ -1,0 +1,1318 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Visor de Formateo Profesional - {{ book.title }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Pro:wght@400;500;600;700&family=Times:wght@400;700&family=Georgia:wght@400;700&family=Arial:wght@400;700&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/ebook-professional.css') }}" rel="stylesheet">
+<style>
+/* 🎯 NUEVA ARQUITECTURA SIMPLIFICADA - SPLIT SCREEN DINÁMICO */
+:root {
+    --primary-color: #1e293b;
+    --accent-color: #3b82f6;
+    --success-color: #10b981;
+    --neutral-100: #f1f5f9;
+    --neutral-200: #e2e8f0;
+    --neutral-700: #334155;
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: var(--neutral-100);
+    overflow: hidden;
+}
+
+/* 📱 SPLIT SCREEN LAYOUT - PANEL MÁS COMPACTO */
+.professional-viewer {
+    display: grid;
+    grid-template-columns: 320px 1fr; /* Panel más estrecho y compacto */
+    height: 100vh;
+}
+
+/* 🎛️ PANEL DE CONFIGURACIONES - COMPACTO Y OPTIMIZADO */
+.config-panel {
+    background: white;
+    border-right: 1px solid var(--neutral-200);
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: relative;
+}
+
+.config-header {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #f1f5f9; /* Texto gris claro como solicitado */
+    padding: 1rem; /* Padding reducido para ser más compacto */
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.config-header h1 {
+    margin: 0;
+    font-size: 1.2rem; /* Más compacto */
+    font-weight: 600;
+    color: #f1f5f9; /* Gris claro para mejor contraste */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    letter-spacing: 0.02em;
+}
+
+.config-header .book-title {
+    font-size: 0.85rem; /* Más compacto */
+    color: #cbd5e1; /* Gris más claro para contraste */
+    margin-top: 0.5rem;
+    font-weight: 400;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    opacity: 0.9;
+}
+
+.config-sections {
+    padding: 0.5rem; /* Aún más compacto */
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 75px); /* Altura más optimizada */
+    scrollbar-width: thin;
+    scroll-behavior: smooth; /* Scrolling suave */
+}
+
+.config-section {
+    margin-bottom: 0.6rem; /* Ultra compacto */
+    border: 1px solid var(--neutral-200);
+    border-radius: 4px; /* Bordes más pequeños */
+    overflow: hidden;
+}
+
+.config-section-header {
+    background: var(--neutral-100);
+    padding: 0.4rem 0.6rem; /* Ultra compacto */
+    border-bottom: 1px solid var(--neutral-200);
+    font-weight: 600;
+    font-size: 0.75rem; /* Aún más pequeño */
+    color: var(--neutral-700);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    line-height: 1.2; /* Mejor espaciado */
+}
+
+.config-section-content {
+    padding: 0.5rem; /* Ultra compacto */
+    display: none;
+}
+
+.config-section.active .config-section-content {
+    display: block;
+}
+
+.config-section.active .config-section-header i {
+    transform: rotate(90deg);
+}
+
+.config-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem; /* Ultra compacto */
+    padding: 0.3rem; /* Ultra compacto */
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+.config-option:hover {
+    background: var(--neutral-100);
+}
+
+.config-option label {
+    font-size: 0.75rem; /* Aún más pequeño */
+    font-weight: 500;
+    margin: 0;
+    cursor: pointer;
+    line-height: 1.2; /* Más compacto */
+    flex: 1; /* Toma el espacio disponible */
+    margin-right: 0.5rem; /* Espaciado con el toggle */
+}
+
+.config-toggle {
+    position: relative;
+    width: 36px; /* Más pequeño */
+    height: 20px; /* Más pequeño */
+    background: var(--neutral-200);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex-shrink: 0; /* No se encoje */
+}
+
+.config-toggle.active {
+    background: var(--accent-color);
+}
+
+.config-toggle::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px; /* Más pequeño */
+    height: 16px; /* Más pequeño */
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.config-toggle.active::before {
+    transform: translateX(16px); /* Ajustado al nuevo tamaño */
+}
+
+/* 📝 FORM CONTROLS COMPACTOS */
+.config-option select,
+.config-option input[type="text"],
+.config-option input[type="range"] {
+    font-size: 0.7rem; /* Más pequeño */
+    padding: 0.25rem 0.4rem; /* Ultra compacto */
+    border: 1px solid var(--neutral-200);
+    border-radius: 3px;
+    background: white;
+    width: 100%;
+    max-width: 120px; /* Ancho máximo */
+}
+
+.config-option select {
+    height: 28px; /* Altura fija compacta */
+}
+
+.config-option input[type="range"] {
+    height: 20px; /* Altura compacta para range */
+    max-width: 80px; /* Más estrecho */
+}
+
+/* 📚 VISTA PREVIA INSTANTÁNEA */
+.preview-panel {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.preview-header {
+    background: white;
+    border-bottom: 1px solid var(--neutral-200);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.preview-title {
+    font-weight: 600;
+    color: var(--neutral-700);
+}
+
+.preview-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.preview-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.preview-btn:hover {
+    background: #2563eb;
+}
+
+.preview-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* 📖 ESTILOS DINÁMICOS DE LIBRO - ORGANIZACIÓN COMPACTA */
+.dynamic-book-content {
+    margin: 0 auto;
+    background: #ffffff; /* Fondo blanco limpio para mejor contraste */
+    padding: 1.5rem; /* Padding más compacto */
+    font-family: var(--dynamic-font-family, 'Times New Roman');
+    font-size: var(--dynamic-font-size, 12pt);
+    line-height: var(--dynamic-line-height, 1.4); /* Línea más compacta */
+    position: relative;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+/* 📝 TEXTO COMPACTO Y BIEN ORGANIZADO */
+.dynamic-book-content p,
+.ebook-page p {
+    margin-bottom: 1rem !important; /* Espaciado reducido entre párrafos */
+    line-height: 1.4 !important; /* Línea más compacta */
+    text-align: justify; /* Justificación para mejor apariencia */
+    text-indent: 0.8rem; /* Sangría ligera para párrafos */
+}
+
+.dynamic-book-content h1,
+.dynamic-book-content h2, 
+.dynamic-book-content h3,
+.ebook-page h1,
+.ebook-page h2,
+.ebook-page h3 {
+    margin-top: 1.5rem !important; /* Espaciado reducido arriba */
+    margin-bottom: 1rem !important; /* Espaciado reducido abajo */
+    line-height: 1.2 !important; /* Línea más compacta para títulos */
+}
+
+/* 📋 LISTAS MÁS COMPACTAS */
+.dynamic-book-content ul,
+.dynamic-book-content ol,
+.ebook-page ul,
+.ebook-page ol {
+    margin: 0.8rem 0 !important;
+    padding-left: 1.5rem !important;
+}
+
+.dynamic-book-content li,
+.ebook-page li {
+    margin-bottom: 0.3rem !important; /* Espaciado muy reducido en listas */
+    line-height: 1.3 !important;
+}
+
+/* 📄 SISTEMA DE PÁGINAS PROFESIONALES - OPTIMIZADO PARA PANTALLA */
+.ebook-page {
+    width: var(--page-width, min(100%, 800px)); /* Tamaño responsivo para pantalla */
+    height: auto; /* Altura automática para mejor legibilidad */
+    min-height: var(--page-height, 600px); /* Altura mínima */
+    margin: 0 auto 1.5rem auto !important; /* Separación más compacta */
+    background: white;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.1);
+    padding: var(--page-margin, 2rem); /* Padding responsivo */
+    position: relative;
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    border-radius: 2px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-size: 16px; /* Tamaño base legible */
+    line-height: 1.6; /* Interlineado óptimo */
+}
+
+.ebook-page:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+/* 📄 SEPARADORES DE PÁGINA ELEGANTES */
+.ebook-page:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: -1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #d1d5db 50%, transparent 100%);
+}
+
+/* 📄 INDICADOR DE NÚMERO DE PÁGINA */
+.ebook-page::before {
+    content: attr(data-page-number);
+    position: absolute;
+    bottom: 1cm;
+    right: 2cm;
+    font-size: 10pt;
+    color: #6b7280;
+    font-family: 'Inter', sans-serif;
+    opacity: 0.7;
+}
+
+/* 📏 TAMAÑOS DE PÁGINA DINÁMICOS - CONSISTENCIA MEJORADA */
+.page-size-a4,
+.page-size-a4 .ebook-page {
+    --page-width: min(100%, 850px) !important; /* A4 adaptado a pantalla */
+    --page-height: min(90vh, 1100px) !important;
+    --page-margin: 3rem !important;
+}
+
+.page-size-a5,
+.page-size-a5 .ebook-page {
+    --page-width: min(100%, 650px) !important; /* A5 adaptado a pantalla */
+    --page-height: min(85vh, 900px) !important;
+    --page-margin: 2.5rem !important;
+}
+
+.page-size-letter,
+.page-size-letter .ebook-page {
+    --page-width: min(100%, 800px) !important; /* Letter adaptado a pantalla */
+    --page-height: min(88vh, 1000px) !important;
+    --page-margin: 2.5rem !important;
+}
+
+.page-size-kindle,
+.page-size-kindle .ebook-page {
+    --page-width: min(100%, 500px) !important; /* Kindle adaptado a pantalla */
+    --page-height: min(80vh, 700px) !important;
+    --page-margin: 2rem !important;
+}
+
+/* 🎯 APLICAR TAMAÑOS A TODAS LAS PÁGINAS ESPECÍFICAMENTE */
+.ebook-page {
+    width: var(--page-width, min(100%, 800px)) !important;
+    height: auto !important;
+    min-height: var(--page-height, 600px) !important;
+    padding: var(--page-margin, 2rem) !important;
+    transition: all 0.3s ease !important; /* Transición suave para cambios */
+}
+
+/* 🎨 PORTADA PROFESIONAL SIMPLIFICADA - ESTRUCTURA CONSISTENTE */
+.ebook-cover-page {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 30%, #cbd5e1 100%);
+    color: #1e293b;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    border: 2px solid #e2e8f0;
+    /* Mantener el padding normal de ebook-page */
+}
+
+/* Simplificar estructura - sin .cover-content anidado */
+.ebook-cover-page h1,
+.ebook-cover-page .cover-title {
+    font-size: clamp(2rem, 4vw, 3rem); /* Más moderado */
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+    color: #1e293b;
+    max-width: 100%;
+}
+
+.ebook-cover-page p,
+.ebook-cover-page .cover-author {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+    letter-spacing: 0.05em;
+    color: #475569;
+}
+
+/* Eliminar elementos problemáticos con position absolute */
+.cover-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* Sin height: 100% que causaba problemas */
+}
+
+.cover-logo {
+    margin-bottom: 1.5rem;
+    opacity: 0.6;
+}
+
+.cover-genre {
+    margin-top: 2rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 1.5rem;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border-radius: 1.5rem;
+    font-weight: 500;
+    display: inline-block;
+    /* Sin position absolute */
+}
+
+/* 🎨 CONFIGURACIONES DINÁMICAS CSS - APLICACIÓN MEJORADA */
+/* Font families - Aplicar a todos los elementos de texto */
+.font-times,
+.font-times .ebook-page,
+.font-times .ebook-page *,
+.font-times .dynamic-book-content,
+.font-times .dynamic-book-content * {
+    --dynamic-font-family: 'Times New Roman', serif !important;
+    font-family: 'Times New Roman', serif !important;
+}
+
+.font-georgia,
+.font-georgia .ebook-page,
+.font-georgia .ebook-page *,
+.font-georgia .dynamic-book-content,
+.font-georgia .dynamic-book-content * {
+    --dynamic-font-family: 'Georgia', serif !important;
+    font-family: 'Georgia', serif !important;
+}
+
+.font-crimson,
+.font-crimson .ebook-page,
+.font-crimson .ebook-page *,
+.font-crimson .dynamic-book-content,
+.font-crimson .dynamic-book-content * {
+    --dynamic-font-family: 'Crimson Pro', serif !important;
+    font-family: 'Crimson Pro', serif !important;
+}
+
+.font-arial,
+.font-arial .ebook-page,
+.font-arial .ebook-page *,
+.font-arial .dynamic-book-content,
+.font-arial .dynamic-book-content * {
+    --dynamic-font-family: 'Arial', sans-serif !important;
+    font-family: 'Arial', sans-serif !important;
+}
+
+/* Font sizes */
+.font-8pt { --dynamic-font-size: 8pt; }
+.font-10pt { --dynamic-font-size: 10pt; }
+.font-12pt { --dynamic-font-size: 12pt; }
+.font-14pt { --dynamic-font-size: 14pt; }
+.font-16pt { --dynamic-font-size: 16pt; }
+.font-18pt { --dynamic-font-size: 18pt; }
+
+/* Drop caps dinámicos */
+.use-drop-caps .chapter-content p:first-of-type::first-letter {
+    float: left;
+    font-size: 3.5em;
+    line-height: 0.8;
+    padding-right: 8px;
+    padding-top: 4px;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+/* Elementos dinámicos ocultos/visibles */
+.hide-cover-page .ebook-cover-page { display: none !important; }
+.hide-toc .ebook-toc { display: none !important; }
+.hide-dedication .ebook-dedication { display: none !important; }
+.hide-prologue .ebook-prologue { display: none !important; }
+.hide-epilogue .ebook-epilogue { display: none !important; }
+.hide-about-author .ebook-about-author { display: none !important; }
+
+/* Professional typography */
+.use-professional-typography {
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern" 1, "liga" 1;
+    hyphens: auto;
+}
+
+/* 📋 TABLA DE CONTENIDOS MEJORADA */
+.ebook-toc {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 3rem 2.5cm;
+}
+
+.ebook-toc h2 {
+    color: var(--primary-color);
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 3px solid var(--accent-color);
+    padding-bottom: 1rem;
+}
+
+.toc-nav {
+    margin-top: 2rem;
+}
+
+.toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.toc-chapter {
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--accent-color);
+    padding-left: 1.5rem;
+    background: white;
+    border-radius: 0 6px 6px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.toc-chapter:hover {
+    background: var(--neutral-100);
+    border-left-color: var(--success-color);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.toc-chapter a {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    color: var(--neutral-700);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1.1rem;
+    line-height: 1.4;
+    transition: color 0.2s ease;
+    gap: 1rem;
+}
+
+.toc-chapter a:hover {
+    color: var(--accent-color);
+}
+
+.toc-number {
+    background: var(--accent-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-width: 2.5rem;
+    text-align: center;
+}
+
+.toc-title {
+    flex: 1;
+    font-weight: 600;
+}
+
+.toc-dots {
+    flex: 1;
+    border-bottom: 2px dotted var(--neutral-300);
+    margin: 0 0.5rem;
+    height: 1px;
+}
+
+.toc-page {
+    background: var(--neutral-100);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    min-width: 2rem;
+    text-align: center;
+}
+
+/* Expression highlighting */
+.highlight-expressions .expression {
+    background: linear-gradient(120deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+    padding: 2px 4px;
+    border-radius: 3px;
+    border-left: 2px solid var(--accent-color);
+}
+
+/* Translation emphasis */
+.emphasize-translations .translation {
+    font-style: italic;
+    color: #1e40af;
+    font-weight: 500;
+}
+
+/* 📊 FORMATO PROFESIONAL PARA TABLAS */
+.dynamic-book-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dynamic-book-content table th {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #475569 100%);
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    padding: 1rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dynamic-book-content table td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    color: var(--neutral-700);
+    line-height: 1.5;
+}
+
+.dynamic-book-content table tbody tr:hover {
+    background: var(--neutral-100);
+}
+
+.dynamic-book-content table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.dynamic-book-content table tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+/* Headers and footers */
+.use-headers-footers .ebook-page {
+    position: relative;
+}
+
+.use-headers-footers .ebook-page::before {
+    content: attr(data-book-title);
+    position: absolute;
+    top: 1cm;
+    left: 2cm;
+    right: 2cm;
+    font-size: 10pt;
+    color: #666;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+}
+
+.use-headers-footers .ebook-page::after {
+    content: "© " attr(data-author-name) " | Página " counter(page);
+    position: absolute;
+    bottom: 1cm;
+    left: 2cm;
+    right: 2cm;
+    font-size: 9pt;
+    color: #666;
+    text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .professional-viewer {
+        grid-template-columns: 350px 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .professional-viewer {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+    
+    .config-panel {
+        height: 40vh;
+        border-right: none;
+        border-bottom: 1px solid var(--neutral-200);
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="professional-viewer">
+    <!-- 🎛️ PANEL DE CONFIGURACIONES -->
+    <div class="config-panel">
+        <div class="config-header">
+            <h1><i class="fas fa-magic"></i> Formateo Profesional</h1>
+            <div class="book-title">{{ book.title }}</div>
+        </div>
+        
+        <div class="config-sections">
+            <!-- ✨ CONFIGURACIONES DE CONTENIDO -->
+            <div class="config-section active">
+                <div class="config-section-header">
+                    <span><i class="fas fa-book"></i> Elementos del Libro</span>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                <div class="config-section-content">
+                    <div class="config-option">
+                        <label for="toggle_cover_page">Página de Portada</label>
+                        <div class="config-toggle active" data-option="cover_page" id="toggle_cover_page"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_title_page">Página de Título</label>
+                        <div class="config-toggle active" data-option="title_page" id="toggle_title_page"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_copyright_page">Página de Derechos</label>
+                        <div class="config-toggle active" data-option="copyright_page" id="toggle_copyright_page"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_toc">Tabla de Contenidos</label>
+                        <div class="config-toggle active" data-option="toc" id="toggle_toc"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_dedication">Dedicatoria</label>
+                        <div class="config-toggle" data-option="dedication" id="toggle_dedication"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_prologue">Prólogo</label>
+                        <div class="config-toggle" data-option="prologue" id="toggle_prologue"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_epilogue">Epílogo</label>
+                        <div class="config-toggle" data-option="epilogue" id="toggle_epilogue"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_about_author">Acerca del Autor</label>
+                        <div class="config-toggle active" data-option="about_author" id="toggle_about_author"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🎨 CONFIGURACIONES DE FORMATO -->
+            <div class="config-section active">
+                <div class="config-section-header">
+                    <span><i class="fas fa-font"></i> Tipografía</span>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                <div class="config-section-content">
+                    <div class="config-option">
+                        <label>Tamaño de Página</label>
+                        <select id="page_size_select" class="form-control">
+                            <option value="a4" selected>A4 (21 × 29.7 cm)</option>
+                            <option value="a5">A5 (14.8 × 21 cm)</option>
+                            <option value="letter">Letter (8.5 × 11 in)</option>
+                            <option value="kindle">Kindle (9 × 12 cm)</option>
+                        </select>
+                    </div>
+                    <div class="config-option">
+                        <label>Familia de Fuente</label>
+                        <select id="font_family_select" class="form-control">
+                            <option value="times" selected>Times New Roman</option>
+                            <option value="georgia">Georgia</option>
+                            <option value="crimson">Crimson Pro</option>
+                            <option value="arial">Arial</option>
+                        </select>
+                    </div>
+                    <div class="config-option">
+                        <label>Tamaño de Fuente: <span id="font_size_display">12pt</span></label>
+                        <input type="range" id="font_size_range" min="8" max="18" value="12" class="form-control">
+                    </div>
+                    <div class="config-option">
+                        <label>Nombre del Autor</label>
+                        <input type="text" id="author_name_input" class="form-control" value="{% if book.user and book.user.first_name and book.user.last_name %}{{ book.user.first_name }} {{ book.user.last_name }}{% elif book.user and book.user.first_name %}{{ book.user.first_name }}{% else %}Autor{% endif %}" placeholder="Ingrese el nombre del autor">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✨ CONFIGURACIONES DE ESTILO -->
+            <div class="config-section active">
+                <div class="config-section-header">
+                    <span><i class="fas fa-palette"></i> Estilo Profesional</span>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                <div class="config-section-content">
+                    <div class="config-option">
+                        <label for="toggle_drop_caps">Capitulares (Drop Caps)</label>
+                        <div class="config-toggle" data-option="drop_caps" id="toggle_drop_caps"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_professional_typography">Tipografía Profesional</label>
+                        <div class="config-toggle active" data-option="professional_typography" id="toggle_professional_typography"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_headers_footers">Encab./Pies de Página</label>
+                        <div class="config-toggle active" data-option="headers_footers" id="toggle_headers_footers"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_highlight_expressions">Resaltar Expresiones</label>
+                        <div class="config-toggle active" data-option="highlight_expressions" id="toggle_highlight_expressions"></div>
+                    </div>
+                    <div class="config-option">
+                        <label for="toggle_emphasize_translations">Enfatizar Traducciones</label>
+                        <div class="config-toggle active" data-option="emphasize_translations" id="toggle_emphasize_translations"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📚 VISTA PREVIA INSTANTÁNEA -->
+    <div class="preview-panel">
+        <div class="preview-header">
+            <div class="preview-title">
+                <i class="fas fa-eye"></i> Vista Previa Instantánea
+            </div>
+            <div class="preview-actions">
+                <button class="preview-btn" onclick="exportToPDF()">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button class="preview-btn" onclick="toggleFullscreen()">
+                    <i class="fas fa-expand"></i> Pantalla Completa
+                </button>
+            </div>
+        </div>
+        
+        <div class="preview-content">
+            <div class="dynamic-book-content font-times font-12pt use-professional-typography use-headers-footers use-highlight-expressions use-emphasize-translations" id="bookPreview">
+                <!-- 📖 CONTENIDO DEL LIBRO SE CARGA AQUÍ -->
+                <div class="loading-message">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Cargando contenido del libro...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* 🚀 JAVASCRIPT PARA CONFIGURACIONES DINÁMICAS INSTANTÁNEAS */
+class InstantPreviewManager {
+    constructor() {
+        this.bookContent = null;
+        this.previewContainer = document.getElementById('bookPreview');
+        this.initializeControls();
+        this.loadBookContent();
+    }
+
+    initializeControls() {
+        // 🎛️ Toggle switches
+        document.querySelectorAll('.config-toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => this.handleToggle(toggle));
+        });
+
+        // 📏 Page size selector
+        document.getElementById('page_size_select').addEventListener('change', (e) => {
+            this.updatePageSize(e.target.value);
+        });
+
+        // 🎨 Font family selector
+        document.getElementById('font_family_select').addEventListener('change', (e) => {
+            this.updateFontFamily(e.target.value);
+        });
+
+        // 📏 Font size range
+        document.getElementById('font_size_range').addEventListener('input', (e) => {
+            this.updateFontSize(e.target.value);
+        });
+
+        // 👤 Author name input
+        document.getElementById('author_name_input').addEventListener('input', (e) => {
+            this.updateAuthorName(e.target.value);
+        });
+
+        // 📁 Section collapsible headers
+        document.querySelectorAll('.config-section-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const section = header.parentElement;
+                section.classList.toggle('active');
+            });
+        });
+    }
+
+    async loadBookContent() {
+        try {
+            // 📡 Cargar contenido inicial del libro
+            const response = await fetch(`/books/book/{{ book.id }}/content-only`);
+            if (response.ok) {
+                this.bookContent = await response.text();
+                this.renderContent();
+            } else {
+                // Fallback: usar contenido estático si el endpoint no existe
+                this.loadStaticContent();
+            }
+        } catch (error) {
+            console.error('Error loading book content:', error);
+            this.loadStaticContent();
+        }
+    }
+
+    loadStaticContent() {
+        // 📚 Contenido de respaldo extendido - ESTRUCTURA CORREGIDA Y COMPLETA
+        this.bookContent = `
+            <div class="ebook-page ebook-cover-page" data-page-type="cover">
+                <h1 class="cover-title">{{ book.title }}</h1>
+                <p class="cover-author">{% if book.user and book.user.first_name and book.user.last_name %}{{ book.user.first_name }} {{ book.user.last_name }}{% elif book.user and book.user.first_name %}{{ book.user.first_name }}{% else %}Autor{% endif %}</p>
+                <div class="cover-genre">
+                    <i class="fas fa-star"></i> Edición Profesional <i class="fas fa-star"></i>
+                </div>
+            </div>
+            
+            <div class="ebook-page ebook-toc" data-page-type="toc">
+                <h2><i class="fas fa-list"></i> Tabla de Contenidos</h2>
+                <nav class="toc-nav">
+                    <ol class="toc-list">
+                        <li class="toc-chapter">
+                            <a href="#chapter1">
+                                <span class="toc-number">01</span>
+                                <span class="toc-title">Introducción</span>
+                                <span class="toc-dots"></span>
+                                <span class="toc-page">3</span>
+                            </a>
+                        </li>
+                        <li class="toc-chapter">
+                            <a href="#chapter2">
+                                <span class="toc-number">02</span>
+                                <span class="toc-title">Desarrollo Principal</span>
+                                <span class="toc-dots"></span>
+                                <span class="toc-page">15</span>
+                            </a>
+                        </li>
+                        <li class="toc-chapter">
+                            <a href="#chapter3">
+                                <span class="toc-number">03</span>
+                                <span class="toc-title">Metodología Avanzada</span>
+                                <span class="toc-dots"></span>
+                                <span class="toc-page">28</span>
+                            </a>
+                        </li>
+                        <li class="toc-chapter">
+                            <a href="#chapter4">
+                                <span class="toc-number">04</span>
+                                <span class="toc-title">Aplicaciones Prácticas</span>
+                                <span class="toc-dots"></span>
+                                <span class="toc-page">42</span>
+                            </a>
+                        </li>
+                        <li class="toc-chapter">
+                            <a href="#chapter5">
+                                <span class="toc-number">05</span>
+                                <span class="toc-title">Conclusiones</span>
+                                <span class="toc-dots"></span>
+                                <span class="toc-page">56</span>
+                            </a>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+            
+            <div class="ebook-page ebook-dedication" data-page-type="dedication">
+                <div class="dedication-content" style="display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center;">
+                    <div style="border: 2px solid var(--accent-color); padding: 2rem; border-radius: 8px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem; font-size: 1.5rem;">Dedicatoria</h3>
+                        <p style="font-style: italic; font-size: 1.1rem; line-height: 1.6; color: var(--neutral-700);">
+                            "Para todos aquellos que buscan el conocimiento con pasión y dedicación, 
+                            y que encuentran en la lectura una fuente infinita de inspiración y crecimiento personal."
+                        </p>
+                        <div style="margin-top: 1.5rem; opacity: 0.7;">
+                            <i class="fas fa-heart" style="color: var(--accent-color);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ebook-page chapter-content" id="chapter1">
+                <h1 class="chapter-title" style="border-bottom: 3px solid var(--accent-color); padding-bottom: 1rem; margin-bottom: 2rem;">
+                    <span style="color: var(--accent-color); font-size: 0.7em; font-weight: 300;">CAPÍTULO 01</span><br>
+                    Introducción
+                </h1>
+                <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 1.5rem;">
+                    Este capítulo presenta los <span class="expression">conceptos fundamentales</span> que serán desarrollados a lo largo de toda la obra, estableciendo las bases teóricas y prácticas necesarias para una comprensión completa del tema.
+                </p>
+                <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+                    Para ejemplificar mejor algunos términos, incluimos <span class="translation">traducciones precisas: "Knowledge" significa "Conocimiento"</span> y otros elementos que facilitan la comprensión del contenido.
+                </p>
+                <table style="margin: 2rem 0;">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Definición</th>
+                            <th>Aplicación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Fundamento</td>
+                            <td>Base teórica principal</td>
+                            <td>Desarrollo de estrategias</td>
+                        </tr>
+                        <tr>
+                            <td>Metodología</td>
+                            <td>Enfoque sistemático</td>
+                            <td>Implementación práctica</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="line-height: 1.8;">
+                    El contenido continúa desarrollando estos temas con el rigor académico y la claridad expositiva que caracterizan una obra de <strong>calidad profesional</strong>.
+                </p>
+            </div>
+            
+            <div class="ebook-page chapter-content" id="chapter2">
+                <h1 class="chapter-title" style="border-bottom: 3px solid var(--accent-color); padding-bottom: 1rem; margin-bottom: 2rem;">
+                    <span style="color: var(--accent-color); font-size: 0.7em; font-weight: 300;">CAPÍTULO 02</span><br>
+                    Desarrollo Principal
+                </h1>
+                <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 1.5rem;">
+                    En este capítulo profundizamos en los <span class="expression">elementos centrales del tema</span>, desarrollando las ideas principales con ejemplos prácticos y análisis detallados.
+                </p>
+                <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+                    Los aspectos técnicos se presentan de manera accesible, manteniendo el rigor académico sin sacrificar la claridad expositiva que caracteriza esta obra.
+                </p>
+                <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+                    <strong>Punto clave:</strong> La implementación práctica de estos conceptos requiere una comprensión profunda de los fundamentos teóricos establecidos en el capítulo anterior.
+                </p>
+            </div>
+            
+            <div class="ebook-page chapter-content" id="chapter3">
+                <h1 class="chapter-title" style="border-bottom: 3px solid var(--accent-color); padding-bottom: 1rem; margin-bottom: 2rem;">
+                    <span style="color: var(--accent-color); font-size: 0.7em; font-weight: 300;">CAPÍTULO 03</span><br>
+                    Metodología Avanzada
+                </h1>
+                <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 1.5rem;">
+                    Este capítulo introduce <span class="expression">metodologías avanzadas</span> que permiten una aplicación más sofisticada de los conceptos previamente desarrollados.
+                </p>
+                <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+                    La progresión lógica del contenido facilita la asimilación de conceptos complejos, manteniendo siempre el enfoque en la aplicabilidad práctica.
+                </p>
+            </div>
+            
+            <div class="ebook-page chapter-content" id="chapter4">
+                <h1 class="chapter-title" style="border-bottom: 3px solid var(--accent-color); padding-bottom: 1rem; margin-bottom: 2rem;">
+                    <span style="color: var(--accent-color); font-size: 0.7em; font-weight: 300;">CAPÍTULO 04</span><br>
+                    Aplicaciones Prácticas
+                </h1>
+                <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 1.5rem;">
+                    Las <span class="expression">aplicaciones prácticas</span> demuestran cómo implementar efectivamente los conceptos desarrollados en los capítulos anteriores.
+                </p>
+                <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+                    A través de casos de estudio y ejemplos concretos, se ilustra la aplicación real de la metodología propuesta.
+                </p>
+            </div>
+            
+            <div class="ebook-page chapter-content" id="chapter5">
+                <h1 class="chapter-title" style="border-bottom: 3px solid var(--accent-color); padding-bottom: 1rem; margin-bottom: 2rem;">
+                    <span style="color: var(--accent-color); font-size: 0.7em; font-weight: 300;">CAPÍTULO 05</span><br>
+                    Conclusiones
+                </h1>
+                <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 1.5rem;">
+                    Este último capítulo sintetiza los <span class="expression">resultados principales</span> y proporciona una visión integral del recorrido realizado.
+                </p>
+                <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+                    Se destacan las contribuciones más significativas y se sugieren direcciones para el desarrollo futuro del tema.
+                </p>
+            </div>
+            
+            <div class="ebook-page ebook-about-author" data-page-type="about-author">
+                <div class="about-author-content">
+                    <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 2rem;">Acerca del Autor</h2>
+                    <p style="text-align: center; line-height: 1.6;">
+                        <strong>{% if book.user and book.user.first_name and book.user.last_name %}{{ book.user.first_name }} {{ book.user.last_name }}{% elif book.user and book.user.first_name %}{{ book.user.first_name }}{% else %}Autor{% endif %}</strong> es un autor comprometido con la creación de recursos educativos de alta calidad, 
+                        utilizando tecnología avanzada para democratizar el acceso al conocimiento y promover el aprendizaje continuo.
+                    </p>
+                </div>
+            </div>
+        `;
+        this.renderContent();
+    }
+
+    renderContent() {
+        if (this.bookContent) {
+            this.previewContainer.innerHTML = this.bookContent;
+            
+            // 🏷️ Set data attributes for CSS headers/footers
+            const bookTitle = "{{ book.title }}";
+            const authorName = document.getElementById('author_name_input').value || "{% if book.user and book.user.first_name and book.user.last_name %}{{ book.user.first_name }} {{ book.user.last_name }}{% elif book.user and book.user.first_name %}{{ book.user.first_name }}{% else %}Autor{% endif %}";
+            
+            // Apply data attributes to all pages
+            const pages = this.previewContainer.querySelectorAll('.ebook-page, .ebook-cover-page, .ebook-toc, .ebook-dedication, .chapter-content');
+            pages.forEach(page => {
+                page.setAttribute('data-book-title', bookTitle);
+                page.setAttribute('data-author-name', authorName);
+            });
+            
+            // 📄 Inicializar números de página
+            this.updatePageNumbers();
+            
+            // 🎨 Aplicar configuraciones iniciales
+            this.applyInitialConfigurations();
+        }
+    }
+
+    applyInitialConfigurations() {
+        // 📏 Aplicar tamaño de página inicial
+        const initialPageSize = document.getElementById('page_size_select').value;
+        this.previewContainer.classList.add(`page-size-${initialPageSize}`);
+        
+        // 🎨 Aplicar fuente inicial
+        const initialFont = document.getElementById('font_family_select').value;
+        this.previewContainer.classList.add(`font-${initialFont}`);
+        
+        // 📏 Aplicar tamaño de fuente inicial
+        const initialFontSize = document.getElementById('font_size_range').value;
+        this.previewContainer.classList.add(`font-${initialFontSize}pt`);
+    }
+
+    handleToggle(toggle) {
+        // 🔄 Cambiar estado visual del toggle
+        toggle.classList.toggle('active');
+        
+        const option = toggle.dataset.option;
+        const isActive = toggle.classList.contains('active');
+        
+        // 🎯 Aplicar cambio instantáneo según la opción
+        switch(option) {
+            case 'cover_page':
+                this.toggleElement('.ebook-cover-page', isActive);
+                break;
+            case 'toc':
+                this.toggleElement('.ebook-toc', isActive);
+                break;
+            case 'dedication':
+                this.toggleElement('.ebook-dedication', isActive);
+                break;
+            case 'prologue':
+                this.toggleElement('.ebook-prologue', isActive);
+                break;
+            case 'epilogue':
+                this.toggleElement('.ebook-epilogue', isActive);
+                break;
+            case 'about_author':
+                this.toggleElement('.ebook-about-author', isActive);
+                break;
+            case 'drop_caps':
+                this.toggleClass('use-drop-caps', isActive);
+                break;
+            case 'professional_typography':
+                this.toggleClass('use-professional-typography', isActive);
+                break;
+            case 'headers_footers':
+                this.toggleClass('use-headers-footers', isActive);
+                break;
+            case 'highlight_expressions':
+                this.toggleClass('use-highlight-expressions', isActive);
+                break;
+            case 'emphasize_translations':
+                this.toggleClass('use-emphasize-translations', isActive);
+                break;
+        }
+    }
+
+    toggleElement(selector, show) {
+        const elements = this.previewContainer.querySelectorAll(selector);
+        elements.forEach(el => {
+            el.style.display = show ? 'block' : 'none';
+        });
+    }
+
+    toggleClass(className, add) {
+        if (add) {
+            this.previewContainer.classList.add(className);
+        } else {
+            this.previewContainer.classList.remove(className);
+        }
+    }
+
+    updatePageSize(size) {
+        // 📏 Remover clases de tamaño de página anteriores
+        this.previewContainer.classList.remove('page-size-a4', 'page-size-a5', 'page-size-letter', 'page-size-kindle');
+        
+        // ✨ Agregar nueva clase de tamaño de página
+        this.previewContainer.classList.add(`page-size-${size}`);
+        
+        // 🎯 APLICAR CLASE TAMBIÉN A TODAS LAS PÁGINAS INDIVIDUALES (FIX DE CONSISTENCIA)
+        const allPages = this.previewContainer.querySelectorAll('.ebook-page');
+        allPages.forEach(page => {
+            // Remover clases anteriores de todas las páginas
+            page.classList.remove('page-size-a4', 'page-size-a5', 'page-size-letter', 'page-size-kindle');
+            // Aplicar nueva clase de tamaño
+            page.classList.add(`page-size-${size}`);
+        });
+        
+        // 📄 Forzar recálculo de layout para garantizar consistencia
+        this.previewContainer.style.display = 'none';
+        this.previewContainer.offsetHeight; // Trigger reflow
+        this.previewContainer.style.display = '';
+        
+        // 📄 Actualizar números de página y reiniciar contador
+        this.updatePageNumbers();
+        
+        console.log(`📏 Page size updated to: ${size}, applied to ${allPages.length} pages`);
+    }
+
+    updateAuthorName(name) {
+        // 👤 Actualizar atributo de nombre del autor en todas las páginas
+        const pages = this.previewContainer.querySelectorAll('.ebook-page, .ebook-cover-page, .ebook-toc, .ebook-dedication, .chapter-content');
+        pages.forEach(page => {
+            page.setAttribute('data-author-name', name || 'Autor');
+        });
+        
+        // 📖 Actualizar nombre en la portada si existe
+        const coverAuthor = this.previewContainer.querySelector('.cover-author');
+        if (coverAuthor) {
+            coverAuthor.textContent = name || 'Autor';
+        }
+    }
+
+    updatePageNumbers() {
+        // 📄 Asignar números de página dinámicamente
+        const pages = this.previewContainer.querySelectorAll('.ebook-page, .ebook-cover-page, .ebook-toc, .ebook-dedication, .chapter-content');
+        pages.forEach((page, index) => {
+            page.setAttribute('data-page-number', index + 1);
+        });
+    }
+
+    updateFontFamily(family) {
+        // 🎨 Remover clases de fuente anteriores del contenedor
+        this.previewContainer.classList.remove('font-times', 'font-georgia', 'font-crimson', 'font-arial');
+        // ✨ Agregar nueva clase de fuente al contenedor
+        this.previewContainer.classList.add(`font-${family}`);
+        
+        // 🎯 APLICAR FUENTE TAMBIÉN A TODAS LAS PÁGINAS INDIVIDUALES (FIX DE CONSISTENCIA)
+        const allPages = this.previewContainer.querySelectorAll('.ebook-page, .dynamic-book-content');
+        allPages.forEach(page => {
+            // Remover clases de fuente anteriores de todas las páginas
+            page.classList.remove('font-times', 'font-georgia', 'font-crimson', 'font-arial');
+            // Aplicar nueva clase de fuente
+            page.classList.add(`font-${family}`);
+        });
+        
+        // 🎨 APLICAR DIRECTAMENTE VIA CSS CUSTOM PROPERTY PARA MÁXIMA COMPATIBILIDAD
+        const fontMapping = {
+            'times': 'Times New Roman, serif',
+            'georgia': 'Georgia, serif', 
+            'crimson': 'Crimson Pro, serif',
+            'arial': 'Arial, sans-serif'
+        };
+        
+        if (fontMapping[family]) {
+            // Aplicar a nivel de documento para máximo alcance
+            document.documentElement.style.setProperty('--dynamic-font-family', fontMapping[family]);
+            
+            // También aplicar directamente al contenedor de preview
+            this.previewContainer.style.fontFamily = fontMapping[family];
+            
+            // Y a todas las páginas individualmente
+            allPages.forEach(page => {
+                page.style.fontFamily = fontMapping[family];
+            });
+        }
+        
+        console.log(`🎨 Font family updated to: ${family} (${fontMapping[family] || 'default'}), applied to ${allPages.length} elements`);
+    }
+
+    updateFontSize(size) {
+        // 📏 Actualizar display del tamaño
+        document.getElementById('font_size_display').textContent = `${size}pt`;
+        // 🎨 Remover clases de tamaño anteriores
+        this.previewContainer.classList.remove('font-8pt', 'font-10pt', 'font-12pt', 'font-14pt', 'font-16pt', 'font-18pt');
+        // ✨ Agregar nueva clase de tamaño
+        this.previewContainer.classList.add(`font-${size}pt`);
+    }
+}
+
+// 🚀 Funciones globales
+function exportToPDF() {
+    // 📄 Implementar exportación a PDF
+    window.print();
+}
+
+function toggleFullscreen() {
+    // 🖥️ Alternar pantalla completa
+    const previewPanel = document.querySelector('.preview-panel');
+    if (!document.fullscreenElement) {
+        previewPanel.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// 🎯 Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    window.previewManager = new InstantPreviewManager();
+});
+</script>
+{% endblock %}
