@@ -1152,7 +1152,7 @@ Comienza directamente con: <div class="book-chunk">"""
         Usa el BookCoherenceManager real para extracción correcta de páginas.
         """
         # Import real BookCoherenceManager desde app.services
-        from app.services.claude_service_coherence import BookCoherenceManager
+        from app.services.claude_service.coherence import BookCoherenceManager
         return BookCoherenceManager()
     
     def __str__(self) -> str:

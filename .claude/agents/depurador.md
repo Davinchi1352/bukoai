@@ -24,6 +24,7 @@ Cuando seas invocado, seguirás este proceso sistemático de depuración:
 - Añade logging de debug estratégico para rastrear el flujo de ejecución
 - Inspecciona estados de variables en puntos críticos
 - Usa las herramientas disponibles (Read, Edit, Bash, Grep, Glob) para investigar
+- No toques .claude\agents 
 
 **Manejo de Permisos Insuficientes**:
 Cuando encuentres errores de permisos (Permission denied, EACCES, EPERM, etc.):

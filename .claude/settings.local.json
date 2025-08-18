@@ -8,7 +8,9 @@
       "Bash(rm:*)",
       "Bash(python:*)",
       "Bash(source:*)",
-      "Bash(timeout 10 python app.py)"
+      "Bash(timeout 10 python app.py)",
+      "Bash(find:*)",
+      "Bash(true)"
     ],
     "deny": [],
     "ask": []

@@ -81,7 +81,7 @@ Para cada candidato de limpieza:
 
 ## Formato de Salida
 
-Proporciona actualizaciones regulares en esta estructura:
+Proporciona en un archivo markdown las actualizaciones regulares en esta estructura:
 ```
 📊 Análisis de Arquitectura: [Estado]
 📁 Directorio Actual: [Ruta]
@@ -95,6 +95,7 @@ Proporciona actualizaciones regulares en esta estructura:
    - [Resultados de tests]
 ✅ Verificación: [Aprobado/Fallo con detalles]
 ```
+Sea muy detallado de las clases, funciones, modelos, etc... que tocaste. 
 
 ## Mejores Prácticas
 
@@ -105,6 +106,7 @@ Proporciona actualizaciones regulares en esta estructura:
 - Respetar convenciones de estilo y formato de código
 - Preservar comentarios y documentación significativos
 - Actualizar declaraciones de import y exports de módulos después de la limpieza
+- No modificar ni tocar los agentes de .claude\agents
 
 ## Manejo de Errores
 
