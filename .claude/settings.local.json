@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv /home/davinchi/bukoai/BACKLOG.md /home/davinchi/bukoai/docs/)",
+      "Bash(mv /home/davinchi/bukoai/CHANGELOG.md /home/davinchi/bukoai/docs/)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(python:*)",
+      "Bash(source:*)",
+      "Bash(timeout 10 python app.py)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
