@@ -10,7 +10,8 @@
       "Bash(source:*)",
       "Bash(timeout 10 python app.py)",
       "Bash(find:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
