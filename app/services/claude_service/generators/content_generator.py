@@ -233,6 +233,8 @@ class ContentGenerator:
                 if intro_result.get('success'):
                     introduction_content = intro_result['content']
                     total_tokens_used += intro_result.get('tokens_used', 0)
+                    # 🔧 FIX: Acumular tokens de introducción por tipo
+                    total_completion_tokens += intro_result.get('tokens_used', 0)
             
             if book_params.get('include_conclusion', False):
                 concl_result = await self._generate_conclusion(
@@ -242,6 +244,8 @@ class ContentGenerator:
                 if concl_result.get('success'):
                     conclusion_content = concl_result['content']
                     total_tokens_used += concl_result.get('tokens_used', 0)
+                    # 🔧 FIX: Acumular tokens de conclusión por tipo
+                    total_completion_tokens += concl_result.get('tokens_used', 0)
             
             # Combinar todo el contenido final en estructura HTML
             final_content_parts = []
@@ -293,7 +297,18 @@ class ContentGenerator:
                 'chunk_count': len(chunks),
                 'chunk_summaries': chunk_summaries,
                 'introduction_included': bool(introduction_content),
-                'conclusion_included': bool(conclusion_content)
+                'conclusion_included': bool(conclusion_content),
+                # 🔧 FIX: Agregar campo 'usage' esperado por la tarea de Celery
+                'usage': {
+                    'prompt_tokens': total_prompt_tokens,
+                    'completion_tokens': total_completion_tokens,
+                    'thinking_tokens': total_thinking_tokens
+                },
+                # 🔧 FIX: Agregar campo 'final_stats' para compatibilidad
+                'final_stats': {
+                    'words': final_word_count,
+                    'pages': int(estimated_pages)
+                }
             }
             
         except Exception as e:
@@ -401,7 +416,11 @@ class ContentGenerator:
                 'thinking_content': final_chunk_thinking,
                 'word_count': word_count,
                 'estimated_pages': estimated_pages,
-                'tokens_used': chunk_count  # Approximate
+                'tokens_used': chunk_count,  # Approximate total tokens
+                # 🔧 FIX: Mejorar estimaciones de tokens por tipo
+                'prompt_tokens': chunk_count * 8,  # Estimación tokens de prompt
+                'completion_tokens': len(final_chunk_content) // 4,  # ~4 caracteres por token
+                'thinking_tokens': len(final_chunk_thinking) // 4    # Thinking tokens
             }
             
         except asyncio.TimeoutError:

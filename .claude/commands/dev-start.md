@@ -5,10 +5,10 @@ description: Iniciar entorno de desarrollo BukoAI
 ---
 
 ## Estado del Sistema
-- Docker: !`docker ps | grep -c bukoai || echo "0 containers"`
-- PostgreSQL: !`pg_isready -h localhost -p 5432 2>/dev/null || echo "PostgreSQL offline"`
-- Redis: !`redis-cli ping 2>/dev/null || echo "Redis offline"`
-- Celery: !`ps aux | grep celery | grep -v grep | wc -l`
+- Docker: !`docker ps | grep -c buko-ai || echo "0 containers"`
+- PostgreSQL: !`docker exec buko-ai-db-dev pg_isready 2>/dev/null || echo "PostgreSQL offline"`
+- Redis: !`docker exec buko-ai-redis-dev redis-cli ping 2>/dev/null || echo "Redis offline"`
+- Celery: !`docker exec buko-ai-worker-dev ps aux | grep celery | grep -v grep | wc -l 2>/dev/null || echo "0"`
 
 ## Tu Tarea
 

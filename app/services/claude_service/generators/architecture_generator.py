@@ -218,7 +218,13 @@ class ArchitectureGenerator:
                 'api_duration': api_duration,
                 'content_length': len(complete_content),
                 'thinking_length': len(complete_thinking),
-                'chunk_count': chunk_count
+                'chunk_count': chunk_count,
+                # 🔧 FIX: Agregar campo 'usage' esperado por la tarea de Celery
+                'usage': {
+                    'prompt_tokens': chunk_count * 10,  # Estimación basada en chunks procesados
+                    'completion_tokens': len(complete_content) // 4,  # Estimación ~4 caracteres por token
+                    'thinking_tokens': len(complete_thinking) // 4   # Estimación thinking tokens
+                }
             }
             
         except asyncio.TimeoutError:

@@ -5,9 +5,9 @@ description: Optimizar base de datos y queries SQLAlchemy
 ---
 
 ## Estado de Base de Datos
-- Tamaño DB: !`psql -U postgres -d bukoai -c "SELECT pg_database_size('bukoai')/1024/1024 as size_mb" 2>/dev/null | grep -E "[0-9]+"`
-- Tablas: !`psql -U postgres -d bukoai -c "\dt" 2>/dev/null | grep -c rows`
-- Índices: !`psql -U postgres -d bukoai -c "\di" 2>/dev/null | grep -c rows`
+- Tamaño DB: !`docker exec buko-ai-db-dev psql -U postgres -d bukoai -c "SELECT pg_database_size('bukoai')/1024/1024 as size_mb" 2>/dev/null | grep -E "[0-9]+" || echo "N/A"`
+- Tablas: !`docker exec buko-ai-db-dev psql -U postgres -d bukoai -c "\dt" 2>/dev/null | grep -c rows || echo "0"`
+- Índices: !`docker exec buko-ai-db-dev psql -U postgres -d bukoai -c "\di" 2>/dev/null | grep -c rows || echo "0"`
 - Modelos SQLAlchemy: @app/models.py
 
 ## Tu Tarea

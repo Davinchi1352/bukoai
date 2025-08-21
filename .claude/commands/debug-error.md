@@ -7,9 +7,9 @@ description: Analizar y resolver error específico
 ## Error a Analizar: ${ARGUMENTS}
 
 ## Contexto de Debugging
-- Logs recientes: !`tail -20 logs/app.log 2>/dev/null | grep -i error`
-- Celery errors: !`tail -20 logs/celery.log 2>/dev/null | grep -i error`
-- Tracebacks: !`grep -r "Traceback" logs/ | tail -5`
+- Logs recientes: !`docker exec buko-ai-web-dev tail -20 logs/app.log 2>/dev/null | grep -i error || echo "No errors"`
+- Celery errors: !`docker exec buko-ai-worker-dev tail -20 logs/celery.log 2>/dev/null | grep -i error || echo "No errors"`
+- Tracebacks: !`docker exec buko-ai-web-dev grep -r "Traceback" logs/ 2>/dev/null | tail -5 || echo "No tracebacks"`
 
 ## Tu Tarea
 

@@ -11,7 +11,9 @@
       "Bash(timeout 10 python app.py)",
       "Bash(find:*)",
       "Bash(true)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)"
     ],
     "deny": [],
     "ask": []

@@ -98,17 +98,17 @@ Buko AI democratiza la creación de libros profesionales usando IA avanzada. Tra
 
 3. **Construir y ejecutar con Docker**
    ```bash
-   docker-compose up --build
+   docker-compose -f docker-compose.dev.yml up --build
    ```
 
 4. **Ejecutar migraciones**
    ```bash
-   docker-compose exec web flask db upgrade
+   docker-compose -f docker-compose.dev.yml exec web flask db upgrade
    ```
 
 5. **Inicializar datos**
    ```bash
-   docker-compose exec web python scripts/init_db.py
+   docker-compose -f docker-compose.dev.yml exec web python scripts/init_db.py
    ```
 
 La aplicación estará disponible en http://localhost
@@ -508,10 +508,10 @@ MAIL_USERNAME=your-email
 tail -f logs/structured.jsonl | jq .
 
 # Verificar estado de workers
-docker-compose exec celery celery -A app.celery inspect active
+docker exec buko-ai-worker-dev celery -A app.celery inspect active
 
 # Estadísticas de Redis
-docker-compose exec redis redis-cli info
+docker exec buko-ai-redis-dev redis-cli info
 
 # Verificar sistema completo
 python scripts/verify_10k_users_setup.py
@@ -523,20 +523,20 @@ python scripts/verify_10k_users_setup.py
 
 #### Error: "Connection refused to PostgreSQL"
 ```bash
-docker-compose restart db
+docker-compose -f docker-compose.dev.yml restart db
 ```
 
 #### Error: "Celery worker not processing tasks"
 ```bash
-docker-compose restart celery
+docker-compose -f docker-compose.dev.yml restart celery
 # Verificar estado de colas
-docker-compose exec celery celery -A app.celery inspect active
+docker exec buko-ai-worker-dev celery -A app.celery inspect active
 ```
 
 #### Error: "Circuit breaker abierto"
 ```bash
 # El sistema se auto-recupera, pero puedes forzar reset
-docker-compose restart celery
+docker-compose -f docker-compose.dev.yml restart celery
 # Verificar logs
 tail -f logs/structured.jsonl | grep circuit_breaker
 ```

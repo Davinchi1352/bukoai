@@ -414,23 +414,15 @@ class RobustStreamingService:
 - **A/B Testing**: Infrastructure para testing different AI approaches
 - **Monitoring**: Comprehensive monitoring de AI integration performance
 
-### Docker Stack Configuration Examples
-```dockerfile
-# Multi-stage Production Dockerfile
-FROM python:3.11-slim as builder
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+### Docker Stack Configuration
 
-FROM python:3.11-slim as production
-WORKDIR /app
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY . .
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
-EXPOSE 5000
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:create_app()"]
-```
+**NOTA IMPORTANTE**: Este proyecto usa la arquitectura Docker existente de BukoAI con contenedores:
+- `buko-ai-web-dev`: Flask application container
+- `buko-ai-worker-dev`: Celery workers container
+- `buko-ai-redis-dev`: Redis cache container
+- `buko-ai-db-dev`: PostgreSQL database container
+
+Para configuraciones Docker, referencia el archivo docker-compose existente del proyecto.
 
 ```yaml
 # Docker Compose Production Stack

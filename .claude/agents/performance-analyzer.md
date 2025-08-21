@@ -67,11 +67,11 @@ Usa enfoque ultrathink debido a la complejidad de correlacionar múltiples métr
 - CDN para activos estáticos
 
 **HERRAMIENTAS DE ANÁLISIS A UTILIZAR:**
-- cProfile para perfilado Python
-- Logging de consultas SQLAlchemy
-- Perfilador de memoria
+- Usar docker exec buko-ai-web-dev para cProfile y perfilado Python
+- Logging de consultas SQLAlchemy dentro del contenedor Flask
+- Perfilador de memoria en el contenedor de aplicación
 - Middleware personalizado para cronometraje
-- EXPLAIN ANALYZE de base de datos
+- Usar docker exec buko-ai-db-dev para análisis de base de datos con EXPLAIN ANALYZE
 
 **ENTREGABLES:**
 - Reporte de rendimiento como reporte-rendimiento.md en docs/rendimiento/

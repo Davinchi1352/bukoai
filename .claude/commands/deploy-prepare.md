@@ -5,9 +5,9 @@ description: Preparar paquete de despliegue completo
 ---
 
 ## Verificaciones Pre-Deploy
-- Tests passing: !`pytest --co -q 2>/dev/null | tail -1`
-- Linting: !`ruff check . 2>/dev/null | tail -1`
-- Migraciones: !`alembic current 2>/dev/null`
+- Tests passing: !`docker exec buko-ai-web-dev pytest --co -q 2>/dev/null | tail -1 || echo "N/A"`
+- Linting: !`docker exec buko-ai-web-dev ruff check . 2>/dev/null | tail -1 || echo "N/A"`
+- Migraciones: !`docker exec buko-ai-web-dev alembic current 2>/dev/null || echo "N/A"`
 - Secrets: !`grep -c "SECRET\|KEY\|TOKEN" .env.example`
 
 ## Tu Tarea

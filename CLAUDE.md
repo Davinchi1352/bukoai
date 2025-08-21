@@ -405,3 +405,4 @@ SOCKETIO_PING_INTERVAL=60
 - Advanced AI integration with Claude Sonnet 4
 - Comprehensive monitoring and resilience patterns
 - 99.5% reliability with automatic recovery systems
+- debes recordar que siempre trabajamos con docker y su stack

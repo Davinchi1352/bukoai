@@ -256,6 +256,12 @@ class ClaudeServiceFacade:
                 'feedback_applied': {
                     'what': feedback_what,
                     'how': feedback_how
+                },
+                # 🔧 FIX: Agregar campo 'usage' para regeneración de arquitectura
+                'usage': {
+                    'prompt_tokens': len(str(messages)) // 4,  # Estimación basada en prompt
+                    'completion_tokens': len(content) // 4,    # Estimación basada en respuesta
+                    'thinking_tokens': 0  # Las regeneraciones no usan thinking
                 }
             }
             

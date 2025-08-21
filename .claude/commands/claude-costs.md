@@ -5,9 +5,9 @@ description: Analizar costos y uso de Claude API
 ---
 
 ## Uso de Claude API
-- Llamadas hoy: !`grep -c "claude.ai" logs/api.log 2>/dev/null || echo "0"`
-- Tokens consumidos: !`grep "tokens_used" logs/metrics.log 2>/dev/null | tail -5`
-- Errores de API: !`grep -c "anthropic.*error" logs/app.log 2>/dev/null`
+- Llamadas hoy: !`docker exec buko-ai-web-dev grep -c "claude.ai" logs/api.log 2>/dev/null || echo "0"`
+- Tokens consumidos: !`docker exec buko-ai-web-dev grep "tokens_used" logs/metrics.log 2>/dev/null | tail -5 || echo "N/A"`
+- Errores de API: !`docker exec buko-ai-web-dev grep -c "anthropic.*error" logs/app.log 2>/dev/null || echo "0"`
 
 ## Tu Tarea
 

@@ -5,9 +5,9 @@ description: Optimización integral del proyecto (multi-agente)
 ---
 
 ## Métricas Baseline
-- Response time p95: !`grep "response_time" logs/metrics.log 2>/dev/null | tail -1`
-- DB queries promedio: !`grep "query_count" logs/metrics.log 2>/dev/null | tail -1`
-- Memory usage: !`ps aux | grep python | awk '{sum+=$4} END {print sum}'`
+- Response time p95: !`docker exec buko-ai-web-dev grep "response_time" logs/metrics.log 2>/dev/null | tail -1 || echo "N/A"`
+- DB queries promedio: !`docker exec buko-ai-web-dev grep "query_count" logs/metrics.log 2>/dev/null | tail -1 || echo "N/A"`
+- Memory usage: !`docker exec buko-ai-web-dev ps aux | grep python | awk '{sum+=$4} END {print sum}' 2>/dev/null || echo "0"`
 
 ## Tu Tarea
 

@@ -5,10 +5,10 @@ description: Análisis completo de rendimiento del sistema
 ---
 
 ## Métricas Actuales
-- Procesos Python: !`ps aux | grep python | wc -l`
-- Uso de memoria: !`free -h | grep Mem`
-- Conexiones DB: !`netstat -an | grep 5432 | wc -l`
-- Workers Celery: !`celery -A app.celery inspect active 2>/dev/null | grep -c "worker"`
+- Procesos Python: !`docker exec buko-ai-web-dev ps aux | grep python | wc -l 2>/dev/null || echo "0"`
+- Uso de memoria: !`docker exec buko-ai-web-dev free -h | grep Mem 2>/dev/null || echo "N/A"`
+- Conexiones DB: !`docker exec buko-ai-db-dev netstat -an | grep 5432 | wc -l 2>/dev/null || echo "0"`
+- Workers Celery: !`docker exec buko-ai-worker-dev celery -A app.celery inspect active 2>/dev/null | grep -c "worker" || echo "0"`
 
 ## Tu Tarea
 

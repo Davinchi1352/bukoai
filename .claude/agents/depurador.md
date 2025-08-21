@@ -79,7 +79,7 @@ Usa ultrathink para analizar problemas complejos multi-capa.
 - **Flask**: Flask-DebugToolbar, Flask-Profiler
 - **Frontend**: Chrome DevTools, Firefox Developer Tools
 - **Docker**: docker logs, docker stats, docker exec
-- **Database**: SQL query logging, EXPLAIN ANALYZE
+- **Database**: SQL query logging, usar docker exec buko-ai-db-dev para EXPLAIN ANALYZE
 - **Network**: curl, postman, browser network tab
 - **Performance**: cProfile, py-spy, memory_profiler
 

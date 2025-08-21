@@ -1,13 +1,13 @@
 ---
-allowed-tools: Bash(python:*), Task
+allowed-tools: Bash, Task
 argument-hint: [quick|full|stress]
 description: Test completo del pipeline de generación de libros
 ---
 
 ## Sistema de Generación
-- Claude API Key: !`grep ANTHROPIC .env | wc -l`
-- Celery workers: !`celery -A app.celery inspect active 2>/dev/null | grep -c worker`
-- Redis queue: !`redis-cli llen celery 2>/dev/null`
+- Claude API Key: !`grep ANTHROPIC .env`
+- Celery workers: !`docker exec buko-ai-worker-dev celery -A app.celery inspect active 2>/dev/null || echo 'Celery no activo'`
+- Redis queue: !`docker exec buko-ai-redis-dev redis-cli llen celery 2>/dev/null || echo 'Redis no activo'`
 
 ## Tu Tarea
 

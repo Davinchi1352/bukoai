@@ -8,7 +8,7 @@ description: Generar tests completos para módulo específico
 
 ## Contexto de Testing
 - Framework: !`grep pytest requirements.txt || echo "No pytest found"`
-- Coverage actual: !`coverage report 2>/dev/null | grep "${ARGUMENTS}" || echo "Sin coverage"`
+- Coverage actual: !`docker exec buko-ai-web-dev coverage report 2>/dev/null | grep "${ARGUMENTS}" || echo "Sin coverage"`
 - Tests existentes: !`find tests -name "*${ARGUMENTS}*" 2>/dev/null | head -5`
 - Código a testear: @${ARGUMENTS}
 

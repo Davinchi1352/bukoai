@@ -6,8 +6,8 @@ model: claude-3-5-sonnet-20241022
 ---
 
 ## Contexto del Sistema
-- Versión Python: !`python --version`
-- Dependencias: !`pip list | grep -E "Flask|SQLAlchemy|bcrypt|JWT"`
+- Versión Python: !`docker exec buko-ai-web-dev python --version 2>/dev/null || echo "N/A"`
+- Dependencias: !`docker exec buko-ai-web-dev pip list | grep -E "Flask|SQLAlchemy|bcrypt|JWT" 2>/dev/null || echo "N/A"`
 - Archivos sensibles: !`find . -name "*.env*" -o -name "*secret*" -o -name "*key*" | head -20`
 - Configuración actual: @config/config.py
 

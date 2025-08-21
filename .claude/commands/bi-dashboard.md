@@ -5,9 +5,9 @@ description: Generar dashboard de inteligencia de negocio
 ---
 
 ## Métricas Disponibles
-- Usuarios totales: !`psql -U postgres -d bukoai -c "SELECT COUNT(*) FROM users" 2>/dev/null | grep -E "[0-9]+" | head -1`
-- Libros generados: !`psql -U postgres -d bukoai -c "SELECT COUNT(*) FROM books" 2>/dev/null | grep -E "[0-9]+" | head -1`
-- Suscripciones activas: !`psql -U postgres -d bukoai -c "SELECT subscription_tier, COUNT(*) FROM users GROUP BY subscription_tier" 2>/dev/null`
+- Usuarios totales: !`docker exec buko-ai-db-dev psql -U postgres -d bukoai -c "SELECT COUNT(*) FROM users" 2>/dev/null | grep -E "[0-9]+" | head -1 || echo "0"`
+- Libros generados: !`docker exec buko-ai-db-dev psql -U postgres -d bukoai -c "SELECT COUNT(*) FROM books" 2>/dev/null | grep -E "[0-9]+" | head -1 || echo "0"`
+- Suscripciones activas: !`docker exec buko-ai-db-dev psql -U postgres -d bukoai -c "SELECT subscription_tier, COUNT(*) FROM users GROUP BY subscription_tier" 2>/dev/null || echo "N/A"`
 
 ## Tu Tarea
 

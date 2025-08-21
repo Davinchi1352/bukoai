@@ -78,8 +78,8 @@ limit() and offset() optimization
 
 **HERRAMIENTAS DE ANÁLISIS:**
 - Logging de consultas SQLAlchemy
-- EXPLAIN ANALYZE para consultas
-- Herramientas específicas de base de datos (pg_stat_statements, etc.)
+- Usar docker exec buko-ai-db-dev para análisis de consultas con EXPLAIN ANALYZE
+- Acceder herramientas específicas de PostgreSQL dentro del contenedor de base de datos
 - Perfilado personalizado para consultas ORM
 
 **ENTREGABLES:**
